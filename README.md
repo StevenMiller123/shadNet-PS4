@@ -32,7 +32,8 @@ To compile, just run
 ```bash
 git clone https://github.com/StevenMiller123/shadNET-PS4.git
 cd ./shadNET-PS4
-make
+cmake -S . -B build
+cmake --build build --parallel $(nproc)
 ```
 
 After that, the compiled GoldHEN plugin should be in ./bin/plugins/prx_final.
@@ -41,5 +42,5 @@ Add the following somewhere to the file, where [CUSAXXXXX] is the game's serial 
 Alternatively, replace [CUSAXXXXX] with [default] if you want the plugin to load for all installed apps (not recommended).
 ```
 [CUSAXXXXX]
-/data/GoldHEN/plugins/shadnet-ps4-plugin.prx
+/data/GoldHEN/plugins/shadNET-PS4.prx
 ```
