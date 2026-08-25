@@ -1,7 +1,10 @@
+// SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 // From https://github.com/GoldHEN/GoldHEN_Plugins_Repository/blob/main/common/plugin_common.c
 
-#include "plugin_common.h"
 #include <Common.h>
+#include "plugin_common.h"
 
 // Thanks to OSM
 // https://github.com/OSM-Made/PS4-Notify/blob/c6d259bc5bd4aa519f5b0ce4f5e27ef7cb01ffdd/Notify.cpp
@@ -20,7 +23,7 @@ void NotifyStatic(const char* IconUri, const char* text) {
 }
 
 // For formatted strings
-void Notify(const char* IconUri, const char *FMT, ...) {
+void Notify(const char* IconUri, const char* FMT, ...) {
     OrbisNotificationRequest Buffer;
     va_list args;
     va_start(args, FMT);

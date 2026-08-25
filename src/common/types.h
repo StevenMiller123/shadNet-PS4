@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include "plugin_common.h"
+#include "ps4_defs.h"
 
 using u128 = std::array<std::uint64_t, 2>;
 static_assert(sizeof(u128) == 16, "u128 must be 128 bits wide");

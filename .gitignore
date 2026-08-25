@@ -3,4 +3,4 @@ bin/
 build/
 *.o
 .vscode/
-common/git_ver.h
+src/common/git_ver.h

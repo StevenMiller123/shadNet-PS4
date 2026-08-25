@@ -46,62 +46,138 @@ if(NOT DEFINED GOLDHEN_SDK)
     set(GOLDHEN_SDK "$ENV{GOLDHEN_SDK}")
 endif()
 if(OO_PS4_TOOLCHAIN STREQUAL "")
-    message(FATAL_ERROR "OO_PS4_TOOLCHAIN is not set (pass -DOO_PS4_TOOLCHAIN=... or export the env var)")
+    message(FATAL_ERROR "OO_PS4_TOOLCHAIN is not set")
 endif()
 if(GOLDHEN_SDK STREQUAL "")
-    message(FATAL_ERROR "GOLDHEN_SDK is not set (pass -DGOLDHEN_SDK=... or export the env var)")
+    message(FATAL_ERROR "GOLDHEN_SDK is not set")
 endif()
 
-set(PROJ_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(COMMON_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/src/common")
-set(BUILD_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/bin/plugins")
+set(PROJ_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(INCLUDE_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(EXTERNALS_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/externals")
+set(COMMON_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/src/common")
+set(BUILD_FOLDER   "${CMAKE_CURRENT_SOURCE_DIR}/bin/plugins")
 
 set(TARGET_PRX_DIR "${BUILD_FOLDER}/prx${PLUGIN_BUILD_TYPE}")
 set(TARGET_ELF_DIR "${BUILD_FOLDER}/elf${PLUGIN_BUILD_TYPE}")
 set(TARGET_ELF     "${TARGET_ELF_DIR}/${PLUGIN_NAME}")
 set(TARGET_PRX     "${TARGET_PRX_DIR}/${PLUGIN_NAME}.prx")
-set(TARGET_STUB_SO "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_NAME}.so")
 
 file(MAKE_DIRECTORY "${TARGET_PRX_DIR}")
 file(MAKE_DIRECTORY "${TARGET_ELF_DIR}")
 
-file(GLOB C_SOURCES      "${PROJ_DIR}/*.c")
-file(GLOB CPP_SOURCES     "${PROJ_DIR}/*.cpp")
-set(ALL_SOURCES ${C_SOURCES} ${CPP_SOURCES} ${COMMON_SOURCES})
-
-if(NOT ALL_SOURCES)
-    message(FATAL_ERROR "No source files found under ${PROJ_DIR}")
+set(EXTERNAL_MODULE_NAMES "")
+if(IS_DIRECTORY "${EXTERNALS_DIR}")
+    file(GLOB EXTERNAL_CANDIDATES RELATIVE "${EXTERNALS_DIR}" "${EXTERNALS_DIR}/*")
+    foreach(CANDIDATE ${EXTERNAL_CANDIDATES})
+        if(IS_DIRECTORY "${EXTERNALS_DIR}/${CANDIDATE}")
+            list(APPEND EXTERNAL_MODULE_NAMES "${CANDIDATE}")
+        endif()
+    endforeach()
 endif()
+
+set(PLUGIN_INCLUDE_FLAGS "")
+set(EXTERNAL_INCLUDE_DIRS "")
+
+foreach(EXT_NAME ${EXTERNAL_MODULE_NAMES})
+    set(EXT_ROOT "${EXTERNALS_DIR}/${EXT_NAME}")
+    if(IS_DIRECTORY "${EXT_ROOT}/include")
+        set(EXT_INCLUDE "${EXT_ROOT}/include")
+    else()
+        set(EXT_INCLUDE "${EXT_ROOT}")
+    endif()
+    list(APPEND EXTERNAL_INCLUDE_DIRS "${EXT_INCLUDE}")
+    list(APPEND PLUGIN_INCLUDE_FLAGS "-I${EXT_INCLUDE}")
+endforeach()
+
+list(APPEND PLUGIN_INCLUDE_FLAGS
+    "-I${GOLDHEN_SDK}/include"
+    "-I${INCLUDE_DIR}"
+    "-I${COMMON_DIR}"
+)
+
+set(PLUGIN_SYSROOT_FLAGS
+    "SHELL:-isysroot ${OO_PS4_TOOLCHAIN}"
+    "SHELL:-isystem ${OO_PS4_TOOLCHAIN}/include"
+    "SHELL:-isystem ${OO_PS4_TOOLCHAIN}/include/c++/v1"
+)
+
+set(EXTRA_FLAGS ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall)
+
+set(PLUGIN_CROSS_COMPILE_FLAGS
+    --target=x86_64-pc-freebsd12-elf
+    -fPIC
+    -funwind-tables
+    ${EXTRA_FLAGS}
+)
 
 set(PLUGIN_LIBS
     -lSceLibcInternal
     -lSceVideoOut
     -lGoldHEN_Hook
     -lkernel
+    -lc
+    -lc++
     -lSceSysmodule
 )
 
-set(EXTRA_FLAGS ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall)
+set(EXTERNAL_OBJECT_TARGETS "")
+
+foreach(EXT_NAME ${EXTERNAL_MODULE_NAMES})
+    set(EXT_ROOT "${EXTERNALS_DIR}/${EXT_NAME}")
+    file(GLOB EXT_ROOT_C      "${EXT_ROOT}/*.c")
+    file(GLOB EXT_ROOT_CC     "${EXT_ROOT}/*.cc")
+    file(GLOB EXT_ROOT_CPP    "${EXT_ROOT}/*.cpp")
+    file(GLOB EXT_SOURCE_CPPM "${EXT_ROOT}/*.cppm")
+    file(GLOB EXT_SRC_C       "${EXT_ROOT}/src/*.c")
+    file(GLOB EXT_SRC_CC      "${EXT_ROOT}/src/*.cc")
+    file(GLOB EXT_SRC_CPP     "${EXT_ROOT}/src/*.cpp")
+    file(GLOB EXT_SOURCE_CPPM "${EXT_ROOT}/src/*.cppm")
+    file(GLOB EXT_SOURCE_C    "${EXT_ROOT}/source/*.c")
+    file(GLOB EXT_SOURCE_CC   "${EXT_ROOT}/source/*.cc")
+    file(GLOB EXT_SOURCE_CPP  "${EXT_ROOT}/source/*.cpp")
+    file(GLOB EXT_SOURCE_CPPM "${EXT_ROOT}/source/*.cppm")
+
+    set(EXT_ALL_SOURCES
+        ${EXT_ROOT_C} ${EXT_ROOT_CC} ${EXT_ROOT_CPP} ${EXT_ROOT_CPPM}
+        ${EXT_SRC_C} ${EXT_SRC_CC} ${EXT_SRC_CPP} ${EXT_SRC_CPPM}
+        ${EXT_SOURCE_C} ${EXT_SOURCE_CC} ${EXT_SOURCE_CPP} ${EXT_SOURCE_CPPM}
+    )
+
+    if(EXT_ALL_SOURCES)
+        set(EXT_TARGET "ext_${EXT_NAME}")
+        add_library(${EXT_TARGET} OBJECT ${EXT_ALL_SOURCES})
+
+        target_compile_options(${EXT_TARGET} PRIVATE
+            ${PLUGIN_CROSS_COMPILE_FLAGS}
+            ${PLUGIN_INCLUDE_FLAGS}
+            ${PLUGIN_SYSROOT_FLAGS}
+        )
+        list(APPEND EXTERNAL_OBJECT_TARGETS ${EXT_TARGET})
+        message(STATUS "adding ${EXT_NAME}")
+    endif()
+endforeach()
+
+file(GLOB C_SOURCES     "${PROJ_DIR}/*.c")
+file(GLOB CPP_SOURCES    "${PROJ_DIR}/*.cpp")
+file(GLOB COMMON_SOURCES "${COMMON_DIR}/*.cpp")
+set(ALL_SOURCES ${C_SOURCES} ${CPP_SOURCES} ${COMMON_SOURCES})
+
+if(NOT ALL_SOURCES)
+    message(FATAL_ERROR "No source files found under ${PROJ_DIR} or ${COMMON_DIR}")
+endif()
 
 add_library(plugin_objects OBJECT ${ALL_SOURCES})
 
 target_compile_options(plugin_objects PRIVATE
-    --target=x86_64-pc-freebsd12-elf
-    -fPIC
-    -funwind-tables
-    ${EXTRA_FLAGS}
-    -isysroot ${OO_PS4_TOOLCHAIN}
-    -isystem ${OO_PS4_TOOLCHAIN}/include
+    ${PLUGIN_CROSS_COMPILE_FLAGS}
+    ${PLUGIN_INCLUDE_FLAGS}
+    ${PLUGIN_SYSROOT_FLAGS}
 )
-target_compile_options(plugin_objects PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:-isystem${OO_PS4_TOOLCHAIN}/${INCLUDE_DIR}/c++/v1>
-)
-target_include_directories(plugin_objects PRIVATE
-    ${GOLDHEN_SDK}/include
-    ${INCLUDE_DIR}
-    ${COMMON_DIR}
-)
+
+if(EXTERNAL_OBJECT_TARGETS)
+    add_dependencies(plugin_objects ${EXTERNAL_OBJECT_TARGETS})
+endif()
 
 find_package(Git QUIET)
 add_custom_target(build_info ALL
@@ -114,6 +190,11 @@ add_custom_target(build_info ALL
 )
 add_dependencies(plugin_objects build_info)
 
+set(ALL_LINK_OBJECTS "$<TARGET_OBJECTS:plugin_objects>")
+foreach(EXT_TARGET ${EXTERNAL_OBJECT_TARGETS})
+    list(APPEND ALL_LINK_OBJECTS "$<TARGET_OBJECTS:${EXT_TARGET}>")
+endforeach()
+
 add_custom_command(
     OUTPUT "${TARGET_PRX}"
     COMMAND ${PLUGIN_LD}
@@ -123,7 +204,7 @@ add_custom_command(
             -L${OO_PS4_TOOLCHAIN}/lib
             -L${GOLDHEN_SDK}
             ${GOLDHEN_SDK}/build/crtprx.o
-            $<TARGET_OBJECTS:plugin_objects>
+            ${ALL_LINK_OBJECTS}
             -o ${TARGET_ELF}.elf
             ${PLUGIN_LIBS}
     COMMAND ${OO_PS4_TOOLCHAIN}/bin/${PLUGIN_CDIR}/create-fself
@@ -132,7 +213,8 @@ add_custom_command(
             --lib=${TARGET_PRX}
             --paid 0x3800000000000011
     COMMAND chmod +x "${TARGET_PRX}"
-    DEPENDS plugin_objects $<TARGET_OBJECTS:plugin_objects>
+    COMMAND_EXPAND_LISTS
+    DEPENDS plugin_objects ${EXTERNAL_OBJECT_TARGETS} ${ALL_LINK_OBJECTS}
     COMMENT "Linking and signing ${PLUGIN_NAME}.prx"
     VERBATIM
 )
