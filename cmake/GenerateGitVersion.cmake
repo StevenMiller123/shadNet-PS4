@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-if(NOT DEFINED COMMON_DIR)
-    message(FATAL_ERROR "COMMON_DIR not provided")
+if(NOT DEFINED PROJ_DIR)
+    message(FATAL_ERROR "PROJ_DIR not provided")
 endif()
 
 set(GIT_COMMIT "unknown")
@@ -32,7 +32,7 @@ endif()
 
 string(TIMESTAMP BUILD_DATE "%b %d %Y @ %H:%M:%S")
 
-file(WRITE "${COMMON_DIR}/git_ver.h"
+file(WRITE "${PROJ_DIR}/common/git_ver.h"
 "#define GIT_COMMIT \"${GIT_COMMIT}\"
 #define GIT_VER \"${GIT_BRANCH}\"
 #define GIT_NUM ${GIT_COUNT}

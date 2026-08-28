@@ -10,3 +10,6 @@
 [submodule "externals/fmt"]
 	path = externals/fmt
 	url = https://github.com/StevenMiller123/fmt-openorbis.git
+[submodule "externals/magic_enum"]
+	path = externals/magic_enum
+	url = https://github.com/Neargye/magic_enum.git

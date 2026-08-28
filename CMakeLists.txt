@@ -2,31 +2,25 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 cmake_minimum_required(VERSION 3.20)
+include(ExternalProject)
+
+if(NOT CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ps4-toolchain.cmake" CACHE FILEPATH "PS4 toolchain")
+endif()
+
+get_filename_component(PLUGIN_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
+project(${PLUGIN_NAME} LANGUAGES C CXX)
 
 execute_process(COMMAND uname -s OUTPUT_VARIABLE HOST_UNAME_S OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(HOST_UNAME_S STREQUAL "Linux")
-    set(PLUGIN_CC  "clang")
-    set(PLUGIN_CXX "clang++")
-    set(PLUGIN_LD  "ld.lld")
+    set(PLUGIN_LD   "ld.lld")
     set(PLUGIN_CDIR "linux")
 elseif(HOST_UNAME_S STREQUAL "Darwin")
-    set(PLUGIN_CC  "/usr/local/opt/llvm/bin/clang")
-    set(PLUGIN_CXX "/usr/local/opt/llvm/bin/clang++")
-    set(PLUGIN_LD  "/usr/local/opt/llvm/bin/ld.lld")
+    set(PLUGIN_LD   "/usr/local/opt/llvm/bin/ld.lld")
     set(PLUGIN_CDIR "macos")
 else()
     message(FATAL_ERROR "Unsupported host platform: ${HOST_UNAME_S}")
 endif()
-
-set(CMAKE_C_COMPILER   "${PLUGIN_CC}")
-set(CMAKE_CXX_COMPILER "${PLUGIN_CXX}")
-
-set(CMAKE_C_COMPILER_WORKS   TRUE)
-set(CMAKE_CXX_COMPILER_WORKS TRUE)
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-
-get_filename_component(PLUGIN_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-project(${PLUGIN_NAME} LANGUAGES C CXX)
 
 option(PLUGIN_DEBUG "Build debug configuration (Makefile DEBUG=1)" OFF)
 
@@ -53,9 +47,7 @@ if(GOLDHEN_SDK STREQUAL "")
 endif()
 
 set(PROJ_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(INCLUDE_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(EXTERNALS_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/externals")
-set(COMMON_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/src/common")
 set(BUILD_FOLDER   "${CMAKE_CURRENT_SOURCE_DIR}/bin/plugins")
 
 set(TARGET_PRX_DIR "${BUILD_FOLDER}/prx${PLUGIN_BUILD_TYPE}")
@@ -65,51 +57,6 @@ set(TARGET_PRX     "${TARGET_PRX_DIR}/${PLUGIN_NAME}.prx")
 
 file(MAKE_DIRECTORY "${TARGET_PRX_DIR}")
 file(MAKE_DIRECTORY "${TARGET_ELF_DIR}")
-
-set(EXTERNAL_MODULE_NAMES "")
-if(IS_DIRECTORY "${EXTERNALS_DIR}")
-    file(GLOB EXTERNAL_CANDIDATES RELATIVE "${EXTERNALS_DIR}" "${EXTERNALS_DIR}/*")
-    foreach(CANDIDATE ${EXTERNAL_CANDIDATES})
-        if(IS_DIRECTORY "${EXTERNALS_DIR}/${CANDIDATE}")
-            list(APPEND EXTERNAL_MODULE_NAMES "${CANDIDATE}")
-        endif()
-    endforeach()
-endif()
-
-set(PLUGIN_INCLUDE_FLAGS "")
-set(EXTERNAL_INCLUDE_DIRS "")
-
-foreach(EXT_NAME ${EXTERNAL_MODULE_NAMES})
-    set(EXT_ROOT "${EXTERNALS_DIR}/${EXT_NAME}")
-    if(IS_DIRECTORY "${EXT_ROOT}/include")
-        set(EXT_INCLUDE "${EXT_ROOT}/include")
-    else()
-        set(EXT_INCLUDE "${EXT_ROOT}")
-    endif()
-    list(APPEND EXTERNAL_INCLUDE_DIRS "${EXT_INCLUDE}")
-    list(APPEND PLUGIN_INCLUDE_FLAGS "-I${EXT_INCLUDE}")
-endforeach()
-
-list(APPEND PLUGIN_INCLUDE_FLAGS
-    "-I${GOLDHEN_SDK}/include"
-    "-I${INCLUDE_DIR}"
-    "-I${COMMON_DIR}"
-)
-
-set(PLUGIN_SYSROOT_FLAGS
-    "SHELL:-isysroot ${OO_PS4_TOOLCHAIN}"
-    "SHELL:-isystem ${OO_PS4_TOOLCHAIN}/include"
-    "SHELL:-isystem ${OO_PS4_TOOLCHAIN}/include/c++/v1"
-)
-
-set(EXTRA_FLAGS ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall)
-
-set(PLUGIN_CROSS_COMPILE_FLAGS
-    --target=x86_64-pc-freebsd12-elf
-    -fPIC
-    -funwind-tables
-    ${EXTRA_FLAGS}
-)
 
 set(PLUGIN_LIBS
     -lSceLibcInternal
@@ -121,79 +68,196 @@ set(PLUGIN_LIBS
     -lSceSysmodule
 )
 
-set(EXTERNAL_OBJECT_TARGETS "")
+set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
+file(MAKE_DIRECTORY "${SHADNET_PROTO_OUT}")
 
-foreach(EXT_NAME ${EXTERNAL_MODULE_NAMES})
-    set(EXT_ROOT "${EXTERNALS_DIR}/${EXT_NAME}")
-    file(GLOB EXT_ROOT_C      "${EXT_ROOT}/*.c")
-    file(GLOB EXT_ROOT_CC     "${EXT_ROOT}/*.cc")
-    file(GLOB EXT_ROOT_CPP    "${EXT_ROOT}/*.cpp")
-    file(GLOB EXT_SOURCE_CPPM "${EXT_ROOT}/*.cppm")
-    file(GLOB EXT_SRC_C       "${EXT_ROOT}/src/*.c")
-    file(GLOB EXT_SRC_CC      "${EXT_ROOT}/src/*.cc")
-    file(GLOB EXT_SRC_CPP     "${EXT_ROOT}/src/*.cpp")
-    file(GLOB EXT_SOURCE_CPPM "${EXT_ROOT}/src/*.cppm")
-    file(GLOB EXT_SOURCE_C    "${EXT_ROOT}/source/*.c")
-    file(GLOB EXT_SOURCE_CC   "${EXT_ROOT}/source/*.cc")
-    file(GLOB EXT_SOURCE_CPP  "${EXT_ROOT}/source/*.cpp")
-    file(GLOB EXT_SOURCE_CPPM "${EXT_ROOT}/source/*.cppm")
+set(COMMON_SOURCES src/common/error.cpp
+                   src/common/goldhen_hook16.cpp
+                   src/common/plugin_common.cpp
+                   src/common/thread.cpp)
 
-    set(EXT_ALL_SOURCES
-        ${EXT_ROOT_C} ${EXT_ROOT_CC} ${EXT_ROOT_CPP} ${EXT_ROOT_CPPM}
-        ${EXT_SRC_C} ${EXT_SRC_CC} ${EXT_SRC_CPP} ${EXT_SRC_CPPM}
-        ${EXT_SOURCE_C} ${EXT_SOURCE_CC} ${EXT_SOURCE_CPP} ${EXT_SOURCE_CPPM}
-    )
+set(CORE_SOURCES src/core/libraries/np/np_handler.cpp)
 
-    if(EXT_ALL_SOURCES)
-        set(EXT_TARGET "ext_${EXT_NAME}")
-        add_library(${EXT_TARGET} OBJECT ${EXT_ALL_SOURCES})
+set(SHADNET_SOURCES src/shadnet/client.cpp
+                    src/shadnet/server_probe.cpp
+                    ${SHADNET_PROTO_OUT}/shadnet.pb.cc)
 
-        target_compile_options(${EXT_TARGET} PRIVATE
-            ${PLUGIN_CROSS_COMPILE_FLAGS}
-            ${PLUGIN_INCLUDE_FLAGS}
-            ${PLUGIN_SYSROOT_FLAGS}
-        )
-        list(APPEND EXTERNAL_OBJECT_TARGETS ${EXT_TARGET})
-        message(STATUS "adding ${EXT_NAME}")
-    endif()
-endforeach()
+set(MAIN_SOURCES src/client_main.cpp
+                 src/main.c)
 
-file(GLOB C_SOURCES     "${PROJ_DIR}/*.c")
-file(GLOB CPP_SOURCES    "${PROJ_DIR}/*.cpp")
-file(GLOB COMMON_SOURCES "${COMMON_DIR}/*.cpp")
-set(ALL_SOURCES ${C_SOURCES} ${CPP_SOURCES} ${COMMON_SOURCES})
+set(ALL_SOURCES ${CORE_SOURCES}
+                ${SHADNET_SOURCES}
+                ${MAIN_SOURCES}
+                ${COMMON_SOURCES})
 
 if(NOT ALL_SOURCES)
-    message(FATAL_ERROR "No source files found under ${PROJ_DIR} or ${COMMON_DIR}")
+    message(FATAL_ERROR "No source files found under ${PROJ_DIR}")
 endif()
 
 add_library(plugin_objects OBJECT ${ALL_SOURCES})
 
-target_compile_options(plugin_objects PRIVATE
-    ${PLUGIN_CROSS_COMPILE_FLAGS}
-    ${PLUGIN_INCLUDE_FLAGS}
-    ${PLUGIN_SYSROOT_FLAGS}
+target_include_directories(plugin_objects PRIVATE
+    "${GOLDHEN_SDK}/include"
+    "${PROJ_DIR}"
+    "${SHADNET_PROTO_OUT}"
 )
 
-if(EXTERNAL_OBJECT_TARGETS)
-    add_dependencies(plugin_objects ${EXTERNAL_OBJECT_TARGETS})
+target_compile_options(plugin_objects PRIVATE
+    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall
+)
+
+set(PROTOBUF_HOST_SOURCE_DIR "${EXTERNALS_DIR}/protobuf")
+set(PROTOBUF_HOST_BUILD_DIR  "${CMAKE_CURRENT_BINARY_DIR}/protobuf-host")
+set(PROTOC_EXECUTABLE "${PROTOBUF_HOST_BUILD_DIR}/protoc")
+
+if(IS_DIRECTORY "${PROTOBUF_HOST_SOURCE_DIR}")
+    ExternalProject_Add(protobuf_host
+        SOURCE_DIR       "${PROTOBUF_HOST_SOURCE_DIR}"
+        BINARY_DIR       "${PROTOBUF_HOST_BUILD_DIR}"
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=Release
+            -Dprotobuf_BUILD_TESTS=OFF
+            -Dprotobuf_BUILD_SHARED_LIBS=OFF
+            -Dprotobuf_ABSL_PROVIDER=module
+            -Dprotobuf_WITH_ZLIB=OFF
+        BUILD_BYPRODUCTS "${PROTOC_EXECUTABLE}"
+        INSTALL_COMMAND ""
+    )
+
+    add_executable(protobuf::protoc IMPORTED GLOBAL)
+    set_target_properties(protobuf::protoc PROPERTIES IMPORTED_LOCATION "${PROTOC_EXECUTABLE}")
+    add_dependencies(protobuf::protoc protobuf_host)
+
+    add_custom_command(
+        OUTPUT
+            "${SHADNET_PROTO_OUT}/shadnet.pb.cc"
+            "${SHADNET_PROTO_OUT}/shadnet.pb.h"
+        COMMAND protobuf::protoc
+            "--proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/shadnet"
+            "--cpp_out=${SHADNET_PROTO_OUT}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/shadnet/shadnet.proto"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/shadnet/shadnet.proto"
+            protobuf::protoc
+            "${PROTOC_EXECUTABLE}"
+        COMMENT "Generating shadnet protobuf sources"
+        VERBATIM
+    )
+endif()
+
+set(EXTERNAL_LINK_FILES "")
+set(EXTERNAL_BUILD_DEPS "")
+
+function(shadnet_add_cmake_external EXT_NAME)
+    set(EXT_ROOT "${EXTERNALS_DIR}/${EXT_NAME}")
+    if(NOT EXISTS "${EXT_ROOT}/CMakeLists.txt")
+        return()
+    endif()
+
+    add_subdirectory("${EXT_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/externals/${EXT_NAME}" EXCLUDE_FROM_ALL)
+
+    get_property(EXT_TARGETS DIRECTORY "${EXT_ROOT}" PROPERTY BUILDSYSTEM_TARGETS)
+
+    set(REAL_LIB_TARGETS "")
+    set(LOCAL_LINK_FILES "")
+    foreach(TGT ${EXT_TARGETS})
+        get_target_property(TGT_TYPE ${TGT} TYPE)
+        if(TGT_TYPE STREQUAL "STATIC_LIBRARY" OR TGT_TYPE STREQUAL "SHARED_LIBRARY")
+            list(APPEND LOCAL_LINK_FILES "$<TARGET_FILE:${TGT}>")
+            list(APPEND REAL_LIB_TARGETS ${TGT})
+        elseif(TGT_TYPE STREQUAL "OBJECT_LIBRARY")
+            list(APPEND LOCAL_LINK_FILES "$<TARGET_OBJECTS:${TGT}>")
+            list(APPEND REAL_LIB_TARGETS ${TGT})
+        elseif(TGT_TYPE STREQUAL "INTERFACE_LIBRARY")
+            list(APPEND REAL_LIB_TARGETS ${TGT})
+        endif()
+    endforeach()
+
+    if(REAL_LIB_TARGETS)
+        target_link_libraries(plugin_objects PRIVATE ${REAL_LIB_TARGETS})
+    endif()
+
+    set(EXTERNAL_LINK_FILES ${EXTERNAL_LINK_FILES} ${LOCAL_LINK_FILES} PARENT_SCOPE)
+    set(EXTERNAL_BUILD_DEPS ${EXTERNAL_BUILD_DEPS} ${REAL_LIB_TARGETS} PARENT_SCOPE)
+    message(STATUS "Added '${EXT_NAME}'")
+endfunction()
+
+set(SHADNET_HANDLED_EXTERNALS "")
+
+if(IS_DIRECTORY "${EXTERNALS_DIR}/abseil-cpp")
+    shadnet_add_cmake_external(abseil-cpp)
+    list(APPEND SHADNET_HANDLED_EXTERNALS abseil-cpp)
+endif()
+
+if(IS_DIRECTORY "${EXTERNALS_DIR}/protobuf")
+    set(protobuf_BUILD_PROTOC_BINARIES OFF CACHE BOOL "" FORCE)
+    set(protobuf_PROTOC_EXE "${PROTOC_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(utf8_range_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+    set(protobuf_INSTALL OFF CACHE BOOL "" FORCE)
+    set(protobuf_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(protobuf_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+    shadnet_add_cmake_external(protobuf)
+    list(APPEND SHADNET_HANDLED_EXTERNALS protobuf)
+endif()
+
+if(IS_DIRECTORY "${EXTERNALS_DIR}")
+    file(GLOB EXTERNAL_CANDIDATES RELATIVE "${EXTERNALS_DIR}" "${EXTERNALS_DIR}/*")
+    foreach(CANDIDATE ${EXTERNAL_CANDIDATES})
+        if(NOT IS_DIRECTORY "${EXTERNALS_DIR}/${CANDIDATE}")
+            continue()
+        endif()
+        list(FIND SHADNET_HANDLED_EXTERNALS "${CANDIDATE}" ALREADY_HANDLED)
+        if(NOT ALREADY_HANDLED EQUAL -1)
+            continue()
+        endif()
+
+        if(EXISTS "${EXTERNALS_DIR}/${CANDIDATE}/CMakeLists.txt")
+            shadnet_add_cmake_external(${CANDIDATE})
+        else()
+            set(EXT_ROOT "${EXTERNALS_DIR}/${CANDIDATE}")
+            if(IS_DIRECTORY "${EXT_ROOT}/include")
+                target_include_directories(plugin_objects PRIVATE "${EXT_ROOT}/include")
+            elseif(IS_DIRECTORY "${EXT_ROOT}/src")
+                target_include_directories(plugin_objects PRIVATE "${EXT_ROOT}/src")
+            else()
+                target_include_directories(plugin_objects PRIVATE "${EXT_ROOT}")
+            endif()
+
+            file(GLOB EXT_ROOT_C   "${EXT_ROOT}/*.c")
+            file(GLOB EXT_ROOT_CC  "${EXT_ROOT}/*.cc")
+            file(GLOB EXT_ROOT_CPP "${EXT_ROOT}/*.cpp")
+            file(GLOB EXT_SRC_C    "${EXT_ROOT}/src/*.c")
+            file(GLOB EXT_SRC_CC   "${EXT_ROOT}/src/*.cc")
+            file(GLOB EXT_SRC_CPP  "${EXT_ROOT}/src/*.cpp")
+            set(EXT_ALL_SOURCES ${EXT_ROOT_C} ${EXT_ROOT_CC} ${EXT_ROOT_CPP} ${EXT_SRC_C} ${EXT_SRC_CC} ${EXT_SRC_CPP})
+
+            if(EXT_ALL_SOURCES)
+                set(EXT_TARGET "ext_${CANDIDATE}")
+                add_library(${EXT_TARGET} OBJECT ${EXT_ALL_SOURCES})
+                list(APPEND EXTERNAL_LINK_FILES "$<TARGET_OBJECTS:${EXT_TARGET}>")
+                list(APPEND EXTERNAL_BUILD_DEPS ${EXT_TARGET})
+                message(STATUS "Added external '${CANDIDATE}' via fallback glob (no CMakeLists.txt found)")
+            endif()
+        endif()
+    endforeach()
 endif()
 
 find_package(Git QUIET)
 add_custom_target(build_info ALL
     COMMAND ${CMAKE_COMMAND}
-        -DCOMMON_DIR=${COMMON_DIR}
+        -DPROJ_DIR=${PROJ_DIR}
         -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateGitVersion.cmake
     COMMENT "Generating git_ver.h"
     VERBATIM
 )
 add_dependencies(plugin_objects build_info)
+if(EXTERNAL_BUILD_DEPS)
+    add_dependencies(plugin_objects ${EXTERNAL_BUILD_DEPS})
+endif()
 
-set(ALL_LINK_OBJECTS "$<TARGET_OBJECTS:plugin_objects>")
-foreach(EXT_TARGET ${EXTERNAL_OBJECT_TARGETS})
-    list(APPEND ALL_LINK_OBJECTS "$<TARGET_OBJECTS:${EXT_TARGET}>")
-endforeach()
+set(ALL_LINK_OBJECTS "$<TARGET_OBJECTS:plugin_objects>" ${EXTERNAL_LINK_FILES})
 
 add_custom_command(
     OUTPUT "${TARGET_PRX}"
@@ -214,7 +278,7 @@ add_custom_command(
             --paid 0x3800000000000011
     COMMAND chmod +x "${TARGET_PRX}"
     COMMAND_EXPAND_LISTS
-    DEPENDS plugin_objects ${EXTERNAL_OBJECT_TARGETS} ${ALL_LINK_OBJECTS}
+    DEPENDS plugin_objects ${EXTERNAL_BUILD_DEPS} ${ALL_LINK_OBJECTS}
     COMMENT "Linking and signing ${PLUGIN_NAME}.prx"
     VERBATIM
 )

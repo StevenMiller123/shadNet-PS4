@@ -30,7 +30,7 @@ export GOLDHEN_SDK=$(PWD)
 ### Compiling this project
 To compile, just run
 ```bash
-git clone https://github.com/StevenMiller123/shadNET-PS4.git
+git clone https://github.com/StevenMiller123/shadNet-PS4.git
 cd ./shadNET-PS4
 cmake -S . -B build
 cmake --build build --parallel $(nproc)
@@ -42,5 +42,5 @@ Add the following somewhere to the file, where [CUSAXXXXX] is the game's serial 
 Alternatively, replace [CUSAXXXXX] with [default] if you want the plugin to load for all installed apps (not recommended).
 ```
 [CUSAXXXXX]
-/data/GoldHEN/plugins/shadNET-PS4.prx
+/data/GoldHEN/plugins/shadNet-PS4.prx
 ```
