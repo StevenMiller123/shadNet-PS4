@@ -5,8 +5,8 @@
 
 #include <pthread_np.h>
 #include "fmt/format.h"
-#include "orbis/libkernel.h"
 #include "orbis/SysUtil.h"
+#include "orbis/libkernel.h"
 
 template <typename... Args>
 std::string FormatLog(char const* format, Args const&... args) {
@@ -25,12 +25,17 @@ void PrintLog(char const* log_level, char const* file, unsigned int line_num, ch
     std::string message = FormatLog(format, args...);
     char thr_name[256];
     std::memset(thr_name, 0, sizeof(thr_name));
+    std::string file_name{file};
+    size_t last_separator = file_name.find_last_of('/');
+    if (last_separator != std::string::npos && last_separator < file_name.size() - 1) {
+        file_name = file_name.substr(last_separator + 1);
+    }
     std::string full_log;
     if (pthread_getname_np(pthread_self(), thr_name) == 0) {
-        full_log = fmt::format("[Homebrew] {}:{} <{}> ({}) {}: {}\n", file, line_num, log_level,
-                               thr_name, function, message);
+        full_log = fmt::format("[Homebrew] <{}> ({}) {}:{} {}: {}\n", log_level, thr_name,
+                               file_name, line_num, function, message);
     } else {
-        full_log = fmt::format("[Homebrew] {}:{} <{}> {}: {}\n", file, line_num, log_level,
+        full_log = fmt::format("[Homebrew] <{}> {}:{} {}: {}\n", log_level, file_name, line_num,
                                function, message);
     }
     sceKernelDebugOutText(0, full_log.c_str());
