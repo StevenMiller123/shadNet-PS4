@@ -8,19 +8,19 @@
 #include <functional>
 #include <mutex>
 #include <optional>
-#include <semaphore>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
-#include "common/types.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <semaphore.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "common/types.h"
 
 using ShadSocketHandle = int;
 static constexpr ShadSocketHandle SHAD_INVALID_SOCK = -1;
@@ -361,8 +361,8 @@ private:
     std::atomic<bool> m_authenticated{false};
     std::atomic<ShadNetState> m_state{ShadNetState::Ok};
 
-    std::binary_semaphore m_sem_connected{0};
-    std::binary_semaphore m_sem_authenticated{0};
+    sem_t m_sem_connected{};
+    sem_t m_sem_authenticated{};
     std::mutex m_mutex_connected;
     std::mutex m_mutex_authenticated;
 

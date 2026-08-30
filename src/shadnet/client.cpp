@@ -12,8 +12,6 @@
 #include "common/thread.h"
 #include "shadnet.pb.h"
 
-static void PlatformInit() {}
-
 namespace ShadNet {
 
 // Build a u32-LE-prefixed proto blob payload for a request packet.
@@ -43,7 +41,9 @@ std::string ShadNetClient::ExtractBlob(const std::vector<u8>& p, int pos) {
 }
 
 ShadNetClient::ShadNetClient() {
-    PlatformInit();
+    if (!sem_init(&m_sem_authenticated, 0, 1) || !sem_init(&m_sem_connected, 0, 1)) {
+        LOG_WARNING("Failed to init semaphores!");
+    }
 }
 
 ShadNetClient::~ShadNetClient() {
@@ -64,11 +64,11 @@ void ShadNetClient::Start(const std::string& host, u16 port, const std::string& 
 void ShadNetClient::Stop() {
     m_terminate = true;
     try {
-        m_sem_connected.release();
+        sem_post(&m_sem_connected);
     } catch (...) {
     }
     try {
-        m_sem_authenticated.release();
+        sem_post(&m_sem_authenticated);
     } catch (...) {
     }
     {
@@ -90,7 +90,7 @@ ShadNetState ShadNetClient::WaitForConnection() {
         if (m_connected)
             return ShadNetState::Ok;
     }
-    m_sem_connected.acquire();
+    sem_wait(&m_sem_connected);
     return m_connected ? ShadNetState::Ok : m_state.load();
 }
 
@@ -100,7 +100,7 @@ ShadNetState ShadNetClient::WaitForAuthenticated() {
         if (m_authenticated)
             return ShadNetState::Ok;
     }
-    m_sem_authenticated.acquire();
+    sem_wait(&m_sem_authenticated);
     return m_authenticated ? ShadNetState::Ok : m_state.load();
 }
 
@@ -164,8 +164,8 @@ void ShadNetClient::ConnectThread() {
             break;
         if (m_terminate || attempt == SHAD_CONNECT_MAX_ATTEMPTS)
             break;
-        LOG_WARNING("connect attempt {}/{} to {}:{} failed, retrying in {} ms",
-                    attempt, SHAD_CONNECT_MAX_ATTEMPTS, m_host, m_port, backoff_ms);
+        LOG_WARNING("connect attempt {}/{} to {}:{} failed, retrying in {} ms", attempt,
+                    SHAD_CONNECT_MAX_ATTEMPTS, m_host, m_port, backoff_ms);
         // Interruptible backoff: poll m_terminate so Stop() wakes us promptly.
         for (u32 waited = 0; waited < backoff_ms && !m_terminate; waited += 100)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -174,14 +174,14 @@ void ShadNetClient::ConnectThread() {
 
     if (!connected) {
         // m_state holds the last failure reason from DoConnect.
-        m_sem_connected.release();
-        m_sem_authenticated.release();
+        sem_post(&m_sem_connected);
+        sem_post(&m_sem_authenticated);
         return;
     }
 
     m_thread_reader = std::thread(&ShadNetClient::ReaderThread, this);
     m_thread_writer = std::thread(&ShadNetClient::WriterThread, this);
-    m_sem_connected.release();
+    sem_post(&m_sem_connected);
 
     // Build Login request as protobuf
     shadnet::LoginRequest req;
@@ -238,7 +238,7 @@ void ShadNetClient::ReaderThread() {
     if (!m_authenticated) {
         if (m_state == ShadNetState::Ok)
             m_state = ShadNetState::FailureOther;
-        m_sem_authenticated.release();
+        sem_post(&m_sem_authenticated);
     }
     m_connected = false;
     m_authenticated = false;
@@ -597,7 +597,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                 res.error = ErrorType::Malformed;
                 LOG_ERROR("Failed to parse LoginReply proto");
                 m_state = ShadNetState::FailureProtocol;
-                m_sem_authenticated.release();
+                sem_post(&m_sem_authenticated);
                 DoDisconnect();
             }
         } else {
@@ -619,7 +619,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                 break;
             }
             LOG_ERROR("Login rejected error code {}", static_cast<u8>(res.error));
-            m_sem_authenticated.release();
+            sem_post(&m_sem_authenticated);
             DoDisconnect();
         }
     }
@@ -678,9 +678,9 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
 
     m_matching2_enabled.store(matching2_enabled);
     m_server_features_received.store(parsed);
-    LOG_INFO("Server features: matching2_enabled={}{}",
-             matching2_enabled ? "true" : "false", parsed ? "" : " (defaulted)");
-    m_sem_authenticated.release();
+    LOG_INFO("Server features: matching2_enabled={}{}", matching2_enabled ? "true" : "false",
+             parsed ? "" : " (defaulted)");
+    sem_post(&m_sem_authenticated);
 }
 
 // Notifications
@@ -798,8 +798,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
             ba.data.assign(a.data().begin(), a.data().end());
             n.bin_attrs.push_back(std::move(ba));
         }
-        LOG_DEBUG("RoomEvent room_id={} event={:#x} cause={}", n.room_id, n.event,
-                  n.event_cause);
+        LOG_DEBUG("RoomEvent room_id={} event={:#x} cause={}", n.room_id, n.event, n.event_cause);
         if (onRoomEvent)
             onRoomEvent(n);
         break;
@@ -865,8 +864,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
                 n.extdData.emplace_back(std::move(key), std::move(val));
             }
         }
-        LOG_INFO("WebApiPushEvent svc='{}' type='{}' from='{}' bytes={} extd={}",
-                 n.npServiceName, n.dataType, n.fromNpid, n.data.size(), n.extdData.size());
+        LOG_INFO("WebApiPushEvent svc='{}' type='{}' from='{}' bytes={} extd={}", n.npServiceName,
+                 n.dataType, n.fromNpid, n.data.size(), n.extdData.size());
         if (onWebApiPushEvent)
             onWebApiPushEvent(n);
         break;
