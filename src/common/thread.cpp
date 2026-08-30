@@ -6,6 +6,7 @@
 #include <ctime>
 #include <string>
 #include <thread>
+#include <pthread_np.h>
 
 #include "error.h"
 #include "logging/log.h"
