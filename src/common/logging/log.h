@@ -3,12 +3,10 @@
 
 #pragma once
 
+#include <pthread_np.h>
 #include "fmt/format.h"
 #include "orbis/libkernel.h"
-
-extern "C" {
-void sceSysUtilSendSystemNotificationWithText(int type, const char* message);
-};
+#include "orbis/SysUtil.h"
 
 template <typename... Args>
 std::string FormatLog(char const* format, Args const&... args) {
@@ -25,8 +23,16 @@ template <typename... Args>
 void PrintLog(char const* log_level, char const* file, unsigned int line_num, char const* function,
               char const* format, Args const&... args) {
     std::string message = FormatLog(format, args...);
-    std::string full_log =
-        fmt::format("[Homebrew] {}:{} <{}> {}: {}\n", file, line_num, log_level, function, message);
+    char thr_name[256];
+    std::memset(thr_name, 0, sizeof(thr_name));
+    std::string full_log;
+    if (pthread_getname_np(pthread_self(), thr_name) == 0) {
+        full_log = fmt::format("[Homebrew] {}:{} <{}> ({}) {}: {}\n", file, line_num, log_level,
+                               thr_name, function, message);
+    } else {
+        full_log = fmt::format("[Homebrew] {}:{} <{}> {}: {}\n", file, line_num, log_level,
+                               function, message);
+    }
     sceKernelDebugOutText(0, full_log.c_str());
 }
 
@@ -50,5 +56,4 @@ void PrintLogR(char const* format, Args const&... args) {
 #define LOG_WARNING(...) PrintLog("Warning", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_ERROR(...) PrintLog("Error", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_CRITICAL(...) PrintLog("Critical", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_NOTIFICATION(...)                                                                   \
-    PrintLogN("Notification", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_NOTIFICATION(...) PrintLogN("Notification", __FILE__, __LINE__, __func__, __VA_ARGS__)
