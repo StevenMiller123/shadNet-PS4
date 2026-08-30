@@ -18,7 +18,6 @@ extern "C" s32 client_start() {
     sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
     game_info.initialized = true;
 
-
     // Initialize NpHandler
     Libraries::Np::NpHandler::GetInstance().Initialize();
     return 0;

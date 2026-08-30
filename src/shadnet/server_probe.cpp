@@ -44,7 +44,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
 
     if (::getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints, &res_list) != 0 ||
         !res_list) {
-        LOG_WARNING("probe: DNS resolution failed for '{}'", host);
+        LOG_WARNING("DNS resolution failed for '{}'", host);
         return info; // Unreachable
     }
 
@@ -81,7 +81,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
 
     if (!connected) {
         SHAD_CLOSE(sock);
-        LOG_WARNING("probe: server {}:{} is unreachable (timeout {} ms)", host, port,
+        LOG_WARNING("server {}:{} is unreachable (timeout {} ms)", host, port,
                     timeout_ms);
         return info; // Unreachable
     }
@@ -101,13 +101,13 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     u8 hdr[SHAD_HEADER_SIZE];
     if (!ProbeRecvN(sock, hdr, SHAD_HEADER_SIZE)) {
         SHAD_CLOSE(sock);
-        LOG_WARNING( "probe: {}:{} reachable but no ServerInfo header received", host,
+        LOG_WARNING( "{}:{} reachable but no ServerInfo header received", host,
                     port);
         return info;
     }
     if (static_cast<PacketType>(hdr[0]) != PacketType::ServerInfo) {
         SHAD_CLOSE(sock);
-        LOG_WARNING("probe: {}:{} sent packet type {:02x} instead of ServerInfo", host,
+        LOG_WARNING("{}:{} sent packet type {:02x} instead of ServerInfo", host,
                     port, hdr[0]);
         return info;
     }
@@ -115,7 +115,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     const u32 total_sz = ProbeGetLE32(hdr + 3);
     if (total_sz < SHAD_HEADER_SIZE || total_sz > SHAD_MAX_PACKET_SIZE) {
         SHAD_CLOSE(sock);
-        LOG_WARNING("probe: {}:{} sent corrupt ServerInfo (total_sz={})", host, port,
+        LOG_WARNING("{}:{} sent corrupt ServerInfo (total_sz={})", host, port,
                     total_sz);
         return info;
     }
@@ -123,14 +123,14 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     std::vector<u8> payload(payload_sz);
     if (payload_sz > 0 && !ProbeRecvN(sock, payload.data(), payload_sz)) {
         SHAD_CLOSE(sock);
-        LOG_WARNING("probe: {}:{} ServerInfo payload read failed", host, port);
+        LOG_WARNING("{}:{} ServerInfo payload read failed", host, port);
         return info;
     }
     SHAD_CLOSE(sock);
 
     if (payload_sz < 4) {
         info.result = ProbeResult::Ok;
-        LOG_INFO("probe: server {}:{} is reachable (no version field in ServerInfo)", host,
+        LOG_INFO("server {}:{} is reachable (no version field in ServerInfo)", host,
                  port);
         return info;
     }
@@ -138,13 +138,13 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     info.server_version = ProbeGetLE32(payload.data());
     if (info.server_version != SHAD_PROTOCOL_VERSION) {
         info.result = ProbeResult::VersionMismatch;
-        LOG_WARNING("probe: server {}:{} protocol version mismatch (server v{}, ours v{})",
+        LOG_WARNING("server {}:{} protocol version mismatch (server v{}, ours v{})",
                     host, port, info.server_version, SHAD_PROTOCOL_VERSION);
         return info;
     }
 
     info.result = ProbeResult::Ok;
-    LOG_INFO("probe: server {}:{} is reachable (protocol v{})", host, port,
+    LOG_INFO("server {}:{} is reachable (protocol v{})", host, port,
              info.server_version);
     return info;
 }
