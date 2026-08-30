@@ -4,12 +4,12 @@
 [submodule "externals/magic_enum"]
 	path = externals/magic_enum
 	url = https://github.com/Neargye/magic_enum.git
-[submodule "externals/json"]
-	path = externals/json
-	url = https://github.com/nlohmann/json.git
-[submodule "externals/protobuf"]
-	path = externals/protobuf
-	url = https://github.com/shadexternals/protobuf.git
 [submodule "externals/abseil-cpp"]
 	path = externals/abseil-cpp
 	url = https://github.com/StevenMiller123/abseil-cpp-openorbis.git
+[submodule "externals/protobuf"]
+	path = externals/protobuf
+	url = https://github.com/shadexternals/protobuf.git
+[submodule "externals/json"]
+	path = externals/json
+	url = https://github.com/nlohmann/json.git
