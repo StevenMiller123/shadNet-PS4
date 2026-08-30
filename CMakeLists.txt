@@ -10,6 +10,7 @@ endif()
 
 get_filename_component(PLUGIN_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${PLUGIN_NAME} LANGUAGES C CXX)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 
 execute_process(COMMAND uname -s OUTPUT_VARIABLE HOST_UNAME_S OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(HOST_UNAME_S STREQUAL "Linux")
@@ -66,6 +67,8 @@ set(PLUGIN_LIBS
     -lc
     -lc++
     -lSceSysmodule
+    -lSceNet
+    -lSceSysUtil
 )
 
 set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
@@ -148,6 +151,20 @@ endif()
 set(EXTERNAL_LINK_FILES "")
 set(EXTERNAL_BUILD_DEPS "")
 
+function(shadnet_collect_targets_recursive DIR OUT_VAR)
+    set(RESULT "")
+    get_property(DIR_TARGETS DIRECTORY "${DIR}" PROPERTY BUILDSYSTEM_TARGETS)
+    list(APPEND RESULT ${DIR_TARGETS})
+ 
+    get_property(SUBDIRS DIRECTORY "${DIR}" PROPERTY SUBDIRECTORIES)
+    foreach(SUBDIR ${SUBDIRS})
+        shadnet_collect_targets_recursive("${SUBDIR}" SUB_RESULT)
+        list(APPEND RESULT ${SUB_RESULT})
+    endforeach()
+ 
+    set(${OUT_VAR} ${RESULT} PARENT_SCOPE)
+endfunction()
+
 function(shadnet_add_cmake_external EXT_NAME)
     set(EXT_ROOT "${EXTERNALS_DIR}/${EXT_NAME}")
     if(NOT EXISTS "${EXT_ROOT}/CMakeLists.txt")
@@ -156,11 +173,14 @@ function(shadnet_add_cmake_external EXT_NAME)
 
     add_subdirectory("${EXT_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/externals/${EXT_NAME}" EXCLUDE_FROM_ALL)
 
-    get_property(EXT_TARGETS DIRECTORY "${EXT_ROOT}" PROPERTY BUILDSYSTEM_TARGETS)
 
+    shadnet_collect_targets_recursive("${EXT_ROOT}" EXT_TARGETS)
     set(REAL_LIB_TARGETS "")
     set(LOCAL_LINK_FILES "")
     foreach(TGT ${EXT_TARGETS})
+        if(NOT TARGET ${TGT})
+            continue()
+        endif()
         get_target_property(TGT_TYPE ${TGT} TYPE)
         if(TGT_TYPE STREQUAL "STATIC_LIBRARY" OR TGT_TYPE STREQUAL "SHARED_LIBRARY")
             list(APPEND LOCAL_LINK_FILES "$<TARGET_FILE:${TGT}>")
@@ -179,7 +199,7 @@ function(shadnet_add_cmake_external EXT_NAME)
 
     set(EXTERNAL_LINK_FILES ${EXTERNAL_LINK_FILES} ${LOCAL_LINK_FILES} PARENT_SCOPE)
     set(EXTERNAL_BUILD_DEPS ${EXTERNAL_BUILD_DEPS} ${REAL_LIB_TARGETS} PARENT_SCOPE)
-    message(STATUS "Added '${EXT_NAME}'")
+    message(STATUS "Added ${EXT_NAME}")
 endfunction()
 
 set(SHADNET_HANDLED_EXTERNALS "")
@@ -237,7 +257,7 @@ if(IS_DIRECTORY "${EXTERNALS_DIR}")
                 add_library(${EXT_TARGET} OBJECT ${EXT_ALL_SOURCES})
                 list(APPEND EXTERNAL_LINK_FILES "$<TARGET_OBJECTS:${EXT_TARGET}>")
                 list(APPEND EXTERNAL_BUILD_DEPS ${EXT_TARGET})
-                message(STATUS "Added external '${CANDIDATE}' via fallback glob (no CMakeLists.txt found)")
+                message(STATUS "Added ${CANDIDATE}")
             endif()
         endif()
     endforeach()
@@ -268,9 +288,11 @@ add_custom_command(
             -L${OO_PS4_TOOLCHAIN}/lib
             -L${GOLDHEN_SDK}
             ${GOLDHEN_SDK}/build/crtprx.o
+            --start-group
             ${ALL_LINK_OBJECTS}
-            -o ${TARGET_ELF}.elf
             ${PLUGIN_LIBS}
+            --end-group
+            -o ${TARGET_ELF}.elf
     COMMAND ${OO_PS4_TOOLCHAIN}/bin/${PLUGIN_CDIR}/create-fself
             -in=${TARGET_ELF}.elf
             -out=${TARGET_ELF}.oelf
@@ -279,7 +301,7 @@ add_custom_command(
     COMMAND chmod +x "${TARGET_PRX}"
     COMMAND_EXPAND_LISTS
     DEPENDS plugin_objects ${EXTERNAL_BUILD_DEPS} ${ALL_LINK_OBJECTS}
-    COMMENT "Linking and signing ${PLUGIN_NAME}.prx"
+    COMMENT "Linking ${PLUGIN_NAME}.prx"
     VERBATIM
 )
 add_custom_target(plugin_prx ALL DEPENDS "${TARGET_PRX}")
