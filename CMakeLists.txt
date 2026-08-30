@@ -68,6 +68,7 @@ set(PLUGIN_LIBS
     -lc++
     -lSceSysmodule
     -lSceNet
+    -lSceNetCtl
     -lSceSysUtil
 )
 
