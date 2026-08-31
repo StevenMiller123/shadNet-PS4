@@ -13,9 +13,8 @@ extern "C" s32 client_start() {
     LOG_INFO("Starting shadNet Client");
 
     // Preload modules used by the plugin
-    // Start by ensuring sceSysmodulePreloadModuleForLibkernel has ran
-    // System apps use a different libkernel that doesn't run this.
-    sceSysmodulePreloadModuleForLibkernel();
+    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_NET);
+    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_NETCTL);
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
