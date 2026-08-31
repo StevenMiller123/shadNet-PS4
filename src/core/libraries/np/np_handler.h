@@ -15,6 +15,7 @@ public:
     NpHandler& operator=(const NpHandler&) = delete;
 
     void Initialize();
+
 private:
     NpHandler() = default;
     ~NpHandler() = default;

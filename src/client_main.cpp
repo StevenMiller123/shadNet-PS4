@@ -1,16 +1,21 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <orbis/Sysmodule.h>
+#include <orbis/libkernel.h>
 #include "client_main.h"
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/types.h"
 #include "core/libraries/np/np_handler.h"
 
-#include "orbis/SystemService.h"
-
 extern "C" s32 client_start() {
     LOG_INFO("Starting shadNet Client");
+
+    // Preload modules used by the plugin
+    // Start by ensuring sceSysmodulePreloadModuleForLibkernel has ran
+    // System apps use a different libkernel that doesn't run this.
+    sceSysmodulePreloadModuleForLibkernel();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
