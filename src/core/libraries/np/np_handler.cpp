@@ -29,6 +29,8 @@ void NpHandler::Initialize() {
                          magic_enum::enum_name(probe.result));
         LOG_ERROR("Failed to connect to shadNet server, error {}",
                   magic_enum::enum_name(probe.result));
+    } else {
+        LOG_NOTIFICATION("shadNet server is accessible");
     }
 }
 
