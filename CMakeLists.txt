@@ -61,7 +61,6 @@ file(MAKE_DIRECTORY "${TARGET_ELF_DIR}")
 
 set(PLUGIN_LIBS
     -lSceLibcInternal
-    -lSceVideoOut
     -lGoldHEN_Hook
     -lkernel
     -lc

@@ -15,6 +15,7 @@ extern "C" s32 client_start() {
     // Preload modules used by the plugin
     sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_NET);
     sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_NETCTL);
+    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
