@@ -61,7 +61,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     }
 
     OrbisNetInAddr shadnet_addr{};
-    result = sceNetResolverStartNtoa(resolver, host.c_str(), &shadnet_addr, 5000, 0, 0);
+    result = sceNetResolverStartNtoa(resolver, host.c_str(), &shadnet_addr, 0, 0, 0);
     if (result != 0) {
         LOG_WARNING("DNS resolution failed for '{}', error = {:#x}", host.c_str(),
                     static_cast<u32>(result));
