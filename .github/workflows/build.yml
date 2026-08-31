@@ -43,7 +43,7 @@ jobs:
     - name: Compile Plugin
       run: |
         cmake -S . -B build
-        cmake --build build --parallel $(nproc)
+        cmake --build build
     
     - name: Create Release
       env:
