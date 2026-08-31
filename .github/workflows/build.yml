@@ -11,6 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install Latest Clang
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh all
+        CLANG_VER=$(ls /usr/bin/clang-[0-9]* | grep -oE '[0-9]+' | sort -n | tail -n1)
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-$CLANG_VER 100 \
+                                   --slave /usr/bin/clang++ clang++ /usr/bin/clang++-$CLANG_VER
+
     - name: Install dependencies
       run: sudo apt install llvm
 
