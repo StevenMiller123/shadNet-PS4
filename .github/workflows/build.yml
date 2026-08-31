@@ -1,0 +1,49 @@
+name: Create Stable Release
+
+on: [ push, pull_request ]
+
+# for release create
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: sudo apt install llvm
+
+    - name: Fetch OpenOrbis
+      run: curl -sL https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain/releases/latest/download/openorbis_toolchain.tar.gz | tar xz -C ./
+
+    - name: Set up OpenOrbis environment
+      run: echo "OO_PS4_TOOLCHAIN=$GITHUB_WORKSPACE/OpenOrbis/PS4Toolchain" >> $GITHUB_ENV
+
+    - name: Checkout GoldHEN Plugins SDK
+      uses: actions/checkout@main
+      with:
+        repository: GoldHEN/GoldHEN_Plugins_SDK
+        path: Plugins-SDK
+    
+    - name: Build Plugins SDK
+      working-directory: "Plugins-SDK"
+      run: make all
+
+    - name: Set up GoldHEN environment
+      run: echo "GOLDHEN_SDK=$GITHUB_WORKSPACE/Plugins_SDK" >> $GITHUB_ENV
+    
+    - name: Checkout Plugin
+      uses: actions/checkout@main
+
+    - name: Compile Plugin
+      run: |
+        cmake -S . -B build
+        cmake --build build --parallel $(nproc)
+    
+    - name: Create Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: gh release create release-${{ GITHUB.SHA }} build/prx_final/shadNet-PS4.prx --target ${{ GITHUB.SHA }} -t "Automated Release ${{ GITHUB.SHA }}"
