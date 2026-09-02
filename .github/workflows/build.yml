@@ -25,6 +25,8 @@ jobs:
     
     - name: Build Plugins SDK
       working-directory: "Plugins-SDK"
+      env:
+        OO_PS4_TOOLCHAIN: "${{ github.workspace }}/OpenOrbis/PS4Toolchain"
       run: make all
     
     - name: Checkout Plugin
