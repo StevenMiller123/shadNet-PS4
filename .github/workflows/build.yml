@@ -17,9 +17,6 @@ jobs:
     - name: Fetch OpenOrbis
       run: curl -sL https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain/releases/latest/download/openorbis_toolchain.tar.gz | tar xz -C ./
 
-    - name: Set up OpenOrbis environment
-      run: echo "OO_PS4_TOOLCHAIN=$GITHUB_WORKSPACE/OpenOrbis/PS4Toolchain" >> $GITHUB_ENV
-
     - name: Checkout GoldHEN Plugins SDK
       uses: actions/checkout@main
       with:
@@ -29,9 +26,6 @@ jobs:
     - name: Build Plugins SDK
       working-directory: "Plugins-SDK"
       run: make all
-
-    - name: Set up GoldHEN environment
-      run: echo "GOLDHEN_SDK=$GITHUB_WORKSPACE/Plugins_SDK" >> $GITHUB_ENV
     
     - name: Checkout Plugin
       uses: actions/checkout@main
@@ -39,6 +33,9 @@ jobs:
         submodules: recursive
 
     - name: Compile Plugin
+      env:
+        OO_PS4_TOOLCHAIN: "${{ github.workspace }}/OpenOrbis/PS4Toolchain"
+        GOLDHEN_SDK: "${{ github.workspace }}/Plugins-SDK"
       run: |
         cmake -S . -B build
         cmake --build build --parallel $(nproc)
