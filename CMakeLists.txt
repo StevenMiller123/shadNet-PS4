@@ -109,7 +109,7 @@ target_include_directories(plugin_objects PRIVATE
 )
 
 target_compile_options(plugin_objects PRIVATE
-    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall
+    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall -mstackrealign
 )
 
 set(PROTOBUF_HOST_SOURCE_DIR "${EXTERNALS_DIR}/protobuf")
