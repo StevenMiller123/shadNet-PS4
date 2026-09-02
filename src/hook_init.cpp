@@ -15,5 +15,5 @@ s32 sceNpGetState_hook(s32 user_id, OrbisNpState* state) {
 }
 
 void init_hooks() {
-    HOOK16(sceNpGetState);
+    HOOK(sceNpGetState);
 }
