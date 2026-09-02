@@ -8,14 +8,19 @@
 #include "common/logging/log.h"
 #include "common/types.h"
 #include "core/libraries/np/np_handler.h"
+#include "hook_init.h"
 
 extern "C" s32 client_start() {
     LOG_INFO("Starting shadNet Client");
 
     // Preload modules used by the plugin
-    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_NET);
-    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_NETCTL);
-    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal::ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
+
+    // Init hooks
+    init_hooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();

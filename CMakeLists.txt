@@ -68,6 +68,7 @@ set(PLUGIN_LIBS
     -lSceSysmodule
     -lSceNet
     -lSceNetCtl
+    -lSceNpManager
     -lSceSysUtil
 )
 
@@ -79,13 +80,15 @@ set(COMMON_SOURCES src/common/error.cpp
                    src/common/plugin_common.cpp
                    src/common/thread.cpp)
 
-set(CORE_SOURCES src/core/libraries/np/np_handler.cpp)
+set(CORE_SOURCES src/core/libraries/np/np_handler.cpp
+                 src/core/libraries/np/np_manager.cpp)
 
 set(SHADNET_SOURCES src/shadnet/client.cpp
                     src/shadnet/server_probe.cpp
                     ${SHADNET_PROTO_OUT}/shadnet.pb.cc)
 
-set(MAIN_SOURCES src/client_main.cpp
+set(MAIN_SOURCES src/hook_init.cpp
+                 src/client_main.cpp
                  src/main.c)
 
 set(ALL_SOURCES ${CORE_SOURCES}
