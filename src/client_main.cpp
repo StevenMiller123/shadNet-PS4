@@ -8,7 +8,7 @@
 #include "common/logging/log.h"
 #include "common/types.h"
 #include "core/libraries/np/np_handler.h"
-#include "hook_init.h"
+#include "core/libraries/np/np_manager.h"
 
 extern "C" s32 client_start() {
     LOG_INFO("Starting shadNet Client");
@@ -20,7 +20,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
 
     // Init hooks
-    init_hooks();
+    Libraries::Np::NpManager::RegisterHooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();

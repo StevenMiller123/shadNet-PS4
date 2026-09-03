@@ -6,6 +6,6 @@
 #include "common/types.h"
 
 namespace Libraries::Np::NpManager {
-
 s32 sceNpGetState(s32 user_id, OrbisNpState* state);
+void RegisterHooks();
 } // namespace Libraries::Np::NpManager
