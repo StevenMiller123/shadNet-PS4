@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <magic_enum/magic_enum.hpp>
+#include <orbis/Net.h>
 
 #include "client.h"
 #include "common/elf_info.h"
@@ -150,7 +152,6 @@ std::string ShadNetClient::GetBearerToken() const {
 }
 
 // Threading
-
 void ShadNetClient::ConnectThread() {
     Common::SetCurrentThreadName("ShadNet:Connect");
     bool connected = false;
@@ -196,7 +197,7 @@ void ShadNetClient::ConnectThread() {
 
     const u64 id = m_pkt_counter.fetch_add(1);
     if (!SendAll(BuildPacket(CommandType::Login, id, MakeProtoPayload(req)))) {
-        LOG_ERROR("ShadNet: Failed to send Login packet");
+        LOG_ERROR("Failed to send login packet");
         m_state = ShadNetState::FailureOther;
         return;
     }
@@ -209,7 +210,7 @@ void ShadNetClient::ReaderThread() {
         u8 hdr[SHAD_HEADER_SIZE];
         if (!RecvN(hdr, SHAD_HEADER_SIZE)) {
             if (!m_terminate)
-                LOG_WARNING("Reader header recv failed, disconnecting");
+                LOG_WARNING("header recv failed, disconnecting");
             break;
         }
         const auto ptype = static_cast<PacketType>(hdr[0]);
@@ -228,7 +229,7 @@ void ShadNetClient::ReaderThread() {
             payload.resize(payload_sz);
             if (!RecvN(payload.data(), payload_sz)) {
                 if (!m_terminate)
-                    LOG_WARNING("Reader payload recv failed");
+                    LOG_WARNING("payload recv failed");
                 break;
             }
         }
@@ -242,7 +243,7 @@ void ShadNetClient::ReaderThread() {
     }
     m_connected = false;
     m_authenticated = false;
-    LOG_INFO("ReaderThread exiting");
+    LOG_INFO("exiting");
 }
 
 void ShadNetClient::WriterThread() {
@@ -259,7 +260,7 @@ void ShadNetClient::WriterThread() {
             if (!m_connected)
                 break;
             if (!SendAll(pkt)) {
-                LOG_ERROR("WriterThread send failed");
+                LOG_ERROR("send failed");
                 return;
             }
         }
@@ -270,33 +271,62 @@ void ShadNetClient::WriterThread() {
 
 bool ShadNetClient::DoConnect() {
     m_state = ShadNetState::Ok; // reset; this attempt sets a failure code only on error
-    struct addrinfo hints{}, *res_list = nullptr;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
 
-    if (::getaddrinfo(m_host.c_str(), std::to_string(m_port).c_str(), &hints, &res_list) != 0 ||
-        !res_list) {
-        LOG_ERROR("DNS resolution failed for '{}'", m_host);
-        m_state = ShadNetState::FailureResolve;
-        return false;
-    }
-
-    m_sock = ::socket(res_list->ai_family, SOCK_STREAM, IPPROTO_TCP);
-    if (m_sock == SHAD_INVALID_SOCK) {
-        ::freeaddrinfo(res_list);
+    s32 netpool_id = sceNetPoolCreate("shadNet Pool", 0x1000, 0);
+    if (netpool_id < 0) {
+        LOG_WARNING("Failed to create net pool, error = {:#x}", static_cast<u32>(netpool_id));
         m_state = ShadNetState::FailureConnect;
         return false;
     }
 
-    // Use non-blocking connect + select() so we time out instead of hanging
-    // for the OS default TCP timeout (75 s on Linux, >20 s on Windows).
-    {
-        int fl = ::fcntl(m_sock, F_GETFL, 0);
-        ::fcntl(m_sock, F_SETFL, fl | O_NONBLOCK);
+    s32 resolver = sceNetResolverCreate("shadNet Resolver", netpool_id, 0);
+    if (resolver < 0) {
+        LOG_WARNING("Failed to create resolver, error = {:#x}", static_cast<u32>(resolver));
+        m_state = ShadNetState::FailureConnect;
+        return false;
     }
 
-    const int cr = ::connect(m_sock, res_list->ai_addr, static_cast<int>(res_list->ai_addrlen));
-    ::freeaddrinfo(res_list);
+    OrbisNetInAddr shadnet_addr{};
+    s32 result = sceNetResolverStartNtoa(resolver, m_host.c_str(), &shadnet_addr, 0, 0, 0);
+    if (result != 0) {
+        LOG_WARNING("DNS resolution failed for '{}', error = {:#x}", m_host.c_str(),
+                    static_cast<u32>(result));
+        m_state = ShadNetState::FailureConnect;
+        return false;
+    }
+
+    result = sceNetResolverDestroy(resolver);
+    if (result != 0) {
+        LOG_WARNING("Failed to destroy resolver, error = {:#x}", static_cast<u32>(result));
+    }
+
+    result = sceNetPoolDestroy(netpool_id);
+    if (result != 0) {
+        LOG_WARNING("Failed to destroy net pool, error = {:#x}", static_cast<u32>(result));
+    }
+
+    m_sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (m_sock == SHAD_INVALID_SOCK) {
+        m_state = ShadNetState::FailureConnect;
+        return false;
+    }
+
+    s32 optval = 1;
+    result = ::setsockopt(m_sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
+                          static_cast<socklen_t>(sizeof(optval)));
+    if (result != 0) {
+        LOG_WARNING("Failed to mark socket as non-blocking");
+        m_state = ShadNetState::FailureConnect;
+        return false;
+    }
+
+    OrbisNetSockaddrIn addr{};
+    addr.sin_len = sizeof(OrbisNetSockaddrIn);
+    addr.sin_family = AF_INET;
+    addr.sin_addr = shadnet_addr.s_addr;
+    addr.sin_port = htons(m_port);
+    const int cr =
+        ::connect(m_sock, reinterpret_cast<sockaddr*>(&addr), static_cast<socklen_t>(addr.sin_len));
 
     bool connected = false;
     const bool in_progress = (cr < 0 && errno == EINPROGRESS);
@@ -322,9 +352,11 @@ bool ShadNetClient::DoConnect() {
     }
 
     // Restore blocking mode for RecvN / SendAll
-    {
-        int fl = ::fcntl(m_sock, F_GETFL, 0);
-        ::fcntl(m_sock, F_SETFL, fl & ~O_NONBLOCK);
+    optval = 0;
+    result = ::setsockopt(m_sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
+                          static_cast<socklen_t>(sizeof(optval)));
+    if (result != 0) {
+        LOG_WARNING("Failed to mark socket as blocking");
     }
 
     struct sockaddr_in local{};
@@ -494,7 +526,7 @@ bool ShadNetClient::RequestServerFeatures() {
         m_send_queue.push_back(std::move(pkt));
     }
     m_cv_send_queue.notify_one();
-    LOG_DEBUG("GetServerFeatures request fired pkt_id={}", pkt_id);
+    LOG_DEBUG("request fired pkt_id={}", pkt_id);
     return true;
 }
 
@@ -549,7 +581,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
 
     if (payload.empty()) {
         res.error = ErrorType::Malformed;
-        LOG_ERROR("Empty Login reply");
+        LOG_ERROR("Empty payload");
     } else {
         res.error = static_cast<ErrorType>(payload[0]);
 
@@ -618,7 +650,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                 m_state = ShadNetState::FailureAuth;
                 break;
             }
-            LOG_ERROR("Login rejected error code {}", static_cast<u8>(res.error));
+            LOG_ERROR("Login rejected, error code {}", static_cast<u8>(res.error));
             sem_post(&m_sem_authenticated);
             DoDisconnect();
         }
@@ -630,21 +662,21 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
 
 void ShadNetClient::HandleGetTokenReply(const std::vector<u8>& payload) {
     if (payload.empty()) {
-        LOG_ERROR("Empty GetToken reply");
+        LOG_ERROR("Empty reply");
         RequestServerFeatures();
         return;
     }
     const ErrorType err = static_cast<ErrorType>(payload[0]);
     if (err != ErrorType::NoError) {
-        LOG_WARNING("GetToken returned error={} — WebAPI calls will be unauthenticated",
-                    static_cast<int>(err));
+        LOG_WARNING("returned error {} - WebAPI calls will be unauthenticated",
+                    magic_enum::enum_name(err));
         RequestServerFeatures();
         return;
     }
     shadnet::GetTokenReply pb;
     const std::string blob = ExtractBlob(payload, 1);
     if (blob.empty() || !pb.ParseFromString(blob)) {
-        LOG_ERROR("Failed to parse GetTokenReply proto");
+        LOG_ERROR("Failed to parse proto");
         RequestServerFeatures();
         return;
     }
@@ -652,7 +684,7 @@ void ShadNetClient::HandleGetTokenReply(const std::vector<u8>& payload) {
         std::lock_guard lock(m_mutex_bearer);
         m_bearer_token = pb.token();
     }
-    LOG_INFO("Bearer token captured ({} chars) for accountID={} canonical npid='{}'",
+    LOG_INFO("Bearer token captured ({} chars) for accountID {} canonical npid '{}'",
              pb.token().size(), pb.user_id(), pb.npid());
     RequestServerFeatures();
 }
@@ -671,8 +703,7 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
                 parsed = true;
             }
         } else {
-            LOG_WARNING("GetServerFeatures returned error={} - assuming Matching2 disabled",
-                        static_cast<int>(err));
+            LOG_WARNING("returned error {} - assuming Matching2 disabled", static_cast<int>(err));
         }
     }
 
@@ -692,7 +723,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         static_cast<NotificationType>(cmd_raw) != NotificationType::WebApiPushEvent) {
         // WebApiPushEvent is multi-field,its first field (service name) may be empty
         // legitimately, so it parses its own payload below rather than relying on blob.
-        LOG_WARNING("Empty notification payload type={}", cmd_raw);
+        LOG_WARNING("Empty payload type={}", cmd_raw);
         return;
     }
 

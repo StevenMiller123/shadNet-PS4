@@ -73,6 +73,11 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
         LOG_WARNING("Failed to destroy resolver, error = {:#x}", static_cast<u32>(result));
     }
 
+    result = sceNetPoolDestroy(netpool_id);
+    if (result != 0) {
+        LOG_WARNING("Failed to destroy net pool, error = {:#x}", static_cast<u32>(result));
+    }
+
     ShadSocketHandle sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock == SHAD_INVALID_SOCK) {
         LOG_WARNING("Failed to create socket");
