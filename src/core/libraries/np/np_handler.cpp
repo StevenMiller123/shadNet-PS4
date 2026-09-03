@@ -27,8 +27,6 @@ void NpHandler::Initialize() {
     if (probe.result != ShadNet::ProbeResult::Ok) {
         LOG_NOTIFICATION("Failed to connect to shadNet server, error {}",
                          magic_enum::enum_name(probe.result));
-        LOG_ERROR("Failed to connect to shadNet server, error {}",
-                  magic_enum::enum_name(probe.result));
     } else {
         LOG_NOTIFICATION("shadNet server is accessible");
     }

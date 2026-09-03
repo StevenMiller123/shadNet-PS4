@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include <orbis/NpManager.h>
 #include "common/types.h"
 
-namespace Libraries::Np::NpManager {
-s32 sceNpGetState(s32 user_id, OrbisNpState* state);
+namespace Libraries::Network::Net {
+
 void RegisterHooks();
-} // namespace Libraries::Np::NpManager
+}

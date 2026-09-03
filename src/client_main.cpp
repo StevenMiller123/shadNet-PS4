@@ -7,6 +7,8 @@
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/types.h"
+#include "core/libraries/kernel/kernel.h"
+#include "core/libraries/network/net.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
 
@@ -20,6 +22,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
 
     // Init hooks
+    Libraries::Kernel::Kernel::RegisterHooks();
+    Libraries::Network::Net::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
 
     // Initialize elfinfo
