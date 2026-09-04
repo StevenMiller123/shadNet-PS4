@@ -7,12 +7,11 @@
 #include <thread>
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/Net.h>
-
-#include "client.h"
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/thread.h"
 #include "shadnet.pb.h"
+#include "shadnet/client.h"
 
 namespace ShadNet {
 
@@ -531,7 +530,6 @@ bool ShadNetClient::RequestServerFeatures() {
 }
 
 // Packet dispatch
-
 void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
                                    const std::vector<u8>& payload) {
     switch (type) {
@@ -575,7 +573,6 @@ void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
 }
 
 // Login reply
-
 void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
     LoginResult res;
 
@@ -715,7 +712,6 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
 }
 
 // Notifications
-
 void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& payload) {
     // Notification payload = u32 LE blob size + proto bytes
     const std::string blob = ExtractBlob(payload, 0);

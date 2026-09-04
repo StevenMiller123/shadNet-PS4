@@ -11,6 +11,7 @@
 #include "core/libraries/network/net.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
+#include "shadnet/config.h"
 
 extern "C" s32 client_start() {
     LOG_INFO("Starting shadNet Client");
@@ -20,6 +21,9 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
+
+    // Initialize config backend
+    ShadNet::Settings::GetInstance().Initialize();
 
     // Init hooks
     Libraries::Kernel::Kernel::RegisterHooks();

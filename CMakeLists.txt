@@ -86,6 +86,7 @@ set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/np/np_manager.cpp
 
 set(SHADNET_SOURCES src/shadnet/client.cpp
+                    src/shadnet/config.cpp
                     src/shadnet/server_probe.cpp
                     ${SHADNET_PROTO_OUT}/shadnet.pb.cc)
 
