@@ -13,11 +13,11 @@ TODO
 
 ## Build instructions (Linux)
 
-This project relies on the [OpenOrbis PS4 Toolchain](https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain) and [GoldHEN Plugins SDK](https://github.com/GoldHEN/GoldHEN_Plugins_SDK).
+This project relies on the [OpenOrbis PS4 Toolchain](https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain) and [GoldHEN Plugins SDK](https://github.com/GoldHEN/GoldHEN_Plugins_SDK).
 
 ### Setting up the OpenOrbis PS4 Toolchain
-Go to https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/actions, click on the top-most "Build OpenOrbis Toolchain" option, then scroll to the bottom and click the "toolchain-llvm-18" option.
-From there, extract the toolchain, and set the OO_PS4_TOOLCHAIN environment variable to the "PS4Toolchain folder in the extracted contents. 
+Download the toolchain from https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain/releases/latest/download/openorbis_toolchain.tar.gz,
+then extract the toolchain and set the OO_PS4_TOOLCHAIN environment variable to the "PS4Toolchain" folder in the extracted contents. 
 
 ### Compiling the GoldHEN Plugins SDK
 ```bash
