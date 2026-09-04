@@ -203,7 +203,7 @@ void ShadNetClient::ConnectThread() {
         m_state = ShadNetState::FailureOther;
         return;
     }
-    LOG_INFO("Login packet sent for '{}'", m_npid);
+    LOG_INFO("Login packet sent for {}", m_npid);
 }
 
 void ShadNetClient::ReaderThread() {
@@ -528,7 +528,6 @@ bool ShadNetClient::RequestServerFeatures() {
         m_send_queue.push_back(std::move(pkt));
     }
     m_cv_send_queue.notify_one();
-    LOG_DEBUG("request fired pkt_id={}", pkt_id);
     return true;
 }
 
@@ -558,7 +557,7 @@ void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
                 }
                 onAsyncReply(static_cast<CommandType>(cmd_raw), pkt_id, err, body);
             } else {
-                LOG_DEBUG("Unhandled reply cmd={} pkt_id={}", cmd_raw, pkt_id);
+                LOG_WARNING("Unhandled reply cmd={} pkt_id={}", cmd_raw, pkt_id);
             }
             break;
         }
@@ -567,7 +566,6 @@ void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
         HandleNotification(cmd_raw, payload);
         break;
     case PacketType::ServerInfo:
-        LOG_DEBUG("ServerInfo update received");
         break;
     case PacketType::Request:
         LOG_WARNING("Unexpected Request from server");
@@ -613,8 +611,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                     m_friends = res.friends;
                 }
                 m_authenticated = true;
-                LOG_INFO("Logged in npid='{}' userId={} friends={}", m_npid, m_user_id,
-                         m_friends.size());
+                LOG_INFO("{} logged in, userId={} friends={}", m_npid, m_user_id, m_friends.size());
 
                 const u64 pkt_id = m_pkt_counter.fetch_add(1);
                 std::vector<u8> empty_payload;
@@ -624,7 +621,6 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                     m_send_queue.push_back(std::move(pkt));
                 }
                 m_cv_send_queue.notify_one();
-                LOG_DEBUG("GetToken request fired pkt_id={}", pkt_id);
             } else {
                 res.error = ErrorType::Malformed;
                 LOG_ERROR("Failed to parse LoginReply proto");
@@ -703,14 +699,13 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
                 parsed = true;
             }
         } else {
-            LOG_WARNING("returned error {} - assuming Matching2 disabled", static_cast<int>(err));
+            LOG_WARNING("returned error {} - assuming Matching2 disabled", magic_enum::enum_name(err));
         }
     }
 
     m_matching2_enabled.store(matching2_enabled);
     m_server_features_received.store(parsed);
-    LOG_INFO("Server features: matching2_enabled={}{}", matching2_enabled ? "true" : "false",
-             parsed ? "" : " (defaulted)");
+    LOG_INFO("Server features: matching2_enabled {}", matching2_enabled);
     sem_post(&m_sem_authenticated);
 }
 
@@ -735,7 +730,6 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         }
         NotifyFriendQuery n;
         n.fromNpid = pb.from_npid();
-        LOG_DEBUG("FriendQuery from '{}'", n.fromNpid);
         if (onFriendQuery)
             onFriendQuery(n);
         break;
@@ -749,7 +743,6 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         NotifyFriendNew n;
         n.npid = pb.npid();
         n.online = pb.online();
-        LOG_DEBUG("FriendNew '{}' ({})", n.npid, n.online ? "online" : "offline");
         if (onFriendNew)
             onFriendNew(n);
         break;
@@ -762,7 +755,6 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         }
         NotifyFriendLost n;
         n.npid = pb.npid();
-        LOG_DEBUG("FriendLost '{}'", n.npid);
         if (onFriendLost)
             onFriendLost(n);
         break;
@@ -777,7 +769,6 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         n.npid = pb.npid();
         n.online = pb.online();
         n.timestamp = pb.timestamp();
-        LOG_DEBUG("FriendStatus '{}' is {}", n.npid, n.online ? "online" : "offline");
         if (onFriendStatus)
             onFriendStatus(n);
         break;
@@ -828,7 +819,6 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
             ba.data.assign(a.data().begin(), a.data().end());
             n.bin_attrs.push_back(std::move(ba));
         }
-        LOG_DEBUG("RoomEvent room_id={} event={:#x} cause={}", n.room_id, n.event, n.event_cause);
         if (onRoomEvent)
             onRoomEvent(n);
         break;
@@ -901,7 +891,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         break;
     }
     default:
-        LOG_DEBUG("Unknown notification type {}", cmd_raw);
+        LOG_WARNING("Unknown notification type {}", cmd_raw);
         break;
     }
 }
