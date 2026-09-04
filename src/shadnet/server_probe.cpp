@@ -34,7 +34,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     ProbeInfo info{};
 
     if (host.empty()) {
-        LOG_WARNING("probe skipped: empty shadNet host");
+        LOG_WARNING("empty shadNet host");
         return info; // Unreachable
     }
 
@@ -44,7 +44,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     OrbisNetCtlInfo net_info{};
     s32 result = sceNetCtlGetInfo(ORBIS_NET_CTL_INFO_LINK, &net_info);
     if (result == ORBIS_NET_CTL_ERROR_NOT_CONNECTED || (result == 0 && net_info.link == 0)) {
-        LOG_WARNING("Probe skipped, internet is disabled");
+        LOG_WARNING("internet is disabled");
         return info;
     }
 

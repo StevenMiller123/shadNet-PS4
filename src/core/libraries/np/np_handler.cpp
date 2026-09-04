@@ -5,6 +5,7 @@
 #include "common/logging/log.h"
 #include "np_handler.h"
 #include "shadnet/server_probe.h"
+#include "shadnet/config.h"
 
 namespace Libraries::Np {
 
@@ -19,9 +20,24 @@ void NpHandler::Initialize() {
         return;
     }
 
-    // TODO: Make server host and port configurable
-    static std::string hostname = "srv.shadps4.net";
-    static u16 port = 31313;
+    auto& config = ShadNet::Settings::GetInstance();
+
+    static std::string server_url = config.GetServerUrl();
+    static const u64 colon = server_url.rfind(':');
+    if (colon == std::string::npos) {
+        LOG_WARNING("Invalid server url {}", server_url);
+        m_initialized.exchange(false);
+        return;
+    }
+    static std::string hostname = server_url.substr(0, colon);
+    u16 port{};
+    try {
+        port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
+    } catch (const std::exception&) {
+        LOG_WARNING("Invalid server url {}", server_url);
+        m_initialized.exchange(false);
+        return;
+    }
 
     const ShadNet::ProbeInfo probe = ShadNet::ProbeServer(hostname, port);
     if (probe.result != ShadNet::ProbeResult::Ok) {
