@@ -24,7 +24,6 @@ struct Setting {
     }
 };
 
-
 template <typename T>
 void to_json(nlohmann::json& j, const Setting<T>& s) {
     j = s.value;
@@ -38,6 +37,7 @@ void from_json(const nlohmann::json& j, Setting<T>& s) {
 struct ServerSettings {
     Setting<bool> shadnet_enabled{true};
     Setting<bool> shadnet_enable_upnp{true};
+    Setting<bool> shadnet_appear_offline{false};
     Setting<std::string> shadnet_server{"srv.shadps4.net:31313"};
     Setting<std::string> shadnet_webapi_server{"http://srv.shadps4.net:31315"};
     Setting<std::string> shadnet_signaling_info{""};
@@ -46,8 +46,8 @@ struct ServerSettings {
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ServerSettings, shadnet_enabled, shadnet_enable_upnp,
-                                   shadnet_server, shadnet_webapi_server, shadnet_signaling_info,
-                                   shadnet_npid, shadnet_password)
+                                   shadnet_appear_offline, shadnet_server, shadnet_webapi_server,
+                                   shadnet_signaling_info, shadnet_npid, shadnet_password)
 
 class Settings {
 public:
@@ -65,6 +65,10 @@ public:
     bool IsUpnpEnabled() {
         return m_server.shadnet_enable_upnp.get();
     };
+
+    bool IsAppearOfflineEnabled() {
+        return m_server.shadnet_appear_offline.get();
+    }
 
     std::string GetServerUrl() {
         return m_server.shadnet_server.get();

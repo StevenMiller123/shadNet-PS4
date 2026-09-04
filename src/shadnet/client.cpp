@@ -42,8 +42,11 @@ std::string ShadNetClient::ExtractBlob(const std::vector<u8>& p, int pos) {
 }
 
 ShadNetClient::ShadNetClient() {
-    if (!sem_init(&m_sem_authenticated, 0, 1) || !sem_init(&m_sem_connected, 0, 1)) {
-        LOG_WARNING("Failed to init semaphores!");
+    if (!sem_init(&m_sem_authenticated, 0, 1)) {
+        LOG_WARNING("Failed to init authenticated semaphore");
+    }
+    if (!sem_init(&m_sem_connected, 0, 1)) {
+        LOG_WARNING("Failed to init connected semaphore");
     }
 }
 
