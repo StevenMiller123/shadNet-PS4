@@ -131,7 +131,7 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
         return false;
     }
 
-    LOG_INFO("signed in npid='{}' accountId={}", npid, client->GetUserId());
+    LOG_NOTIFICATION("{} successfully signed in to shadNet, accountId={}", npid, client->GetUserId());
 
     // Net::UPnPClient::Instance().SetP2PFeaturesEnabled(client->IsMatching2Enabled());
     // if (client->IsMatching2Enabled() && config.IsUpnpEnabled()) {
