@@ -25,8 +25,11 @@ extern "C" s32 client_start() {
     // Initialize config backend
     ShadNet::Settings::GetInstance().Initialize();
 
-    // Init hooks
+    // Init kernel hooks
+    // This must be first because it hooks mmap to reduce the plugin's flexible memory usage.
     Libraries::Kernel::Kernel::RegisterHooks();
+
+    // Init other library hooks
     Libraries::Network::Net::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
 
