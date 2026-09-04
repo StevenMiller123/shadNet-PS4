@@ -35,14 +35,19 @@ private:
     void FireStateCallback(s32 user_id, OrbisNpState state);
 
     void OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n);
+    void OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n);
+    void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
+    void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
 
     std::atomic<bool> m_initialized{false};
     std::atomic<bool> m_worker_running{false};
 
+    // Client
     mutable std::mutex m_mutex_client;
     std::shared_ptr<ShadNet::ShadNetClient> m_client;
     OrbisNpId m_np_id;
 
+    // State callbacks
     struct CbEntry {
         s32 handle;
         StateCallback cb;
@@ -51,6 +56,20 @@ private:
     mutable std::mutex m_mutex_cbs;
     std::map<s32, CbEntry> m_state_cbs;
     std::atomic<s32> m_next_handle;
+
+    // Friend state
+    struct FriendInfo {
+        std::string npid;
+        bool online = false;
+    };
+    struct FriendListSnapshot {
+        std::vector<FriendInfo> friends;
+        std::vector<std::string> requests_received;
+        std::vector<std::string> requests_sent;
+        std::vector<std::string> blocked;
+    };
+    mutable std::mutex m_mutex_friend_state;
+    FriendListSnapshot m_friend_state;
 };
 
 } // namespace Libraries::Np

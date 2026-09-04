@@ -70,7 +70,6 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
 
     // Initialize per-user notification callbacks
     auto client = std::make_shared<ShadNet::ShadNetClient>();
-    /*
     client->onFriendQuery = [this, user_id](const ShadNet::NotifyFriendQuery& n) {
         OnFriendQuery(user_id, n);
     };
@@ -83,6 +82,8 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
     client->onFriendStatus = [this, user_id](const ShadNet::NotifyFriendStatus& n) {
         OnFriendStatus(user_id, n);
     };
+
+    /*
     client->onWebApiPushEvent = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
         OnWebApiPushEvent(user_id, n);
     };
@@ -174,6 +175,59 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
     for (const auto& e : m_state_cbs) {
         if (e.second.cb)
             e.second.cb(user_id, state);
+    }
+}
+
+// Friend callbacks
+void NpHandler::OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n) {
+    LOG_NOTIFICATION("Friend request from {}", n.fromNpid);
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_state;
+    if (std::find(st.requests_received.begin(), st.requests_received.end(), n.fromNpid) ==
+        st.requests_received.end()) {
+        st.requests_received.push_back(n.fromNpid);
+    }
+}
+
+void NpHandler::OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n) {
+    LOG_NOTIFICATION("{} is now your friend", n.npid);
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_state;
+    auto it = std::find_if(st.friends.begin(), st.friends.end(),
+                           [&](const FriendInfo& f) { return f.npid == n.npid; });
+    if (it == st.friends.end()) {
+        st.friends.push_back({n.npid, n.online});
+    } else {
+        it->online = n.online;
+    }
+    const auto drop = [&](std::vector<std::string>& v) {
+        v.erase(std::remove(v.begin(), v.end(), n.npid), v.end());
+    };
+    drop(st.requests_received);
+    drop(st.requests_sent);
+}
+
+void NpHandler::OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n) {
+    LOG_NOTIFICATION("{} removed you as a friend", n.npid);
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_state;
+    st.friends.erase(std::remove_if(st.friends.begin(), st.friends.end(),
+                                    [&](const FriendInfo& f) { return f.npid == n.npid; }),
+                     st.friends.end());
+}
+
+void NpHandler::OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n) {
+    if (n.online) {
+        LOG_NOTIFICATION("{} is online", n.npid);
+    }
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_state;
+    auto it = std::find_if(st.friends.begin(), st.friends.end(),
+                           [&](const FriendInfo& f) { return f.npid == n.npid; });
+    if (it != st.friends.end()) {
+        it->online = n.online;
+    } else {
+        st.friends.push_back({n.npid, n.online});
     }
 }
 
