@@ -14,7 +14,7 @@
 #include "shadnet/config.h"
 
 extern "C" s32 client_start() {
-    LOG_INFO("Starting shadNet Client");
+    LOG_INFO(shadNet, "Starting shadNet Client");
 
     // Preload modules used by the plugin
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
@@ -40,11 +40,11 @@ extern "C" s32 client_start() {
     OrbisAppInfo app_info{};
     s32 result = sceKernelGetAppInfo(getpid(), &app_info);
     if (result != 0) {
-        LOG_ERROR("sceKernelGetAppInfo failed!");
+        LOG_ERROR(shadNet, "sceKernelGetAppInfo failed!");
         return 1;
     }
 
-    LOG_INFO("Currently running {}", app_info.TitleId);
+    LOG_INFO(shadNet, "Currently running {}", app_info.TitleId);
     sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
     game_info.initialized = true;
     game_info.game_serial = std::string{app_info.TitleId};

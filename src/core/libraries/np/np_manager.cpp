@@ -19,7 +19,7 @@ void RegisterLibraryHooks() {
 
 namespace Libraries::Np::NpManager {
 s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
-    LOG_INFO("(STUBBED) called, returning SIGNED_IN");
+    LOG_INFO(Lib_NpManager, "(STUBBED) called, returning SIGNED_IN");
     if (state) {
         *state = ORBIS_NP_STATE_SIGNED_IN;
     }

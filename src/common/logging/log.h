@@ -20,7 +20,7 @@ std::string FormatLog(char const* format, Args const&... args) {
 }
 
 template <typename... Args>
-void PrintLog(char const* log_level, char const* file, unsigned int line_num, char const* function,
+void PrintLog(char const* lib, char const* log_level, char const* file, unsigned int line_num, char const* function,
               char const* format, Args const&... args) {
     std::string message = FormatLog(format, args...);
     char thr_name[256];
@@ -32,19 +32,19 @@ void PrintLog(char const* log_level, char const* file, unsigned int line_num, ch
     }
     std::string full_log;
     if (pthread_getname_np(pthread_self(), thr_name) == 0) {
-        full_log = fmt::format("[Homebrew] <{}> ({}) {}:{} {}: {}\n", log_level, thr_name,
+        full_log = fmt::format("[{}] <{}> ({}) {}:{} {}: {}\n", lib, log_level, thr_name,
                                file_name, line_num, function, message);
     } else {
-        full_log = fmt::format("[Homebrew] <{}> {}:{} {}: {}\n", log_level, file_name, line_num,
+        full_log = fmt::format("[{}] <{}> {}:{} {}: {}\n", lib, log_level, file_name, line_num,
                                function, message);
     }
     sceKernelDebugOutText(0, full_log.c_str());
 }
 
 template <typename... Args>
-void PrintLogN(char const* log_level, char const* file, unsigned int line_num, char const* function,
+void PrintLogN(char const* lib, char const* log_level, char const* file, unsigned int line_num, char const* function,
                char const* format, Args const&... args) {
-    PrintLog(log_level, file, line_num, function, format, args...);
+    PrintLog(lib, log_level, file, line_num, function, format, args...);
     std::string message = FormatLog(format, args...);
     sceSysUtilSendSystemNotificationWithText(222, message.c_str());
 }
@@ -55,10 +55,10 @@ void PrintLogR(char const* format, Args const&... args) {
     sceKernelDebugOutText(0, message.c_str());
 }
 
-#define LOG_TRACE(...) PrintLog("Trace", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_DEBUG(...) PrintLog("Debug", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_INFO(...) PrintLog("Info", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_WARNING(...) PrintLog("Warning", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_ERROR(...) PrintLog("Error", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_CRITICAL(...) PrintLog("Critical", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_NOTIFICATION(...) PrintLogN("Info", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_TRACE(lib, ...) PrintLog(#lib, "Trace", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_DEBUG(lib, ...) PrintLog(#lib, "Debug", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_INFO(lib, ...) PrintLog(#lib, "Info", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_WARNING(lib, ...) PrintLog(#lib, "Warning", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_ERROR(lib, ...) PrintLog(#lib, "Error", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_CRITICAL(lib, ...) PrintLog(#lib, "Critical", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_NOTIFICATION(lib, ...) PrintLogN(#lib, "Info", __FILE__, __LINE__, __func__, __VA_ARGS__)
