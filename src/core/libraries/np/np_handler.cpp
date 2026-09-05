@@ -260,6 +260,11 @@ void NpHandler::OnLoginResult(s32 user_id, const ShadNet::LoginResult& res) {
     }
 }
 
+bool NpHandler::IsPsnSignedIn(s32 user_id) const {
+    std::lock_guard lock(m_mutex_client);
+    return m_client->GetUserId() == user_id && m_client->IsAuthenticated();
+}
+
 // WebApi Push Event
 /*
 void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n) {

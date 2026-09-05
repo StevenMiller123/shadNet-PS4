@@ -6,6 +6,7 @@
 #include "common/types.h"
 #include "core/libraries/rtc/rtc.h"
 #include "core/libraries/np/np_types.h"
+#include "core/libraries/np/np_score_ctx.h"
 
 namespace Libraries::Np::NpScore {
 

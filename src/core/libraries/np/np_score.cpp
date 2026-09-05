@@ -11,7 +11,9 @@
 
 // #include "orbis/NpScore.h"
 using namespace Libraries::Np::NpScore;
+using namespace Libraries::Np;
 using namespace Libraries;
+using namespace Common;
 
 HOOK_INIT(sceNpScoreCreateNpTitleCtx);
 static s32 sceNpScoreCreateNpTitleCtx_hook(OrbisNpServiceLabel serviceLabel,
