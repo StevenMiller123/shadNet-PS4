@@ -6,6 +6,7 @@
 #include <atomic>
 #include <map>
 #include <orbis/NpManager.h>
+#include "common/singleton.h"
 #include "common/types.h"
 #include "shadnet/client.h"
 
@@ -13,12 +14,19 @@ namespace Libraries::Np {
 
 class NpHandler {
 public:
-    static NpHandler& GetInstance();
-
-    NpHandler(const NpHandler&) = delete;
-    NpHandler& operator=(const NpHandler&) = delete;
+    static NpHandler& Instance() {
+        return *Common::Singleton<NpHandler>::Instance();
+    }
 
     void Initialize();
+
+    bool IsActive() {
+        return m_initialized;
+    };
+
+    OrbisNpId& GetNpId() {
+        return m_np_id;
+    };
 
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
@@ -26,9 +34,6 @@ public:
     void UnregisterStateCallback(s32 handle);
 
 private:
-    NpHandler() = default;
-    ~NpHandler() = default;
-
     bool Connect(const std::string& host, u16 port, const std::string& npid,
                  const std::string& password, const std::string& token);
 
@@ -38,6 +43,9 @@ private:
     void OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n);
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
+    // void OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n);
+    // void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
+    //                   const std::vector<u8>& body);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
 
     std::atomic<bool> m_initialized{false};

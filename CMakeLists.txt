@@ -72,6 +72,7 @@ set(PLUGIN_LIBS
     -lSceNpManager
     -lSceNpScore
     -lSceSysUtil
+    -lSceUserService
 )
 
 set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
@@ -84,6 +85,7 @@ set(COMMON_SOURCES src/common/error.cpp
 
 set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/net.cpp
+                 src/core/libraries/system/user_service.cpp
                  src/core/libraries/np/np_handler.cpp
                  src/core/libraries/np/np_manager.cpp
                  src/core/libraries/np/np_score.cpp)
