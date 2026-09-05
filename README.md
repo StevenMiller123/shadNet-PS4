@@ -30,8 +30,8 @@ export GOLDHEN_SDK=$(PWD)
 ### Compiling this project
 To compile, just run
 ```bash
-git clone https://github.com/StevenMiller123/shadNet-PS4.git
-cd ./shadNET-PS4
+git clone https://github.com/StevenMiller123/shadNet-PS4.git --recursive
+cd ./shadNet-PS4
 cmake -S . -B build
 cmake --build build --parallel $(nproc)
 ```
