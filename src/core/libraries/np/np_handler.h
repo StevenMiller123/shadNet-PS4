@@ -38,6 +38,7 @@ private:
     void OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n);
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
+    void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
 
     std::atomic<bool> m_initialized{false};
     std::atomic<bool> m_worker_running{false};
