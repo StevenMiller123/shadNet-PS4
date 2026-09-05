@@ -8,6 +8,7 @@
 #include <orbis/NpManager.h>
 #include "common/types.h"
 #include "shadnet/client.h"
+#include "core/libraries/userservice/userservice.h"
 
 namespace Libraries::Np {
 
@@ -39,6 +40,9 @@ private:
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
+    bool IsPsnSignedIn(Libraries::UserService::OrbisUserServiceUserId id) {
+        return true;
+    }
 
     std::atomic<bool> m_initialized{false};
     std::atomic<bool> m_worker_running{false};

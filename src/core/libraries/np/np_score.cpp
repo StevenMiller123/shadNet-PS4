@@ -4,6 +4,10 @@
 #include "common/logging/log.h"
 #include "common/plugin_common.h"
 #include "core/libraries/np/np_score.h"
+#include "core/libraries/np/np_error.h"
+#include "core/libraries/np/np_handler.h"
+
+#include <map>
 
 // #include "orbis/NpScore.h"
 using namespace Libraries::Np::NpScore;
@@ -261,77 +265,154 @@ static s32 sceNpScoreGetRankingByAccountId_hook(
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdAsync);
-static s32 sceNpScoreGetRankingByAccountIdAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdAsync();
+static s32 sceNpScoreGetRankingByAccountIdAsync_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpAccountId* accountIdArray,
+    u64 accountIdArraySize, OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdAsync(
+        reqId, boardId, accountIdArray, accountIdArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdForCrossSave);
-static s32 sceNpScoreGetRankingByAccountIdForCrossSave_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdForCrossSave();
+static s32 sceNpScoreGetRankingByAccountIdForCrossSave_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpAccountId* accountIdArray,
+    u64 accountIdArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdForCrossSave(
+        reqId, boardId, accountIdArray, accountIdArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdForCrossSaveAsync);
-static s32 sceNpScoreGetRankingByAccountIdForCrossSaveAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdForCrossSaveAsync();
+static s32 sceNpScoreGetRankingByAccountIdForCrossSaveAsync_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpAccountId* accountIdArray,
+    u64 accountIdArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdForCrossSaveAsync(
+        reqId, boardId, accountIdArray, accountIdArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdPcId);
-static s32 sceNpScoreGetRankingByAccountIdPcId_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcId();
+static s32 sceNpScoreGetRankingByAccountIdPcId_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
+    u64 idArraySize, OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcId(
+        reqId, boardId, idArray, idArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdPcIdAsync);
-static s32 sceNpScoreGetRankingByAccountIdPcIdAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcIdAsync();
+static s32 sceNpScoreGetRankingByAccountIdPcIdAsync_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
+    u64 idArraySize, OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcIdAsync(
+        reqId, boardId, idArray, idArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdPcIdForCrossSave);
-static s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSave_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcIdForCrossSave();
+static s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSave_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
+    u64 idArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcIdForCrossSave(
+        reqId, boardId, idArray, idArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync);
-static s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync();
+static s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
+    u64 idArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync(
+        reqId, boardId, idArray, idArraySize, rankArray, rankArraySize, commentArray,
+        commentArraySize, infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByRangeA);
-static s32 sceNpScoreGetRankingByRangeA_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeA();
+static s32 sceNpScoreGetRankingByRangeA_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreRankNumber startSerialRank,
+    OrbisNpScoreRankDataA* rankArray, u64 rankArraySize, OrbisNpScoreComment* commentArray,
+    u64 commentArraySize, OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
+    Rtc::OrbisRtcTick* lastSortDate, OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeA(
+        reqId, boardId, startSerialRank, rankArray, rankArraySize, commentArray, commentArraySize,
+        infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByRangeAAsync);
-static s32 sceNpScoreGetRankingByRangeAAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeAAsync();
+static s32 sceNpScoreGetRankingByRangeAAsync_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreRankNumber startSerialRank,
+    OrbisNpScoreRankDataA* rankArray, u64 rankArraySize, OrbisNpScoreComment* commentArray,
+    u64 commentArraySize, OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
+    Rtc::OrbisRtcTick* lastSortDate, OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeAAsync(
+        reqId, boardId, startSerialRank, rankArray, rankArraySize, commentArray, commentArraySize,
+        infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByRangeForCrossSave);
-static s32 sceNpScoreGetRankingByRangeForCrossSave_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeForCrossSave();
+static s32 sceNpScoreGetRankingByRangeForCrossSave_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreRankNumber startSerialRank,
+    OrbisNpScoreRankDataForCrossSave* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeForCrossSave(
+        reqId, boardId, startSerialRank, rankArray, rankArraySize, commentArray, commentArraySize,
+        infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScoreGetRankingByRangeForCrossSaveAsync);
-static s32 sceNpScoreGetRankingByRangeForCrossSaveAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeForCrossSaveAsync();
+static s32 sceNpScoreGetRankingByRangeForCrossSaveAsync_hook(
+    s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreRankNumber startSerialRank,
+    OrbisNpScoreRankDataForCrossSave* rankArray, u64 rankArraySize,
+    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
+    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
+    OrbisNpScoreRankNumber* totalRecord, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreGetRankingByRangeForCrossSaveAsync(
+        reqId, boardId, startSerialRank, rankArray, rankArraySize, commentArray, commentArraySize,
+        infoArray, infoArraySize, arrayNum, lastSortDate, totalRecord, option);
 }
 
 HOOK_INIT(sceNpScorePollAsync);
-static s32 sceNpScorePollAsync_hook() {
-    return Libraries::Np::NpScore::sceNpScorePollAsync();
+static s32 sceNpScorePollAsync_hook(s32 reqId, s32* result) {
+    return Libraries::Np::NpScore::sceNpScorePollAsync(reqId, result);
 }
 
 HOOK_INIT(sceNpScoreRecordGameData);
-static s32 sceNpScoreRecordGameData_hook() {
-    return Libraries::Np::NpScore::sceNpScoreRecordGameData();
+static s32 sceNpScoreRecordGameData_hook(s32 reqId, OrbisNpScoreBoardId boardId,
+                                         OrbisNpScoreValue score, u64 totalSize, u64 sendSize,
+                                         const void* data, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreRecordGameData(reqId, boardId, score, totalSize,
+                                                            sendSize, data, option);
 }
 
 HOOK_INIT(sceNpScoreRecordGameDataAsync);
 static s32 sceNpScoreRecordGameDataAsync_hook(s32 reqId, OrbisNpScoreBoardId boardId,
-                                               OrbisNpScoreValue score, u64 totalSize, u64 sendSize,
-                                               const void* data, void* option) {
-    return Libraries::Np::NpScore::sceNpScoreRecordGameDataAsync(reqId, boardId,
-                                               score, totalSize, sendSize,
-                                               data, option);
+                                              OrbisNpScoreValue score, u64 totalSize, u64 sendSize,
+                                              const void* data, void* option) {
+    return Libraries::Np::NpScore::sceNpScoreRecordGameDataAsync(reqId, boardId, score, totalSize,
+                                                                 sendSize, data, option);
 }
 
 HOOK_INIT(sceNpScoreRecordScore);

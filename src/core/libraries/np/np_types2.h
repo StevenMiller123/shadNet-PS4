@@ -7,9 +7,7 @@
 #include "core/libraries/np/np_types.h"
 #include "core/libraries/rtc/rtc.h"
 
-namespace Libraries::UserService {
-#include "orbis/UserService.h"
-}
+#include "core/libraries/userservice/userservice.h"
 
 namespace Libraries::Np::NpMatching2 {
 

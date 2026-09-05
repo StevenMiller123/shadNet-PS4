@@ -10,9 +10,7 @@
 #include "common/types.h"
 #include "core/libraries/error_codes.h"
 
-namespace Libraries::UserService {
-#include "orbis/UserService.h"
-}
+#include "core/libraries/userservice/userservice.h"
 
 // For structs and constants shared between multiple Np libraries.
 namespace Libraries::Np {
