@@ -9,7 +9,7 @@
 HOOK_INIT(sceNetSocket);
 
 s32 sceNetSocket_hook(const char* name, s32 family, s32 type, s32 protocol) {
-    LOG_INFO("called, name = {}, family = {}, type = {}, protocol = {}", name ? name : "(null)", family, type, protocol);
+    LOG_INFO(Lib_Net, "called, name = {}, family = {}, type = {}, protocol = {}", name ? name : "(null)", family, type, protocol);
     return HOOK_CONTINUE(sceNetSocket, s32 (*)(const char*, s32, s32, s32), name, family, type, protocol);
 }
 

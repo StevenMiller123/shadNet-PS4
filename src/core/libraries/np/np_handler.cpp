@@ -18,13 +18,13 @@ NpHandler& NpHandler::GetInstance() {
 // Init procedures
 void NpHandler::Initialize() {
     if (m_initialized.exchange(true)) {
-        LOG_WARNING("Initialize called more than once");
+        LOG_WARNING(NpHandler, "Initialize called more than once");
         return;
     }
 
     auto& config = ShadNet::Settings::GetInstance();
     if (!config.IsShadNetEnabled()) {
-        LOG_NOTIFICATION("shadNet is currently disabled");
+        LOG_NOTIFICATION(NpHandler, "shadNet is currently disabled");
         m_initialized.exchange(false);
         return;
     }
@@ -33,7 +33,7 @@ void NpHandler::Initialize() {
     static std::string server_url = config.GetServerUrl();
     static const u64 colon = server_url.rfind(':');
     if (colon == std::string::npos) {
-        LOG_WARNING("Invalid server url {}", server_url);
+        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
         m_initialized.exchange(false);
         return;
     }
@@ -42,18 +42,18 @@ void NpHandler::Initialize() {
     try {
         port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
     } catch (const std::exception&) {
-        LOG_WARNING("Invalid server url {}", server_url);
+        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
         m_initialized.exchange(false);
         return;
     }
 
     const ShadNet::ProbeInfo probe = ShadNet::ProbeServer(hostname, port);
     if (probe.result != ShadNet::ProbeResult::Ok) {
-        LOG_NOTIFICATION("Failed to connect to shadNet server, error {}",
+        LOG_NOTIFICATION(NpHandler, "Failed to connect to shadNet server, error {}",
                          magic_enum::enum_name(probe.result));
         m_initialized.exchange(false);
     } else {
-        LOG_NOTIFICATION("shadNet server is accessible");
+        LOG_NOTIFICATION(NpHandler, "shadNet server is accessible");
     }
 
     // Log in the current user.
@@ -62,7 +62,7 @@ void NpHandler::Initialize() {
 
 bool NpHandler::Connect(const std::string& host, u16 port, const std::string& npid,
                         const std::string& password, const std::string& token) {
-    LOG_INFO("Connecting npid='{}' to {}:{} (timeout {}s)", npid, host, port,
+    LOG_INFO(NpHandler, "Connecting npid='{}' to {}:{} (timeout {}s)", npid, host, port,
              ShadNet::SHAD_CONNECT_TIMEOUT_MS / 1000);
 
     auto& config = ShadNet::Settings::GetInstance();
@@ -107,18 +107,20 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
         const u32 server_ver = client->GetServerProtocolVersion();
         if (server_ver != 0) {
             LOG_NOTIFICATION(
+                NpHandler,
                 "shadNet protocol version mismatch (server v{}, emulator v{}); disabling "
                 "shadNet for this run",
                 server_ver, ShadNet::SHAD_PROTOCOL_VERSION);
         } else {
-            LOG_NOTIFICATION("shadNet protocol error during handshake; disabling shadNet for "
+            LOG_NOTIFICATION(NpHandler,
+                             "shadNet protocol error during handshake; disabling shadNet for "
                              "this run");
         }
     };
 
     const ShadNet::ShadNetState conn_state = client->WaitForConnection();
     if (conn_state != ShadNet::ShadNetState::Ok) {
-        LOG_ERROR("connection failed (state={})", magic_enum::enum_name(conn_state));
+        LOG_ERROR(NpHandler, "connection failed (state={})", magic_enum::enum_name(conn_state));
         handle_protocol_mismatch(conn_state);
         client->Stop();
         return false;
@@ -126,13 +128,13 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
 
     const ShadNet::ShadNetState auth_state = client->WaitForAuthenticated();
     if (auth_state != ShadNet::ShadNetState::Ok) {
-        LOG_ERROR("authentication failed (state={})", magic_enum::enum_name(auth_state));
+        LOG_ERROR(NpHandler, "authentication failed (state={})", magic_enum::enum_name(auth_state));
         handle_protocol_mismatch(auth_state);
         client->Stop();
         return false;
     }
 
-    LOG_NOTIFICATION("{} successfully signed in to shadNet, accountId={}", npid,
+    LOG_NOTIFICATION(NpHandler, "{} successfully signed in to shadNet, accountId={}", npid,
                      client->GetUserId());
 
     // Net::UPnPClient::Instance().SetP2PFeaturesEnabled(client->IsMatching2Enabled());
@@ -181,7 +183,7 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
 
 // Friend callbacks
 void NpHandler::OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n) {
-    LOG_NOTIFICATION("Friend request from {}", n.fromNpid);
+    LOG_NOTIFICATION(NpHandler, "Friend request from {}", n.fromNpid);
     std::lock_guard lock(m_mutex_friend_state);
     auto& st = m_friend_state;
     if (std::find(st.requests_received.begin(), st.requests_received.end(), n.fromNpid) ==
@@ -191,7 +193,7 @@ void NpHandler::OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n) 
 }
 
 void NpHandler::OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n) {
-    LOG_NOTIFICATION("{} is now your friend", n.npid);
+    LOG_NOTIFICATION(NpHandler, "{} is now your friend", n.npid);
     std::lock_guard lock(m_mutex_friend_state);
     auto& st = m_friend_state;
     auto it = std::find_if(st.friends.begin(), st.friends.end(),
@@ -209,7 +211,7 @@ void NpHandler::OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n) {
 }
 
 void NpHandler::OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n) {
-    LOG_NOTIFICATION("{} removed you as a friend", n.npid);
+    LOG_NOTIFICATION(NpHandler, "{} removed you as a friend", n.npid);
     std::lock_guard lock(m_mutex_friend_state);
     auto& st = m_friend_state;
     st.friends.erase(std::remove_if(st.friends.begin(), st.friends.end(),
@@ -219,7 +221,7 @@ void NpHandler::OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n) {
 
 void NpHandler::OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n) {
     if (n.online) {
-        LOG_NOTIFICATION("{} is online", n.npid);
+        LOG_NOTIFICATION(NpHandler, "{} is online", n.npid);
     }
     std::lock_guard lock(m_mutex_friend_state);
     auto& st = m_friend_state;
@@ -248,19 +250,20 @@ void NpHandler::OnLoginResult(s32 user_id, const ShadNet::LoginResult& res) {
         std::lock_guard lock(m_mutex_friend_state);
         m_friend_state = std::move(snap);
     }
-    LOG_INFO("{} friends, {} requests received, {} requests sent, {} blocked", res.friends.size(),
-             res.requestsReceived.size(), res.requestsSent.size(), res.blocked.size());
+    LOG_INFO(NpHandler, "{} friends, {} requests received, {} requests sent, {} blocked",
+             res.friends.size(), res.requestsReceived.size(), res.requestsSent.size(),
+             res.blocked.size());
 
     // Send notification for any pending requests
     if (!res.requestsReceived.empty()) {
-        LOG_NOTIFICATION("{} pending friend request(s)", res.requestsReceived.size());
+        LOG_NOTIFICATION(NpHandler, "{} pending friend request(s)", res.requestsReceived.size());
     }
 }
 
 // WebApi Push Event
 /*
 void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n) {
-    LOG_INFO("WebApiPushEvent svc='{}' type='{}' bytes={}", n.npServiceName, n.dataType,
+    LOG_INFO(NpHandler, "WebApiPushEvent svc='{}' type='{}' bytes={}", n.npServiceName, n.dataType,
              n.data.size());
     NpWebApi::PushEventInput ev;
     ev.targetUserId = user_id;
