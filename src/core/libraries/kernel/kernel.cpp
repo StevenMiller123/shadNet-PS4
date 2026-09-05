@@ -7,8 +7,6 @@
 #include "common/logging/log.h"
 #include "core/libraries/kernel/kernel.h"
 
-s32 __sys_socketex(const char* name, s32 family, s32 type, s32 protocol);
-
 HOOK_INIT(mmap);
 HOOK_INIT(sceKernelMmap);
 HOOK_INIT(socket);
