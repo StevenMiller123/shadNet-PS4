@@ -24,7 +24,7 @@ s32 __sys_socketex_hook(const char* name, s32 family, s32 type, s32 protocol) {
 
 void* mmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 offset) {
     if ((flags & 0x1000) == 0x1000 && (flags & 0x2000) == 0) {
-        LOG_INFO(Lib_Kernel, "called with MAP_ANON, appending MAP_SYSTEM");
+        // Append MAP_SYSTEM, that way mmaps used to create hooks aren't consuming flex budget.
         flags |= 0x2000;
     }
     return HOOK_CONTINUE(mmap, void* (*)(void*, u64, s32, s32, s32, s64), addr, len, prot, flags, fd, offset);
@@ -32,7 +32,7 @@ void* mmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 offset) {
 
 s32 sceKernelMmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 offset, void** result) {
     if ((flags & 0x1000) == 0x1000 && (flags & 0x2000) == 0) {
-        LOG_INFO(Lib_Kernel, "called with MAP_ANON, appending MAP_SYSTEM");
+        // Append MAP_SYSTEM, that way mmaps used to create hooks aren't consuming flex budget.
         flags |= 0x2000;
     }
     return HOOK_CONTINUE(sceKernelMmap, s32 (*)(void*, u64, s32, s32, s32, s64, void**), addr, len, prot, flags, fd, offset, result);
