@@ -28,12 +28,12 @@ void Settings::InitialSetup() {
 
     std::ofstream out{config_path};
     if (!out) {
-        LOG_ERROR("Failed to open config for writing");
+        LOG_ERROR(Config, "Failed to open config for writing");
         return;
     }
     out << std::setw(2) << j;
     if (out.fail()) {
-        LOG_ERROR("Failed to write to config");
+        LOG_ERROR(Config, "Failed to write to config");
     }
 }
 
@@ -43,7 +43,7 @@ void Settings::Initialize() {
     } else {
         std::ifstream in{config_path};
         if (!in.good()) {
-            LOG_ERROR("Failed to open read config file");
+            LOG_ERROR(Config, "Failed to open read config file");
             return;
         }
 

@@ -36,6 +36,7 @@ namespace Libraries::Np::NpManager {
 static s32 g_firmware_version = 0;
 
 s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
+    LOG_INFO(Lib_NpManager, "called");
     if (user_id == -1 && g_firmware_version >= Common::ElfInfo::FW_900) {
         // FW < 9.00 behavior needs validating.
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
@@ -52,6 +53,7 @@ s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
 }
 
 s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id) {
+    LOG_INFO(Lib_NpManager, "called");
     if (user_id == -1) {
         return g_firmware_version >= Common::ElfInfo::FW_900 ? ORBIS_NP_ERROR_INVALID_ARGUMENT
                                                              : ORBIS_NP_ERROR_USER_NOT_FOUND;
@@ -68,6 +70,7 @@ s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id) {
 }
 
 s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
+    LOG_INFO(Lib_NpManager, "called");
     if (user_id == -1) {
         return g_firmware_version >= Common::ElfInfo::FW_900 ? ORBIS_NP_ERROR_INVALID_ARGUMENT
                                                              : ORBIS_NP_ERROR_USER_NOT_FOUND;

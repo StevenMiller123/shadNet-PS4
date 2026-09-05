@@ -70,6 +70,7 @@ set(PLUGIN_LIBS
     -lSceNet
     -lSceNetCtl
     -lSceNpManager
+    -lSceNpScore
     -lSceSysUtil
     -lSceUserService
 )
@@ -86,7 +87,8 @@ set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/net.cpp
                  src/core/libraries/system/user_service.cpp
                  src/core/libraries/np/np_handler.cpp
-                 src/core/libraries/np/np_manager.cpp)
+                 src/core/libraries/np/np_manager.cpp
+                 src/core/libraries/np/np_score.cpp)
 
 set(SHADNET_SOURCES src/shadnet/client.cpp
                     src/shadnet/config.cpp
@@ -114,7 +116,7 @@ target_include_directories(plugin_objects PRIVATE
 )
 
 target_compile_options(plugin_objects PRIVATE
-    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall -mstackrealign
+    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall -mstackrealign -Wno-deprecated-literal-operator
 )
 
 set(PROTOBUF_HOST_SOURCE_DIR "${EXTERNALS_DIR}/protobuf")

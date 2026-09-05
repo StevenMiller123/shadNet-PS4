@@ -11,11 +11,12 @@
 #include "core/libraries/network/net.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
+#include "core/libraries/np/np_score.h"
 #include "core/libraries/system/user_service.h"
 #include "shadnet/config.h"
 
 extern "C" s32 client_start() {
-    LOG_INFO("Starting shadNet Client");
+    LOG_INFO(shadNet, "Starting shadNet Client");
 
     // Preload modules used by the plugin
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
@@ -23,6 +24,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
+
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
 
     // Initialize config backend
     ShadNet::Settings::GetInstance().Initialize();
@@ -35,6 +38,7 @@ extern "C" s32 client_start() {
     Libraries::Network::Net::RegisterHooks();
     Libraries::System::UserService::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
+    Libraries::Np::NpScore::RegisterHooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
@@ -43,11 +47,11 @@ extern "C" s32 client_start() {
     OrbisAppInfo app_info{};
     s32 result = sceKernelGetAppInfo(getpid(), &app_info);
     if (result != 0) {
-        LOG_ERROR("sceKernelGetAppInfo failed!");
+        LOG_ERROR(shadNet, "sceKernelGetAppInfo failed!");
         return 1;
     }
 
-    LOG_INFO("Currently running {}", app_info.TitleId);
+    LOG_INFO(shadNet, "Currently running {}", app_info.TitleId);
     sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
     game_info.initialized = true;
     game_info.game_serial = std::string{app_info.TitleId};

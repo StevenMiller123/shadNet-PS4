@@ -43,10 +43,10 @@ std::string ShadNetClient::ExtractBlob(const std::vector<u8>& p, int pos) {
 
 ShadNetClient::ShadNetClient() {
     if (!sem_init(&m_sem_authenticated, 0, 1)) {
-        LOG_WARNING("Failed to init authenticated semaphore");
+        LOG_WARNING(shadNet, "Failed to init authenticated semaphore");
     }
     if (!sem_init(&m_sem_connected, 0, 1)) {
-        LOG_WARNING("Failed to init connected semaphore");
+        LOG_WARNING(shadNet, "Failed to init connected semaphore");
     }
 }
 
@@ -167,7 +167,7 @@ void ShadNetClient::ConnectThread() {
             break;
         if (m_terminate || attempt == SHAD_CONNECT_MAX_ATTEMPTS)
             break;
-        LOG_WARNING("connect attempt {}/{} to {}:{} failed, retrying in {} ms", attempt,
+        LOG_WARNING(shadNet, "connect attempt {}/{} to {}:{} failed, retrying in {} ms", attempt,
                     SHAD_CONNECT_MAX_ATTEMPTS, m_host, m_port, backoff_ms);
         // Interruptible backoff: poll m_terminate so Stop() wakes us promptly.
         for (u32 waited = 0; waited < backoff_ms && !m_terminate; waited += 100)
@@ -199,11 +199,11 @@ void ShadNetClient::ConnectThread() {
 
     const u64 id = m_pkt_counter.fetch_add(1);
     if (!SendAll(BuildPacket(CommandType::Login, id, MakeProtoPayload(req)))) {
-        LOG_ERROR("Failed to send login packet");
+        LOG_ERROR(shadNet, "Failed to send login packet");
         m_state = ShadNetState::FailureOther;
         return;
     }
-    LOG_INFO("Login packet sent for {}", m_npid);
+    LOG_INFO(shadNet, "Login packet sent for {}", m_npid);
 }
 
 void ShadNetClient::ReaderThread() {
@@ -212,7 +212,7 @@ void ShadNetClient::ReaderThread() {
         u8 hdr[SHAD_HEADER_SIZE];
         if (!RecvN(hdr, SHAD_HEADER_SIZE)) {
             if (!m_terminate)
-                LOG_WARNING("header recv failed, disconnecting");
+                LOG_WARNING(shadNet, "header recv failed, disconnecting");
             break;
         }
         const auto ptype = static_cast<PacketType>(hdr[0]);
@@ -221,7 +221,7 @@ void ShadNetClient::ReaderThread() {
         const u64 pkt_id = GetLE64(hdr + 7);
 
         if (total_sz < SHAD_HEADER_SIZE || total_sz > SHAD_MAX_PACKET_SIZE) {
-            LOG_ERROR("Corrupt packet (total_sz={})", total_sz);
+            LOG_ERROR(shadNet, "Corrupt packet (total_sz={})", total_sz);
             m_state = ShadNetState::FailureProtocol;
             break;
         }
@@ -231,7 +231,7 @@ void ShadNetClient::ReaderThread() {
             payload.resize(payload_sz);
             if (!RecvN(payload.data(), payload_sz)) {
                 if (!m_terminate)
-                    LOG_WARNING("payload recv failed");
+                    LOG_WARNING(shadNet, "payload recv failed");
                 break;
             }
         }
@@ -245,7 +245,7 @@ void ShadNetClient::ReaderThread() {
     }
     m_connected = false;
     m_authenticated = false;
-    LOG_INFO("exiting");
+    LOG_INFO(shadNet, "exiting");
 }
 
 void ShadNetClient::WriterThread() {
@@ -262,7 +262,7 @@ void ShadNetClient::WriterThread() {
             if (!m_connected)
                 break;
             if (!SendAll(pkt)) {
-                LOG_ERROR("send failed");
+                LOG_ERROR(shadNet, "send failed");
                 return;
             }
         }
@@ -276,14 +276,14 @@ bool ShadNetClient::DoConnect() {
 
     s32 netpool_id = sceNetPoolCreate("shadNet Pool", 0x1000, 0);
     if (netpool_id < 0) {
-        LOG_WARNING("Failed to create net pool, error = {:#x}", static_cast<u32>(netpool_id));
+        LOG_WARNING(shadNet, "Failed to create net pool, error = {:#x}", static_cast<u32>(netpool_id));
         m_state = ShadNetState::FailureConnect;
         return false;
     }
 
     s32 resolver = sceNetResolverCreate("shadNet Resolver", netpool_id, 0);
     if (resolver < 0) {
-        LOG_WARNING("Failed to create resolver, error = {:#x}", static_cast<u32>(resolver));
+        LOG_WARNING(shadNet, "Failed to create resolver, error = {:#x}", static_cast<u32>(resolver));
         m_state = ShadNetState::FailureConnect;
         return false;
     }
@@ -291,7 +291,7 @@ bool ShadNetClient::DoConnect() {
     OrbisNetInAddr shadnet_addr{};
     s32 result = sceNetResolverStartNtoa(resolver, m_host.c_str(), &shadnet_addr, 0, 0, 0);
     if (result != 0) {
-        LOG_WARNING("DNS resolution failed for '{}', error = {:#x}", m_host.c_str(),
+        LOG_WARNING(shadNet, "DNS resolution failed for '{}', error = {:#x}", m_host.c_str(),
                     static_cast<u32>(result));
         m_state = ShadNetState::FailureConnect;
         return false;
@@ -299,12 +299,12 @@ bool ShadNetClient::DoConnect() {
 
     result = sceNetResolverDestroy(resolver);
     if (result != 0) {
-        LOG_WARNING("Failed to destroy resolver, error = {:#x}", static_cast<u32>(result));
+        LOG_WARNING(shadNet, "Failed to destroy resolver, error = {:#x}", static_cast<u32>(result));
     }
 
     result = sceNetPoolDestroy(netpool_id);
     if (result != 0) {
-        LOG_WARNING("Failed to destroy net pool, error = {:#x}", static_cast<u32>(result));
+        LOG_WARNING(shadNet, "Failed to destroy net pool, error = {:#x}", static_cast<u32>(result));
     }
 
     m_sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -317,7 +317,7 @@ bool ShadNetClient::DoConnect() {
     result = ::setsockopt(m_sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
                           static_cast<socklen_t>(sizeof(optval)));
     if (result != 0) {
-        LOG_WARNING("Failed to mark socket as non-blocking");
+        LOG_WARNING(shadNet, "Failed to mark socket as non-blocking");
         m_state = ShadNetState::FailureConnect;
         return false;
     }
@@ -346,7 +346,7 @@ bool ShadNetClient::DoConnect() {
         }
     }
     if (!connected) {
-        LOG_ERROR("connect() timed out or failed for {}:{}", m_host, m_port);
+        LOG_ERROR(shadNet, "connect() timed out or failed for {}:{}", m_host, m_port);
         SHAD_CLOSE(m_sock);
         m_sock = SHAD_INVALID_SOCK;
         m_state = ShadNetState::FailureConnect;
@@ -358,7 +358,7 @@ bool ShadNetClient::DoConnect() {
     result = ::setsockopt(m_sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
                           static_cast<socklen_t>(sizeof(optval)));
     if (result != 0) {
-        LOG_WARNING("Failed to mark socket as blocking");
+        LOG_WARNING(shadNet, "Failed to mark socket as blocking");
     }
 
     struct sockaddr_in local{};
@@ -371,7 +371,7 @@ bool ShadNetClient::DoConnect() {
     if (::getpeername(m_sock, reinterpret_cast<struct sockaddr*>(&peer), &plen) == 0)
         m_addr_server.store(peer.sin_addr.s_addr);
 
-    LOG_INFO("TCP connected to {}:{}", m_host, m_port);
+    LOG_INFO(shadNet, "TCP connected to {}:{}", m_host, m_port);
 
     // Apply receive timeout for the ServerInfo handshake.
     // Cleared after success so ReaderThread's RecvN blocks indefinitely as intended.
@@ -383,13 +383,13 @@ bool ShadNetClient::DoConnect() {
     // ServerInfo handshake
     u8 hdr[SHAD_HEADER_SIZE];
     if (!RecvN(hdr, SHAD_HEADER_SIZE)) {
-        LOG_ERROR("Timeout reading ServerInfo header");
+        LOG_ERROR(shadNet, "Timeout reading ServerInfo header");
         DoDisconnect();
         m_state = ShadNetState::FailureServerInfo;
         return false;
     }
     if (static_cast<PacketType>(hdr[0]) != PacketType::ServerInfo) {
-        LOG_ERROR("Expected ServerInfo, got packet type {:02x}", hdr[0]);
+        LOG_ERROR(shadNet, "Expected ServerInfo, got packet type {:02x}", hdr[0]);
         DoDisconnect();
         m_state = ShadNetState::FailureServerInfo;
         return false;
@@ -398,7 +398,7 @@ bool ShadNetClient::DoConnect() {
     const u32 payload_sz = (total_sz > SHAD_HEADER_SIZE) ? total_sz - SHAD_HEADER_SIZE : 0;
     std::vector<u8> si_payload(payload_sz);
     if (payload_sz > 0 && !RecvN(si_payload.data(), payload_sz)) {
-        LOG_ERROR("Timeout reading ServerInfo payload");
+        LOG_ERROR(shadNet, "Timeout reading ServerInfo payload");
         DoDisconnect();
         m_state = ShadNetState::FailureServerInfo;
         return false;
@@ -407,14 +407,14 @@ bool ShadNetClient::DoConnect() {
         const u32 server_ver = GetLE32(si_payload.data());
         m_server_protocol_version.store(server_ver);
         if (server_ver != SHAD_PROTOCOL_VERSION) {
-            LOG_ERROR("Protocol version mismatch server={} client={}", server_ver,
+            LOG_ERROR(shadNet, "Protocol version mismatch server={} client={}", server_ver,
                       SHAD_PROTOCOL_VERSION);
             DoDisconnect();
             m_state = ShadNetState::FailureProtocol;
             return false;
         }
     }
-    LOG_INFO("ServerInfo OK (protocol v{})", SHAD_PROTOCOL_VERSION);
+    LOG_INFO(shadNet, "ServerInfo OK (protocol v{})", SHAD_PROTOCOL_VERSION);
 
     // Clear the receive timeout ReaderThread handles the socket from here.
     struct timeval no_timeout{0, 0};
@@ -455,7 +455,7 @@ bool ShadNetClient::SendAll(const std::vector<u8>& data) {
         const int r = static_cast<int>(
             ::send(m_sock, reinterpret_cast<const char*>(data.data() + sent), total - sent, 0));
         if (r < 0) {
-            LOG_ERROR("send() failed");
+            LOG_ERROR(shadNet, "send() failed");
             return false;
         }
         sent += r;
@@ -557,7 +557,7 @@ void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
                 }
                 onAsyncReply(static_cast<CommandType>(cmd_raw), pkt_id, err, body);
             } else {
-                LOG_WARNING("Unhandled reply cmd={} pkt_id={}", cmd_raw, pkt_id);
+                LOG_WARNING(shadNet, "Unhandled reply cmd={} pkt_id={}", cmd_raw, pkt_id);
             }
             break;
         }
@@ -568,7 +568,7 @@ void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
     case PacketType::ServerInfo:
         break;
     case PacketType::Request:
-        LOG_WARNING("Unexpected Request from server");
+        LOG_WARNING(shadNet, "Unexpected Request from server");
         break;
     }
 }
@@ -579,7 +579,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
 
     if (payload.empty()) {
         res.error = ErrorType::Malformed;
-        LOG_ERROR("Empty payload");
+        LOG_ERROR(shadNet, "Empty payload");
     } else {
         res.error = static_cast<ErrorType>(payload[0]);
 
@@ -611,7 +611,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                     m_friends = res.friends;
                 }
                 m_authenticated = true;
-                LOG_INFO("{} logged in, userId={} friends={}", m_npid, m_user_id, m_friends.size());
+                LOG_INFO(shadNet, "{} logged in, userId={} friends={}", m_npid, m_user_id, m_friends.size());
 
                 const u64 pkt_id = m_pkt_counter.fetch_add(1);
                 std::vector<u8> empty_payload;
@@ -623,7 +623,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                 m_cv_send_queue.notify_one();
             } else {
                 res.error = ErrorType::Malformed;
-                LOG_ERROR("Failed to parse LoginReply proto");
+                LOG_ERROR(shadNet, "Failed to parse LoginReply proto");
                 m_state = ShadNetState::FailureProtocol;
                 sem_post(&m_sem_authenticated);
                 DoDisconnect();
@@ -646,7 +646,7 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                 m_state = ShadNetState::FailureAuth;
                 break;
             }
-            LOG_ERROR("Login rejected, error code {}", static_cast<u8>(res.error));
+            LOG_ERROR(shadNet, "Login rejected, error code {}", static_cast<u8>(res.error));
             sem_post(&m_sem_authenticated);
             DoDisconnect();
         }
@@ -658,13 +658,13 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
 
 void ShadNetClient::HandleGetTokenReply(const std::vector<u8>& payload) {
     if (payload.empty()) {
-        LOG_ERROR("Empty reply");
+        LOG_ERROR(shadNet, "Empty reply");
         RequestServerFeatures();
         return;
     }
     const ErrorType err = static_cast<ErrorType>(payload[0]);
     if (err != ErrorType::NoError) {
-        LOG_WARNING("returned error {} - WebAPI calls will be unauthenticated",
+        LOG_WARNING(shadNet, "returned error {} - WebAPI calls will be unauthenticated",
                     magic_enum::enum_name(err));
         RequestServerFeatures();
         return;
@@ -672,7 +672,7 @@ void ShadNetClient::HandleGetTokenReply(const std::vector<u8>& payload) {
     shadnet::GetTokenReply pb;
     const std::string blob = ExtractBlob(payload, 1);
     if (blob.empty() || !pb.ParseFromString(blob)) {
-        LOG_ERROR("Failed to parse proto");
+        LOG_ERROR(shadNet, "Failed to parse proto");
         RequestServerFeatures();
         return;
     }
@@ -680,7 +680,7 @@ void ShadNetClient::HandleGetTokenReply(const std::vector<u8>& payload) {
         std::lock_guard lock(m_mutex_bearer);
         m_bearer_token = pb.token();
     }
-    LOG_INFO("Bearer token captured ({} chars) for accountID {} canonical npid '{}'",
+    LOG_INFO(shadNet, "Bearer token captured ({} chars) for accountID {} canonical npid '{}'",
              pb.token().size(), pb.user_id(), pb.npid());
     RequestServerFeatures();
 }
@@ -699,13 +699,13 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
                 parsed = true;
             }
         } else {
-            LOG_WARNING("returned error {} - assuming Matching2 disabled", magic_enum::enum_name(err));
+            LOG_WARNING(shadNet, "returned error {} - assuming Matching2 disabled", magic_enum::enum_name(err));
         }
     }
 
     m_matching2_enabled.store(matching2_enabled);
     m_server_features_received.store(parsed);
-    LOG_INFO("Server features: matching2_enabled {}", matching2_enabled);
+    LOG_INFO(shadNet, "Server features: matching2_enabled {}", matching2_enabled);
     sem_post(&m_sem_authenticated);
 }
 
@@ -717,7 +717,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         static_cast<NotificationType>(cmd_raw) != NotificationType::WebApiPushEvent) {
         // WebApiPushEvent is multi-field,its first field (service name) may be empty
         // legitimately, so it parses its own payload below rather than relying on blob.
-        LOG_WARNING("Empty payload type={}", cmd_raw);
+        LOG_WARNING(shadNet, "Empty payload type={}", cmd_raw);
         return;
     }
 
@@ -725,7 +725,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     case NotificationType::FriendQuery: {
         shadnet::NotifyFriendQuery pb;
         if (!pb.ParseFromString(blob)) {
-            LOG_WARNING("FriendQuery parse error");
+            LOG_WARNING(shadNet, "FriendQuery parse error");
             break;
         }
         NotifyFriendQuery n;
@@ -737,7 +737,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     case NotificationType::FriendNew: {
         shadnet::NotifyFriendNew pb;
         if (!pb.ParseFromString(blob)) {
-            LOG_WARNING("FriendNew parse error");
+            LOG_WARNING(shadNet, "FriendNew parse error");
             break;
         }
         NotifyFriendNew n;
@@ -750,7 +750,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     case NotificationType::FriendLost: {
         shadnet::NotifyFriendLost pb;
         if (!pb.ParseFromString(blob)) {
-            LOG_WARNING("FriendLost parse error");
+            LOG_WARNING(shadNet, "FriendLost parse error");
             break;
         }
         NotifyFriendLost n;
@@ -762,7 +762,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     case NotificationType::FriendStatus: {
         shadnet::NotifyFriendStatus pb;
         if (!pb.ParseFromString(blob)) {
-            LOG_WARNING("FriendStatus parse error");
+            LOG_WARNING(shadNet, "FriendStatus parse error");
             break;
         }
         NotifyFriendStatus n;
@@ -776,7 +776,7 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     case NotificationType::RoomEvent: {
         shadnet::NotifyRoomEvent pb;
         if (!pb.ParseFromString(blob)) {
-            LOG_WARNING("RoomEvent parse error");
+            LOG_WARNING(shadNet, "RoomEvent parse error");
             break;
         }
         NotifyRoomEvent n;
@@ -884,14 +884,14 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
                 n.extdData.emplace_back(std::move(key), std::move(val));
             }
         }
-        LOG_INFO("WebApiPushEvent svc='{}' type='{}' from='{}' bytes={} extd={}", n.npServiceName,
+        LOG_INFO(shadNet, "WebApiPushEvent svc='{}' type='{}' from='{}' bytes={} extd={}", n.npServiceName,
                  n.dataType, n.fromNpid, n.data.size(), n.extdData.size());
         if (onWebApiPushEvent)
             onWebApiPushEvent(n);
         break;
     }
     default:
-        LOG_WARNING("Unknown notification type {}", cmd_raw);
+        LOG_WARNING(shadNet, "Unknown notification type {}", cmd_raw);
         break;
     }
 }
