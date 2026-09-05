@@ -27,6 +27,7 @@ void RegisterUserServiceHooks() {
 namespace Libraries::System::UserService {
 
 s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
+    LOG_INFO(Lib_UserService, "called");
     if (!user_name) {
         return ORBIS_USER_SERVICE_ERROR_INVALID_ARGUMENT;
     }
