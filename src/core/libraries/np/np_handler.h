@@ -25,6 +25,7 @@ public:
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
     s32 RegisterStateCallback(StateCallback cb, void* userdata);
     void UnregisterStateCallback(s32 handle);
+    bool IsPsnSignedIn(s32 user_id) const;
 
 private:
     NpHandler() = default;
@@ -40,7 +41,6 @@ private:
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
-    bool IsPsnSignedIn(s32 user_id) const;
 
     std::atomic<bool> m_initialized{false};
     std::atomic<bool> m_worker_running{false};

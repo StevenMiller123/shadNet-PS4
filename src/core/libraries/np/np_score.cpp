@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
+#include "common/elf_info.h"
 #include "common/plugin_common.h"
 #include "core/libraries/np/np_score.h"
 #include "core/libraries/np/np_error.h"
