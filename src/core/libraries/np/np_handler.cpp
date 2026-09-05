@@ -10,11 +10,6 @@
 
 namespace Libraries::Np {
 
-NpHandler& NpHandler::GetInstance() {
-    static NpHandler s_instance;
-    return s_instance;
-}
-
 // Init procedures
 void NpHandler::Initialize() {
     if (m_initialized.exchange(true)) {

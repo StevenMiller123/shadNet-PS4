@@ -11,6 +11,7 @@
 #include "core/libraries/network/net.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
+#include "core/libraries/system/user_service.h"
 #include "shadnet/config.h"
 
 extern "C" s32 client_start() {
@@ -20,6 +21,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
 
     // Initialize config backend
@@ -31,6 +33,7 @@ extern "C" s32 client_start() {
 
     // Init other library hooks
     Libraries::Network::Net::RegisterHooks();
+    Libraries::System::UserService::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
 
     // Initialize elfinfo
@@ -50,6 +53,6 @@ extern "C" s32 client_start() {
     game_info.game_serial = std::string{app_info.TitleId};
 
     // Initialize NpHandler
-    Libraries::Np::NpHandler::GetInstance().Initialize();
+    Libraries::Np::NpHandler::Instance().Initialize();
     return 0;
 }
