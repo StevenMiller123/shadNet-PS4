@@ -11,6 +11,7 @@
 #include "core/libraries/network/net.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
+#include "core/libraries/np/np_score.h"
 #include "shadnet/config.h"
 
 extern "C" s32 client_start() {
@@ -22,6 +23,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
 
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
+
     // Initialize config backend
     ShadNet::Settings::GetInstance().Initialize();
 
@@ -32,6 +35,7 @@ extern "C" s32 client_start() {
     // Init other library hooks
     Libraries::Network::Net::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
+    Libraries::Np::NpScore::RegisterHooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
