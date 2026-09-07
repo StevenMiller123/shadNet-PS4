@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <fstream>
-
+#include <orbis/UserService.h>
 #include "common/logging/log.h"
 #include "shadnet/config.h"
 
@@ -23,8 +23,24 @@ void Settings::InitialSetup() {
         // Need to make shadnet config folder.
         std::filesystem::create_directory("/data/shadnet");
     }
+
+    OrbisUserServiceLoginUserIdList user_list{};
+    s32 result = sceUserServiceGetLoginUserIdList(&user_list);
+    if (result != 0) {
+        // Failed to get logged in users.
+        LOG_ERROR(Config, "Failed to retrieve logged in users");
+        return;
+    }
+
     nlohmann::json j;
-    j["Server"] = m_server;
+    for (s32 i = 0; i < ORBIS_USER_SERVICE_MAX_LOGIN_USERS; i++) {
+        s32 user_id = user_list.userId[i];
+        if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
+            break;
+        }
+        std::string id_str = std::to_string(user_id);
+        j[id_str] = m_server[user_id];
+    }
 
     std::ofstream out{config_path};
     if (!out) {
@@ -49,10 +65,25 @@ void Settings::Initialize() {
 
         nlohmann::json gj;
         in >> gj;
-        if (gj.contains("Server")) {
-            nlohmann::json current = m_server;
-            current.update(gj.at("Server"));
-            m_server = current.get<std::remove_reference_t<ShadNet::ServerSettings>>();
+        OrbisUserServiceLoginUserIdList user_list{};
+        s32 result = sceUserServiceGetLoginUserIdList(&user_list);
+        if (result != 0) {
+            // Failed to get logged in users.
+            LOG_ERROR(Config, "Failed to retrieve logged in users");
+            return;
+        }
+
+        for (s32 i = 0; i < ORBIS_USER_SERVICE_MAX_LOGIN_USERS; i++) {
+            s32 user_id = user_list.userId[i];
+            if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
+                break;
+            }
+            std::string id_str = std::to_string(user_id);
+            if (gj.contains(id_str)) {
+                nlohmann::json current = m_server[user_id];
+                current.update(gj.at(id_str));
+                m_server[user_id] = current.get<std::remove_reference_t<ShadNet::ServerSettings>>();
+            }
         }
     }
 }

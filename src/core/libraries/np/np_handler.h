@@ -24,8 +24,8 @@ public:
         return m_initialized;
     };
 
-    OrbisNpId& GetNpId() {
-        return m_np_id;
+    OrbisNpId& GetNpId(s32 user_id) {
+        return m_np_ids[user_id];
     };
 
     // State callbacks
@@ -34,8 +34,8 @@ public:
     void UnregisterStateCallback(s32 handle);
 
 private:
-    bool Connect(const std::string& host, u16 port, const std::string& npid,
-                 const std::string& password, const std::string& token);
+    bool ConnectUser(s32 user_id, const std::string& host, u16 port, const std::string& npid,
+                     const std::string& password);
 
     void FireStateCallback(s32 user_id, OrbisNpState state);
 
@@ -44,8 +44,8 @@ private:
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
     // void OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n);
-    // void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
-    //                   const std::vector<u8>& body);
+    // void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType
+    // error, const std::vector<u8>& body);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
 
     std::atomic<bool> m_initialized{false};
@@ -53,8 +53,8 @@ private:
 
     // Client
     mutable std::mutex m_mutex_client;
-    std::shared_ptr<ShadNet::ShadNetClient> m_client;
-    OrbisNpId m_np_id;
+    std::map<s32, std::shared_ptr<ShadNet::ShadNetClient>> m_clients;
+    std::map<s32, OrbisNpId> m_np_ids;
 
     // State callbacks
     struct CbEntry {
@@ -78,7 +78,7 @@ private:
         std::vector<std::string> blocked;
     };
     mutable std::mutex m_mutex_friend_state;
-    FriendListSnapshot m_friend_state;
+    std::map<s32, FriendListSnapshot> m_friend_states;
 };
 
 } // namespace Libraries::Np

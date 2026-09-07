@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <magic_enum/magic_enum.hpp>
+#include <orbis/UserService.h>
 #include "common/logging/log.h"
 #include "np_handler.h"
 #include "shadnet/client.h"
@@ -17,51 +18,63 @@ void NpHandler::Initialize() {
         return;
     }
 
-    auto& config = ShadNet::Settings::GetInstance();
-    if (!config.IsShadNetEnabled()) {
-        LOG_NOTIFICATION(NpHandler, "shadNet is currently disabled");
+    // Log in any logged in users
+    OrbisUserServiceLoginUserIdList user_list{};
+    s32 result = sceUserServiceGetLoginUserIdList(&user_list);
+    if (result != 0) {
+        LOG_NOTIFICATION(NpHandler, "Failed to get logged in users");
         m_initialized.exchange(false);
-        return;
     }
 
-    // Probe shadNet accessibility
-    static std::string server_url = config.GetServerUrl();
-    static const u64 colon = server_url.rfind(':');
-    if (colon == std::string::npos) {
-        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
-        m_initialized.exchange(false);
-        return;
-    }
-    static std::string hostname = server_url.substr(0, colon);
-    u16 port{};
-    try {
-        port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
-    } catch (const std::exception&) {
-        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
-        m_initialized.exchange(false);
-        return;
-    }
+    for (s32 i = 0; i < ORBIS_USER_SERVICE_MAX_LOGIN_USERS; i++) {
+        s32 user_id = user_list.userId[i];
+        if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
+            break;
+        }
+        auto& config = ShadNet::Settings::GetInstance();
+        if (!config.IsShadNetEnabled(user_id)) {
+            LOG_NOTIFICATION(NpHandler, "shadNet is currently disabled");
+            m_initialized.exchange(false);
+            return;
+        }
 
-    const ShadNet::ProbeInfo probe = ShadNet::ProbeServer(hostname, port);
-    if (probe.result != ShadNet::ProbeResult::Ok) {
-        LOG_NOTIFICATION(NpHandler, "Failed to connect to shadNet server, error {}",
-                         magic_enum::enum_name(probe.result));
-        m_initialized.exchange(false);
-    } else {
-        LOG_NOTIFICATION(NpHandler, "shadNet server is accessible");
-    }
+        // Probe shadNet accessibility
+        static std::string server_url = config.GetServerUrl(user_id);
+        static const u64 colon = server_url.rfind(':');
+        if (colon == std::string::npos) {
+            LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
+            m_initialized.exchange(false);
+            return;
+        }
+        static std::string hostname = server_url.substr(0, colon);
+        u16 port{};
+        try {
+            port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
+        } catch (const std::exception&) {
+            LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
+            m_initialized.exchange(false);
+            return;
+        }
 
-    // Log in the current user.
-    Connect(hostname, port, config.GetNpId(), config.GetPassword(), "");
+        const ShadNet::ProbeInfo probe = ShadNet::ProbeServer(hostname, port);
+        if (probe.result != ShadNet::ProbeResult::Ok) {
+            LOG_NOTIFICATION(NpHandler, "Failed to connect to shadNet server, error {}",
+                             magic_enum::enum_name(probe.result));
+            m_initialized.exchange(false);
+        } else {
+            LOG_NOTIFICATION(NpHandler, "shadNet server is accessible");
+        }
+
+        ConnectUser(user_id, hostname, port, config.GetNpId(user_id), config.GetPassword(user_id));
+    }
 }
 
-bool NpHandler::Connect(const std::string& host, u16 port, const std::string& npid,
-                        const std::string& password, const std::string& token) {
+bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, const std::string& npid,
+                            const std::string& password) {
     LOG_INFO(NpHandler, "Connecting npid='{}' to {}:{} (timeout {}s)", npid, host, port,
              ShadNet::SHAD_CONNECT_TIMEOUT_MS / 1000);
 
     auto& config = ShadNet::Settings::GetInstance();
-    s32 user_id = 1000;
 
     // Initialize per-user notification callbacks
     auto client = std::make_shared<ShadNet::ShadNetClient>();
@@ -92,8 +105,8 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
     */
 
     // Set whether the user should appear as offline or online during this session.
-    client->SetAppearOffline(config.IsAppearOfflineEnabled());
-    client->Start(host, port, npid, password, token);
+    client->SetAppearOffline(config.IsAppearOfflineEnabled(user_id));
+    client->Start(host, port, npid, password, "");
 
     // Handle incompatible protocol erros
     const auto handle_protocol_mismatch = [&client](ShadNet::ShadNetState st) {
@@ -147,8 +160,8 @@ bool NpHandler::Connect(const std::string& host, u16 port, const std::string& np
         if (id_len > 0) {
             std::memcpy(np_id.handle.data, npid.data(), id_len);
         }
-        m_np_id = np_id;
-        m_client = std::move(client);
+        m_np_ids[user_id] = np_id;
+        m_clients[user_id] = std::move(client);
     }
 
     FireStateCallback(user_id, ORBIS_NP_STATE_SIGNED_IN);
@@ -180,7 +193,7 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
 void NpHandler::OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n) {
     LOG_NOTIFICATION(NpHandler, "Friend request from {}", n.fromNpid);
     std::lock_guard lock(m_mutex_friend_state);
-    auto& st = m_friend_state;
+    auto& st = m_friend_states[user_id];
     if (std::find(st.requests_received.begin(), st.requests_received.end(), n.fromNpid) ==
         st.requests_received.end()) {
         st.requests_received.push_back(n.fromNpid);
@@ -190,7 +203,7 @@ void NpHandler::OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n) 
 void NpHandler::OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n) {
     LOG_NOTIFICATION(NpHandler, "{} is now your friend", n.npid);
     std::lock_guard lock(m_mutex_friend_state);
-    auto& st = m_friend_state;
+    auto& st = m_friend_states[user_id];
     auto it = std::find_if(st.friends.begin(), st.friends.end(),
                            [&](const FriendInfo& f) { return f.npid == n.npid; });
     if (it == st.friends.end()) {
@@ -208,7 +221,7 @@ void NpHandler::OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n) {
 void NpHandler::OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n) {
     LOG_NOTIFICATION(NpHandler, "{} removed you as a friend", n.npid);
     std::lock_guard lock(m_mutex_friend_state);
-    auto& st = m_friend_state;
+    auto& st = m_friend_states[user_id];
     st.friends.erase(std::remove_if(st.friends.begin(), st.friends.end(),
                                     [&](const FriendInfo& f) { return f.npid == n.npid; }),
                      st.friends.end());
@@ -219,7 +232,7 @@ void NpHandler::OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n
         LOG_NOTIFICATION(NpHandler, "{} is online", n.npid);
     }
     std::lock_guard lock(m_mutex_friend_state);
-    auto& st = m_friend_state;
+    auto& st = m_friend_states[user_id];
     auto it = std::find_if(st.friends.begin(), st.friends.end(),
                            [&](const FriendInfo& f) { return f.npid == n.npid; });
     if (it != st.friends.end()) {
@@ -243,7 +256,7 @@ void NpHandler::OnLoginResult(s32 user_id, const ShadNet::LoginResult& res) {
     snap.blocked = res.blocked;
     {
         std::lock_guard lock(m_mutex_friend_state);
-        m_friend_state = std::move(snap);
+        m_friend_states[user_id] = std::move(snap);
     }
     LOG_INFO(NpHandler, "{} friends, {} requests received, {} requests sent, {} blocked",
              res.friends.size(), res.requestsReceived.size(), res.requestsSent.size(),
