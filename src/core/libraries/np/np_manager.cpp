@@ -10,26 +10,17 @@
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
 
-HOOK_INIT(sceNpGetState);
-HOOK_INIT(sceNpGetNpId);
-HOOK_INIT(sceNpGetOnlineId);
+extern "C" {
 
-s32 sceNpGetState_hook(s32 user_id, OrbisNpState* state) {
-    return Libraries::Np::NpManager::sceNpGetState(user_id, state);
-}
-
-s32 sceNpGetNpId_hook(s32 user_id, OrbisNpId* np_id) {
-    return Libraries::Np::NpManager::sceNpGetNpId(user_id, np_id);
-}
-
-s32 sceNpGetOnlineId_hook(s32 user_id, OrbisNpOnlineId* online_id) {
-    return Libraries::Np::NpManager::sceNpGetOnlineId(user_id, online_id);
-}
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetState);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetNpId);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetOnlineId);
 
 void RegisterLibraryHooks() {
     HOOK(sceNpGetState);
     HOOK(sceNpGetNpId);
     HOOK(sceNpGetOnlineId);
+}
 }
 
 namespace Libraries::Np::NpManager {
