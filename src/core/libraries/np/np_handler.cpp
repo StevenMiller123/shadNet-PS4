@@ -18,6 +18,25 @@ void NpHandler::Initialize() {
         return;
     }
 
+    // Probe shadNet accessibility
+    auto& config = ShadNet::Settings::GetInstance();
+    static std::string server_url = config.GetServerUrl();
+    static const u64 colon = server_url.rfind(':');
+    if (colon == std::string::npos) {
+        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
+        m_initialized.exchange(false);
+        return;
+    }
+    static std::string hostname = server_url.substr(0, colon);
+    u16 port{};
+    try {
+        port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
+    } catch (const std::exception&) {
+        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
+        m_initialized.exchange(false);
+        return;
+    }
+
     // Log in any logged in users
     OrbisUserServiceLoginUserIdList user_list{};
     s32 result = sceUserServiceGetLoginUserIdList(&user_list);
@@ -31,27 +50,9 @@ void NpHandler::Initialize() {
         if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
             break;
         }
-        auto& config = ShadNet::Settings::GetInstance();
+
         if (!config.IsShadNetEnabled(user_id)) {
             LOG_NOTIFICATION(NpHandler, "shadNet is currently disabled");
-            m_initialized.exchange(false);
-            return;
-        }
-
-        // Probe shadNet accessibility
-        static std::string server_url = config.GetServerUrl(user_id);
-        static const u64 colon = server_url.rfind(':');
-        if (colon == std::string::npos) {
-            LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
-            m_initialized.exchange(false);
-            return;
-        }
-        static std::string hostname = server_url.substr(0, colon);
-        u16 port{};
-        try {
-            port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
-        } catch (const std::exception&) {
-            LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
             m_initialized.exchange(false);
             return;
         }

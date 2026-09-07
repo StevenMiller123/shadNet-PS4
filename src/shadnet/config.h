@@ -35,19 +35,24 @@ void from_json(const nlohmann::json& j, Setting<T>& s) {
 }
 
 struct ServerSettings {
-    Setting<bool> shadnet_enabled{true};
     Setting<bool> shadnet_enable_upnp{true};
-    Setting<bool> shadnet_appear_offline{false};
     Setting<std::string> shadnet_server{"srv.shadps4.net:31313"};
     Setting<std::string> shadnet_webapi_server{"http://srv.shadps4.net:31315"};
     Setting<std::string> shadnet_signaling_info{""};
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ServerSettings, shadnet_enable_upnp, shadnet_server,
+                                   shadnet_webapi_server, shadnet_signaling_info)
+
+struct UserSettings {
+    Setting<bool> shadnet_enabled{false};
+    Setting<bool> shadnet_appear_offline{false};
     Setting<std::string> shadnet_npid{""};
     Setting<std::string> shadnet_password{""};
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ServerSettings, shadnet_enabled, shadnet_enable_upnp,
-                                   shadnet_appear_offline, shadnet_server, shadnet_webapi_server,
-                                   shadnet_signaling_info, shadnet_npid, shadnet_password)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UserSettings, shadnet_enabled, shadnet_appear_offline,
+                                   shadnet_npid, shadnet_password)
 
 class Settings {
 public:
@@ -58,36 +63,36 @@ public:
 
     void Initialize();
 
-    bool IsShadNetEnabled(s32 user_id) {
-        return m_server[user_id].shadnet_enabled.get();
+    bool IsUpnpEnabled() {
+        return m_server.shadnet_enable_upnp.get();
     };
 
-    bool IsUpnpEnabled(s32 user_id) {
-        return m_server[user_id].shadnet_enable_upnp.get();
+    std::string GetServerUrl() {
+        return m_server.shadnet_server.get();
+    };
+
+    std::string GetWebApiServerUrl() {
+        return m_server.shadnet_webapi_server.get();
+    };
+
+    std::string GetSignalingInfo() {
+        return m_server.shadnet_signaling_info.get();
+    };
+
+    bool IsShadNetEnabled(s32 user_id) {
+        return m_user[user_id].shadnet_enabled.get();
     };
 
     bool IsAppearOfflineEnabled(s32 user_id) {
-        return m_server[user_id].shadnet_appear_offline.get();
+        return m_user[user_id].shadnet_appear_offline.get();
     }
 
-    std::string GetServerUrl(s32 user_id) {
-        return m_server[user_id].shadnet_server.get();
-    };
-
-    std::string GetWebApiServerUrl(s32 user_id) {
-        return m_server[user_id].shadnet_webapi_server.get();
-    };
-
-    std::string GetSignalingInfo(s32 user_id) {
-        return m_server[user_id].shadnet_signaling_info.get();
-    };
-
     std::string GetNpId(s32 user_id) {
-        return m_server[user_id].shadnet_npid.get();
+        return m_user[user_id].shadnet_npid.get();
     };
 
     std::string GetPassword(s32 user_id) {
-        return m_server[user_id].shadnet_password.get();
+        return m_user[user_id].shadnet_password.get();
     };
 
 private:
@@ -96,7 +101,8 @@ private:
 
     void InitialSetup();
 
-    std::map<s32, ServerSettings> m_server{};
+    ServerSettings m_server{};
+    std::map<s32, UserSettings> m_user{};
 };
 
 } // namespace ShadNet

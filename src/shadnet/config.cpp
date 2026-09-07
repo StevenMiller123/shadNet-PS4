@@ -39,8 +39,9 @@ void Settings::InitialSetup() {
             break;
         }
         std::string id_str = std::to_string(user_id);
-        j[id_str] = m_server[user_id];
+        j[id_str] = m_user[user_id];
     }
+    j["Server"] = m_server;
 
     std::ofstream out{config_path};
     if (!out) {
@@ -80,10 +81,15 @@ void Settings::Initialize() {
             }
             std::string id_str = std::to_string(user_id);
             if (gj.contains(id_str)) {
-                nlohmann::json current = m_server[user_id];
+                nlohmann::json current = m_user[user_id];
                 current.update(gj.at(id_str));
-                m_server[user_id] = current.get<std::remove_reference_t<ShadNet::ServerSettings>>();
+                m_user[user_id] = current.get<std::remove_reference_t<ShadNet::UserSettings>>();
             }
+        }
+        if (gj.contains("Server")) {
+            nlohmann::json current = m_server;
+            current.update(gj.at("Server"));
+            m_server = current.get<std::remove_reference_t<ShadNet::ServerSettings>>();
         }
     }
 }
