@@ -6,6 +6,7 @@
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/plugin_common.h"
+#include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
 

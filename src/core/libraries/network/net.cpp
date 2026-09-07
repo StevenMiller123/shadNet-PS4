@@ -10,8 +10,7 @@ HOOK_INIT(sceNetSocket);
 s32 sceNetSocket_hook(const char* name, s32 family, s32 type, s32 protocol) {
     LOG_INFO(Lib_Net, "called, name = {}, family = {}, type = {}, protocol = {}",
              name ? name : "(null)", family, type, protocol);
-    return HOOK_CONTINUE(sceNetSocket, s32 (*)(const char*, s32, s32, s32), name, family, type,
-                         protocol);
+    return SHADNET_HOOK_CONTINUE(sceNetSocket, name, family, type, protocol);
 }
 
 HOOK_INIT(sceNetResolverStartNtoa);
@@ -19,9 +18,8 @@ s32 sceNetResolverStartNtoa_hook(s32 rid, const char* hostname, OrbisNetInAddr* 
                                  s32 retry, s32 flags) {
     LOG_INFO(Lib_Net, "called, hostname = {}, timeout = {}, retry = {}",
              hostname ? hostname : "(null)", timeout, retry);
-    return HOOK_CONTINUE(sceNetResolverStartNtoa,
-                         s32 (*)(s32, const char*, OrbisNetInAddr*, s32, s32, s32), rid, hostname,
-                         addr, timeout, retry, flags);
+    return SHADNET_HOOK_CONTINUE(sceNetResolverStartNtoa, rid, hostname, addr, timeout, retry,
+                                 flags);
 }
 
 void RegisterNetHooks() {

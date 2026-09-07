@@ -14,12 +14,12 @@ HOOK_INIT(__sys_socketex);
 
 s32 socket_hook(s32 family, s32 type, s32 protocol) {
     LOG_INFO(Lib_Kernel, "called, family = {}, type = {}, protocol = {}", family, type, protocol);
-    return HOOK_CONTINUE(socket, s32 (*)(s32, s32, s32), family, type, protocol);
+    return SHADNET_HOOK_CONTINUE(socket, family, type, protocol);
 }
 
 s32 __sys_socketex_hook(const char* name, s32 family, s32 type, s32 protocol) {
     LOG_INFO(Lib_Kernel, "called, name = {}, family = {}, type = {}, protocol = {}", name, family, type, protocol);
-    return HOOK_CONTINUE(__sys_socketex, s32 (*)(const char*, s32, s32, s32), name, family, type, protocol);
+    return SHADNET_HOOK_CONTINUE(__sys_socketex, name, family, type, protocol);
 }
 
 void* mmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 offset) {
@@ -27,7 +27,7 @@ void* mmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 offset) {
         // Append MAP_SYSTEM, that way mmaps used to create hooks aren't consuming flex budget.
         flags |= 0x2000;
     }
-    return HOOK_CONTINUE(mmap, void* (*)(void*, u64, s32, s32, s32, s64), addr, len, prot, flags, fd, offset);
+    return SHADNET_HOOK_CONTINUE(mmap, addr, len, prot, flags, fd, offset);
 }
 
 s32 sceKernelMmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 offset, void** result) {
@@ -35,7 +35,7 @@ s32 sceKernelMmap_hook(void* addr, u64 len, s32 prot, s32 flags, s32 fd, s64 off
         // Append MAP_SYSTEM, that way mmaps used to create hooks aren't consuming flex budget.
         flags |= 0x2000;
     }
-    return HOOK_CONTINUE(sceKernelMmap, s32 (*)(void*, u64, s32, s32, s32, s64, void**), addr, len, prot, flags, fd, offset, result);
+    return SHADNET_HOOK_CONTINUE(sceKernelMmap, addr, len, prot, flags, fd, offset, result);
 }
 
 void RegisterKernelHooks() {

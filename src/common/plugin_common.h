@@ -8,6 +8,7 @@
 #include <Common.h>
 #include "git_ver.h"
 #include "goldhen_hook16.h"
+#include "shadnet_hook.h"
 
 #define GOLDHEN_PATH "/data/GoldHEN"
 

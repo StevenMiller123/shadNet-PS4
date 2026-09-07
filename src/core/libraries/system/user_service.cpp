@@ -14,8 +14,7 @@ s32 sceUserServiceGetUserName_hook(s32 user_id, char* user_name, u64 name_len) {
         Libraries::System::UserService::sceUserServiceGetUserName(user_id, user_name, name_len);
     if (result == 1) {
         // placeholder return to indicate we need to get the actual user name.
-        return HOOK_CONTINUE(sceUserServiceGetUserName, s32 (*)(s32, char*, u64), user_id,
-                             user_name, name_len);
+        return SHADNET_HOOK_CONTINUE(sceUserServiceGetUserName, user_id, user_name, name_len);
     }
     return result;
 }
