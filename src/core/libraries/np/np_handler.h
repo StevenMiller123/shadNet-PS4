@@ -28,6 +28,8 @@ public:
         return m_np_ids[user_id];
     };
 
+    std::string GetBearerToken(s32 user_id) const;
+
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
     s32 RegisterStateCallback(StateCallback cb, void* userdata);
@@ -43,7 +45,7 @@ private:
     void OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n);
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
-    // void OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n);
+    void OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n);
     // void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType
     // error, const std::vector<u8>& body);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
@@ -52,7 +54,7 @@ private:
     std::atomic<bool> m_worker_running{false};
 
     // Client
-    mutable std::mutex m_mutex_client;
+    mutable std::mutex m_mutex_clients;
     std::map<s32, std::shared_ptr<ShadNet::ShadNetClient>> m_clients;
     std::map<s32, OrbisNpId> m_np_ids;
 
@@ -79,6 +81,17 @@ private:
     };
     mutable std::mutex m_mutex_friend_state;
     std::map<s32, FriendListSnapshot> m_friend_states;
+
+    // Invitations
+    struct PendingInvitation {
+        std::string session_id;
+        std::string invitation_id;
+        std::string from_npid;
+        std::string to_npid;
+        int64_t valid_until = 0;
+    };
+    mutable std::mutex m_mutex_pending_invites;
+    std::map<s32, std::vector<PendingInvitation>> m_pending_invites;
 };
 
 } // namespace Libraries::Np

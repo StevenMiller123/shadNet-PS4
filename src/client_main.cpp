@@ -12,6 +12,7 @@
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
 #include "core/libraries/np/np_score.h"
+#include "core/libraries/np/np_web_api.h"
 #include "core/libraries/system/user_service.h"
 #include "shadnet/config.h"
 
@@ -39,6 +40,7 @@ extern "C" s32 client_start() {
     Libraries::System::UserService::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
     Libraries::Np::NpScore::RegisterHooks();
+    Libraries::Np::NpWebApi::RegisterHooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();

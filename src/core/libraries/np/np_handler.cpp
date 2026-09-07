@@ -4,7 +4,8 @@
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/UserService.h>
 #include "common/logging/log.h"
-#include "np_handler.h"
+#include "core/libraries/np/np_handler.h"
+#include "core/libraries/np/np_web_api/np_web_api.h"
 #include "shadnet/client.h"
 #include "shadnet/config.h"
 #include "shadnet/server_probe.h"
@@ -94,11 +95,10 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     client->onLoginResult = [this, user_id](const ShadNet::LoginResult& res) {
         OnLoginResult(user_id, res);
     };
-
-    /*
     client->onWebApiPushEvent = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
         OnWebApiPushEvent(user_id, n);
     };
+    /*
     client->onAsyncReply = [this, user_id](ShadNet::CommandType cmd, u64 pkt_id,
                                            ShadNet::ErrorType err, const std::vector<u8>& body) {
         OnAsyncReply(user_id, cmd, pkt_id, err, body);
@@ -157,7 +157,7 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     {
         OrbisNpId np_id{};
         const u64 id_len = std::min<u64>(npid.length(), 16);
-        std::lock_guard lock(m_mutex_client);
+        std::lock_guard lock(m_mutex_clients);
         if (id_len > 0) {
             std::memcpy(np_id.handle.data, npid.data(), id_len);
         }
@@ -167,6 +167,12 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
 
     FireStateCallback(user_id, ORBIS_NP_STATE_SIGNED_IN);
     return true;
+}
+
+std::string NpHandler::GetBearerToken(s32 user_id) const {
+    std::lock_guard lock(m_mutex_clients);
+    auto it = m_clients.find(user_id);
+    return it != m_clients.end() ? it->second->GetBearerToken() : std::string{};
 }
 
 // State callbacks
@@ -270,10 +276,8 @@ void NpHandler::OnLoginResult(s32 user_id, const ShadNet::LoginResult& res) {
 }
 
 // WebApi Push Event
-/*
 void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n) {
-    LOG_INFO(NpHandler, "WebApiPushEvent svc='{}' type='{}' bytes={}", n.npServiceName, n.dataType,
-             n.data.size());
+    LOG_INFO(NpHandler, "svc='{}' type='{}' bytes={}", n.npServiceName, n.dataType, n.data.size());
     NpWebApi::PushEventInput ev;
     ev.targetUserId = user_id;
     ev.npServiceName = n.npServiceName;
@@ -282,18 +286,17 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
     ev.data = n.data;
     if (!n.fromNpid.empty()) {
         ev.hasFrom = true;
-
-        SetNpOnlineId(ev.fromOnlineId, n.fromNpid);
+        u64 copy_len = std::min<u64>(n.fromNpid.length(), 16);
+        std::memcpy(ev.fromOnlineId.data, n.fromNpid.data(), copy_len);
     }
     if (!n.toNpid.empty()) {
         ev.hasTo = true;
-        SetNpOnlineId(ev.toOnlineId, n.toNpid);
+        u64 copy_len = std::min<u64>(n.toNpid.length(), 16);
+        std::memcpy(ev.toOnlineId.data, n.toNpid.data(), copy_len);
     }
-    ev.extdData = n.extdData; // extended-data (key,value) pairs -> dispatched as pExtdData
+    ev.extdData = n.extdData;
     NpWebApi::EnqueuePushEvent(ev);
 
-    // Also surface a SESSION_INVITATION system-service event for titles that watch it instead of
-    // (or in addition to) the WebAPI push callback
     if (n.npServiceName == "sessionInvitation") {
         std::string session_id, invitation_id;
         int64_t valid_until = 0;
@@ -309,7 +312,7 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
         if (!session_id.empty()) {
             {
                 std::lock_guard lk(m_mutex_pending_invites);
-                auto& v = m_pending_invites;
+                auto& v = m_pending_invites[user_id];
                 v.erase(std::remove_if(v.begin(), v.end(),
                                        [&](const PendingInvitation& p) {
                                            return p.invitation_id == invitation_id;
@@ -322,7 +325,6 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
         }
     }
 }
-*/
 
 /*
 void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,

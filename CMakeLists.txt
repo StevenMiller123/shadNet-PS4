@@ -71,8 +71,10 @@ set(PLUGIN_LIBS
     -lSceNetCtl
     -lSceNpManager
     -lSceNpScore
+    -lSceNpWebApi
     -lSceSysUtil
     -lSceUserService
+    -lSceHttp
 )
 
 set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
@@ -88,7 +90,9 @@ set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/system/user_service.cpp
                  src/core/libraries/np/np_handler.cpp
                  src/core/libraries/np/np_manager.cpp
-                 src/core/libraries/np/np_score.cpp)
+                 src/core/libraries/np/np_score.cpp
+                 src/core/libraries/np/np_web_api/np_web_api.cpp
+                 src/core/libraries/np/np_web_api/np_web_api_internal.cpp)
 
 set(SHADNET_SOURCES src/shadnet/client.cpp
                     src/shadnet/config.cpp
