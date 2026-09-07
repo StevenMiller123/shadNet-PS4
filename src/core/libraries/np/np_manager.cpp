@@ -80,19 +80,13 @@ s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
 }
 
 // Np callback handling
-static std::map<std::string, std::function<void()>> g_np_callbacks;
+static std::vector<std::function<void()>> g_np_callbacks;
 static std::mutex g_np_callbacks_mutex;
 
 void RegisterNpCallback(std::string key, std::function<void()> cb) {
     std::scoped_lock lk{g_np_callbacks_mutex};
     LOG_DEBUG(Lib_NpManager, "registering callback processing for {}", key);
-    g_np_callbacks.emplace(key, cb);
-}
-
-void DeregisterNpCallback(std::string key) {
-    std::scoped_lock lk{g_np_callbacks_mutex};
-    LOG_DEBUG(Lib_NpManager, "deregistering callback processing for {}", key);
-    g_np_callbacks.erase(key);
+    g_np_callbacks.emplace_back(cb);
 }
 
 struct PendingNpStateEvent {

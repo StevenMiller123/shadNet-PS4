@@ -995,8 +995,8 @@ s32 sceNpWebApiVshInitialize(s32 libHttpCtxId, u64 poolSize) {
 }
 
 void RegisterHooks() {
-    Libraries::Np::NpManager::RegisterNpCallback("npwebapi_push", DrainPushEvents);
     RegisterNpWebApiHooks();
+    Libraries::Np::NpManager::RegisterNpCallback("npwebapi_push", DrainPushEvents);
 };
 
 } // namespace Libraries::Np::NpWebApi
