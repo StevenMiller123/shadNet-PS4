@@ -20,7 +20,7 @@ jobs:
     - name: Checkout GoldHEN Plugins SDK
       uses: actions/checkout@main
       with:
-        repository: GoldHEN/GoldHEN_Plugins_SDK
+        repository: StevenMiller123/GoldHEN_Plugins_SDK
         path: Plugins-SDK
     
     - name: Build Plugins SDK
