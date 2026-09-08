@@ -527,10 +527,9 @@ std::string ShadNetClient::BuildVersionString() {
     const std::string remote_host = Common::GetRemoteNameFromLink();
     const bool official = false;
 
-    return official ? fmt::format("shadNet-PS4 v{} {} {}", Common::g_version, Common::g_scm_branch,
-                                  Common::g_scm_desc)
-                    : fmt::format("shadNet-PS4 v{} {}/{} {}", Common::g_version, remote_host,
-                                  Common::g_scm_branch, Common::g_scm_desc);
+    return official ? fmt::format("shadNet-PS4 {} {}", Common::g_scm_branch, Common::g_scm_desc)
+                    : fmt::format("shadNet-PS4 {}/{} {}", remote_host, Common::g_scm_branch,
+                                  Common::g_scm_desc);
 }
 
 u64 ShadNetClient::ReportClientVersion() {
@@ -738,6 +737,9 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
 
     m_matching2_enabled.store(matching2_enabled);
     m_server_features_received.store(parsed);
+
+    ReportClientVersion();
+
     LOG_INFO(shadNet, "Server features: matching2_enabled {}", matching2_enabled);
     sem_post(&m_sem_authenticated);
 }
