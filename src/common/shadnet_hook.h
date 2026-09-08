@@ -10,6 +10,12 @@
         return name_space::func(args...);                                                          \
     }
 
+#define SHADNET_HOOK(name_space, name) do { \
+    klog("%s:%d HOOK64() Create " #name "\n", __FUNCTION__, __LINE__);  \
+    Detour_Construct( (&(Detour_##name)), DetourMode_x64);                                 \
+    Detour_DetourFunction( (&(Detour_##name)), (uint64_t)name, (void *)((decltype(&name_space::name))(name##_hook)) ); \
+} while (0)
+
 template <auto f>
 struct HookContinueWrapperImpl;
 
