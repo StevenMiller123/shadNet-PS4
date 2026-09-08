@@ -39,6 +39,7 @@ void NpHandler::Initialize() {
 
     // Log in any logged in users
     OrbisUserServiceLoginUserIdList user_list{};
+    sceUserServiceInitialize(nullptr);
     s32 result = sceUserServiceGetLoginUserIdList(&user_list);
     if (result != 0) {
         LOG_NOTIFICATION(NpHandler, "Failed to get logged in users");
