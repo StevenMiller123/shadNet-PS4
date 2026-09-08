@@ -67,7 +67,6 @@ void Settings::Initialize() {
         nlohmann::json gj;
         in >> gj;
         OrbisUserServiceLoginUserIdList user_list{};
-        sceUserServiceInitialize(nullptr);
         s32 result = sceUserServiceGetLoginUserIdList(&user_list);
         if (result != 0) {
             // Failed to get logged in users.

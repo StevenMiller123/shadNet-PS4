@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <orbis/Sysmodule.h>
+#include <orbis/UserService.h>
 #include <orbis/libkernel.h>
 #include "client_main.h"
 #include "common/elf_info.h"
@@ -26,6 +27,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
+
+    sceUserServiceInitialize(nullptr);
 
     // Initialize config backend
     ShadNet::Settings::GetInstance().Initialize();
