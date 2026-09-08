@@ -60,6 +60,7 @@ enum class CommandType : u16 {
     AddBlock = 10,
     RemoveBlock = 11,
     GetServerFeatures = 12,
+    SetClientVersion = 13,
     GetBoardInfos = 30,
     RecordScore = 31,
     RecordScoreData = 32,
@@ -289,6 +290,8 @@ public:
     bool IsMatching2Enabled() const;
     u32 GetNumFriends() const;
     std::optional<std::string> GetFriendNpid(u32 index) const;
+    u64 ReportClientVersion();
+    static std::string BuildVersionString();
 
     std::string GetBearerToken() const;
 

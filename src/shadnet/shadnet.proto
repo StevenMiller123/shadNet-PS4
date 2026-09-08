@@ -720,3 +720,7 @@ message TusGetMultiUserVariableRequest {
     repeated string virtualUsers    = 3;   // alternative to ownerAccountIds (virtual users)
     repeated string ownerNpIds      = 4;   // base npid-array path (server resolves each)
 }
+
+message SetClientVersionRequest {
+    string version = 1; 
+}
