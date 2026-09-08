@@ -25,11 +25,10 @@ void Settings::InitialSetup() {
     }
 
     OrbisUserServiceLoginUserIdList user_list{};
-    sceUserServiceInitialize(nullptr);
     s32 result = sceUserServiceGetLoginUserIdList(&user_list);
     if (result != 0) {
         // Failed to get logged in users.
-        LOG_ERROR(Config, "Failed to retrieve logged in users");
+        LOG_ERROR(Config, "Failed to retrieve logged in users: {:#x}", (u32)result);
         return;
     }
 
@@ -72,7 +71,7 @@ void Settings::Initialize() {
         s32 result = sceUserServiceGetLoginUserIdList(&user_list);
         if (result != 0) {
             // Failed to get logged in users.
-            LOG_ERROR(Config, "Failed to retrieve logged in users");
+            LOG_ERROR(Config, "Failed to retrieve logged in users: {:#x}", (u32)result);
             return;
         }
 
