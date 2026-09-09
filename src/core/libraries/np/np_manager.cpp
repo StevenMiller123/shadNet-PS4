@@ -17,9 +17,9 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetNpId);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetOnlineId);
 
 void RegisterLibraryHooks() {
-    HOOK(sceNpGetState);
-    HOOK(sceNpGetNpId);
-    HOOK(sceNpGetOnlineId);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetNpId);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetOnlineId);
 }
 }
 
