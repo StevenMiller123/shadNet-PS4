@@ -17,422 +17,130 @@ void sceNpWebApiInitializeForPresence();
 void sceNpWebApiIntCreateRequest();
 void sceNpWebApiIntRegisterServicePushEventCallback();
 void sceNpWebApiIntRegisterServicePushEventCallbackA();
-}
 
-HOOK_INIT(sceNpWebApiCreateContext);
-static s32 sceNpWebApiCreateContext_hook(s32 libCtxId, OrbisNpOnlineId* onlineId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateContext(libCtxId, onlineId);
-}
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiDeletePushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiDeleteServicePushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiRegisterNotificationCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiRegisterPushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiRegisterServicePushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterNotificationCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterPushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterServicePushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiAbortHandle);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiAbortRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiAddHttpRequestHeader);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiAddMultipartPart);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCheckTimeout);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiClearAllUnusedConnection);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiClearUnusedConnection);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateContextA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateExtdPushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateHandle);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateMultipartRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiDeleteContext);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiDeleteExtdPushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiDeleteHandle);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiDeleteRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiGetConnectionStats);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiGetHttpResponseHeaderValue);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiGetHttpResponseHeaderValueLength);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiGetHttpStatusCode);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiGetMemoryPoolStats);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiInitialize);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiInitializeForPresence);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiIntCreateCtxIndExtdPushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiIntCreateRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiIntCreateServicePushEventFilter);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiIntInitialize);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiIntRegisterServicePushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiIntRegisterServicePushEventCallbackA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiReadData);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallbackA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSendMultipartRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSendMultipartRequest2);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSendRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSendRequest2);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSetHandleTimeout);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSetMaxConnection);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSetMultipartContentType);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSetRequestTimeout);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
 
-HOOK_INIT(sceNpWebApiCreatePushEventFilter);
-static s32 sceNpWebApiCreatePushEventFilter_hook(
-    s32 libCtxId,
-    const Libraries::Np::NpWebApi::OrbisNpWebApiPushEventFilterParameter* pFilterParam,
-    u64 filterParamNum) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreatePushEventFilter(libCtxId, pFilterParam,
-                                                                     filterParamNum);
+static void RegisterLibraryHooks() {
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeletePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteServicePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterNotificationCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterServicePushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterNotificationCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterServicePushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiAbortHandle);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiAbortRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiAddHttpRequestHeader);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiAddMultipartPart);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCheckTimeout);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiClearAllUnusedConnection);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiClearUnusedConnection);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContextA);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateExtdPushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateHandle);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateMultipartRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteContext);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteExtdPushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteHandle);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeletePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteServicePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetConnectionStats);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetHttpResponseHeaderValue);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetHttpResponseHeaderValueLength);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetHttpStatusCode);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetMemoryPoolStats);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiInitialize);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiInitializeForPresence);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntCreateCtxIndExtdPushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntCreateRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntCreateServicePushEventFilter);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntInitialize);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntRegisterServicePushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntRegisterServicePushEventCallbackA);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiReadData);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallbackA);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterNotificationCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterServicePushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendMultipartRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendMultipartRequest2);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendRequest);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendRequest2);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSetHandleTimeout);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSetMaxConnection);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSetMultipartContentType);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSetRequestTimeout);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterNotificationCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterPushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterServicePushEventCallback);
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
 }
-
-HOOK_INIT(sceNpWebApiCreateServicePushEventFilter);
-static s32 sceNpWebApiCreateServicePushEventFilter_hook(
-    s32 libCtxId, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const Libraries::Np::NpWebApi::OrbisNpWebApiServicePushEventFilterParameter* pFilterParam,
-    u64 filterParamNum) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateServicePushEventFilter(
-        libCtxId, handleId, pNpServiceName, npServiceLabel, pFilterParam, filterParamNum);
-}
-
-HOOK_INIT(sceNpWebApiDeletePushEventFilter);
-static s32 sceNpWebApiDeletePushEventFilter_hook(s32 libCtxId, s32 filterId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiDeletePushEventFilter(libCtxId, filterId);
-}
-
-HOOK_INIT(sceNpWebApiDeleteServicePushEventFilter);
-static s32 sceNpWebApiDeleteServicePushEventFilter_hook(s32 libCtxId, s32 filterId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiDeleteServicePushEventFilter(libCtxId, filterId);
-}
-
-HOOK_INIT(sceNpWebApiRegisterExtdPushEventCallback);
-static s32 sceNpWebApiRegisterExtdPushEventCallback_hook(s32 titleUserCtxId, s32 filterId,
-                                                         OrbisNpWebApiExtdPushEventCallback cbFunc,
-                                                         void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiRegisterExtdPushEventCallback(
-        titleUserCtxId, filterId, cbFunc, pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiRegisterNotificationCallback);
-static s32 sceNpWebApiRegisterNotificationCallback_hook(
-    s32 titleUserCtxId, Libraries::Np::NpWebApi::OrbisNpWebApiNotificationCallback cbFunc,
-    void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiRegisterNotificationCallback(titleUserCtxId, cbFunc,
-                                                                            pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiRegisterPushEventCallback);
-static s32 sceNpWebApiRegisterPushEventCallback_hook(s32 titleUserCtxId, s32 filterId,
-                                                     OrbisNpWebApiPushEventCallback cbFunc,
-                                                     void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiRegisterPushEventCallback(titleUserCtxId, filterId,
-                                                                         cbFunc, pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiRegisterServicePushEventCallback);
-static s32 sceNpWebApiRegisterServicePushEventCallback_hook(
-    s32 titleUserCtxId, s32 filterId, OrbisNpWebApiServicePushEventCallback cbFunc,
-    void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiRegisterServicePushEventCallback(
-        titleUserCtxId, filterId, cbFunc, pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiUnregisterNotificationCallback);
-static s32 sceNpWebApiUnregisterNotificationCallback_hook(s32 titleUserCtxId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiUnregisterNotificationCallback(titleUserCtxId);
-}
-
-HOOK_INIT(sceNpWebApiUnregisterPushEventCallback);
-static s32 sceNpWebApiUnregisterPushEventCallback_hook(s32 titleUserCtxId, s32 callbackId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiUnregisterPushEventCallback(titleUserCtxId,
-                                                                           callbackId);
-}
-
-HOOK_INIT(sceNpWebApiUnregisterServicePushEventCallback);
-static s32 sceNpWebApiUnregisterServicePushEventCallback_hook(s32 titleUserCtxId, s32 callbackId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiUnregisterServicePushEventCallback(titleUserCtxId,
-                                                                                  callbackId);
-}
-
-HOOK_INIT(sceNpWebApiAbortHandle);
-static s32 sceNpWebApiAbortHandle_hook(s32 libCtxId, s32 handleId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiAbortHandle(libCtxId, handleId);
-}
-
-HOOK_INIT(sceNpWebApiAbortRequest);
-static s32 sceNpWebApiAbortRequest_hook(s64 requestId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiAbortRequest(requestId);
-}
-
-HOOK_INIT(sceNpWebApiAddHttpRequestHeader);
-static s32 sceNpWebApiAddHttpRequestHeader_hook(s64 requestId, const char* pFieldName,
-                                                const char* pValue) {
-    return Libraries::Np::NpWebApi::sceNpWebApiAddHttpRequestHeader(requestId, pFieldName, pValue);
-}
-
-HOOK_INIT(sceNpWebApiAddMultipartPart);
-static s32 sceNpWebApiAddMultipartPart_hook(
-    s64 requestId, const Libraries::Np::NpWebApi::OrbisNpWebApiMultipartPartParameter* pParam,
-    s32* pIndex) {
-    return Libraries::Np::NpWebApi::sceNpWebApiAddMultipartPart(requestId, pParam, pIndex);
-}
-
-HOOK_INIT(sceNpWebApiCheckTimeout);
-static void sceNpWebApiCheckTimeout_hook() {
-    return Libraries::Np::NpWebApi::sceNpWebApiCheckTimeout();
-}
-
-HOOK_INIT(sceNpWebApiClearAllUnusedConnection);
-static s32 sceNpWebApiClearAllUnusedConnection_hook(s32 userCtxId,
-                                                    bool bRemainKeepAliveConnection) {
-    return Libraries::Np::NpWebApi::sceNpWebApiClearAllUnusedConnection(userCtxId,
-                                                                        bRemainKeepAliveConnection);
-}
-
-HOOK_INIT(sceNpWebApiClearUnusedConnection);
-static s32 sceNpWebApiClearUnusedConnection_hook(s32 userCtxId, const char* pApiGroup,
-                                                 bool bRemainKeepAliveConnection) {
-    return Libraries::Np::NpWebApi::sceNpWebApiClearUnusedConnection(userCtxId, pApiGroup,
-                                                                     bRemainKeepAliveConnection);
-}
-
-HOOK_INIT(sceNpWebApiCreateContextA);
-static s32 sceNpWebApiCreateContextA_hook(s32 libCtxId, s32 userId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateContextA(libCtxId, userId);
-}
-
-HOOK_INIT(sceNpWebApiCreateExtdPushEventFilter);
-static s32 sceNpWebApiCreateExtdPushEventFilter_hook(
-    s32 libCtxId, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const OrbisNpWebApiExtdPushEventFilterParameter* pFilterParam, u64 filterParamNum) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateExtdPushEventFilter(
-        libCtxId, handleId, pNpServiceName, npServiceLabel, pFilterParam, filterParamNum);
-}
-
-HOOK_INIT(sceNpWebApiCreateHandle);
-static s32 sceNpWebApiCreateHandle_hook(s32 libCtxId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateHandle(libCtxId);
-}
-
-HOOK_INIT(sceNpWebApiCreateMultipartRequest);
-static s32 sceNpWebApiCreateMultipartRequest_hook(s32 titleUserCtxId, const char* pApiGroup,
-                                                  const char* pPath, OrbisNpWebApiHttpMethod method,
-                                                  s64* pRequestId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateMultipartRequest(titleUserCtxId, pApiGroup,
-                                                                      pPath, method, pRequestId);
-}
-
-HOOK_INIT(sceNpWebApiCreateRequest);
-static s32 sceNpWebApiCreateRequest_hook(s32 titleUserCtxId, const char* pApiGroup,
-                                         const char* pPath, OrbisNpWebApiHttpMethod method,
-                                         const OrbisNpWebApiContentParameter* pContentParameter,
-                                         s64* pRequestId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiCreateRequest(titleUserCtxId, pApiGroup, pPath,
-                                                             method, pContentParameter, pRequestId);
-}
-
-HOOK_INIT(sceNpWebApiDeleteContext);
-static s32 sceNpWebApiDeleteContext_hook(s32 titleUserCtxId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiDeleteContext(titleUserCtxId);
-}
-
-HOOK_INIT(sceNpWebApiDeleteExtdPushEventFilter);
-static s32 sceNpWebApiDeleteExtdPushEventFilter_hook(s32 libCtxId, s32 filterId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiDeleteExtdPushEventFilter(libCtxId, filterId);
-}
-
-HOOK_INIT(sceNpWebApiDeleteHandle);
-static s32 sceNpWebApiDeleteHandle_hook(s32 libCtxId, s32 handleId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiDeleteHandle(libCtxId, handleId);
-}
-
-HOOK_INIT(sceNpWebApiDeleteRequest);
-static s32 sceNpWebApiDeleteRequest_hook(s64 requestId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiDeleteRequest(requestId);
-}
-
-HOOK_INIT(sceNpWebApiGetConnectionStats);
-static s32 sceNpWebApiGetConnectionStats_hook(
-    s32 userCtxId, const char* pApiGroup,
-    Libraries::Np::NpWebApi::OrbisNpWebApiConnectionStats* pStats) {
-    return Libraries::Np::NpWebApi::sceNpWebApiGetConnectionStats(userCtxId, pApiGroup, pStats);
-}
-
-HOOK_INIT(sceNpWebApiGetHttpResponseHeaderValue);
-static s32 sceNpWebApiGetHttpResponseHeaderValue_hook(s64 requestId, const char* pFieldName,
-                                                      char* pValue, u64 valueSize) {
-    return Libraries::Np::NpWebApi::sceNpWebApiGetHttpResponseHeaderValue(requestId, pFieldName,
-                                                                          pValue, valueSize);
-}
-
-HOOK_INIT(sceNpWebApiGetHttpResponseHeaderValueLength);
-static s32 sceNpWebApiGetHttpResponseHeaderValueLength_hook(s64 requestId, const char* pFieldName,
-                                                            u64* pValueLength) {
-    return Libraries::Np::NpWebApi::sceNpWebApiGetHttpResponseHeaderValueLength(
-        requestId, pFieldName, pValueLength);
-}
-
-HOOK_INIT(sceNpWebApiGetHttpStatusCode);
-static s32 sceNpWebApiGetHttpStatusCode_hook(s64 requestId, s32* out_status_code) {
-    return Libraries::Np::NpWebApi::sceNpWebApiGetHttpStatusCode(requestId, out_status_code);
-}
-
-HOOK_INIT(sceNpWebApiGetMemoryPoolStats);
-static s32 sceNpWebApiGetMemoryPoolStats_hook(
-    s32 libCtxId, Libraries::Np::NpWebApi::OrbisNpWebApiMemoryPoolStats* pCurrentStat) {
-    return Libraries::Np::NpWebApi::sceNpWebApiGetMemoryPoolStats(libCtxId, pCurrentStat);
-}
-
-HOOK_INIT(sceNpWebApiInitialize);
-static s32 sceNpWebApiInitialize_hook(s32 libHttpCtxId, u64 poolSize) {
-    return Libraries::Np::NpWebApi::sceNpWebApiInitialize(libHttpCtxId, poolSize);
-}
-
-HOOK_INIT(sceNpWebApiInitializeForPresence);
-static s32 sceNpWebApiInitializeForPresence_hook(s32 libHttpCtxId, u64 poolSize) {
-    return Libraries::Np::NpWebApi::sceNpWebApiInitializeForPresence(libHttpCtxId, poolSize);
-}
-
-HOOK_INIT(sceNpWebApiIntCreateCtxIndExtdPushEventFilter);
-static s32 sceNpWebApiIntCreateCtxIndExtdPushEventFilter_hook(
-    s32 libCtxId, s32 handleId, const OrbisNpWebApiExtdPushEventFilterParameter* pFilterParam,
-    u64 filterParamNum) {
-    return Libraries::Np::NpWebApi::sceNpWebApiIntCreateCtxIndExtdPushEventFilter(
-        libCtxId, handleId, pFilterParam, filterParamNum);
-}
-
-HOOK_INIT(sceNpWebApiIntCreateRequest);
-static s32 sceNpWebApiIntCreateRequest_hook(
-    s32 titleUserCtxId, const char* pApiGroup, const char* pPath, OrbisNpWebApiHttpMethod method,
-    const OrbisNpWebApiContentParameter* pContentParameter,
-    const Libraries::Np::NpWebApi::OrbisNpWebApiIntCreateRequestExtraArgs* pInternalArgs,
-    s64* pRequestId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiIntCreateRequest(
-        titleUserCtxId, pApiGroup, pPath, method, pContentParameter, pInternalArgs, pRequestId);
-}
-
-HOOK_INIT(sceNpWebApiIntCreateServicePushEventFilter);
-static s32 sceNpWebApiIntCreateServicePushEventFilter_hook(
-    s32 libCtxId, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const Libraries::Np::NpWebApi::OrbisNpWebApiServicePushEventFilterParameter* pFilterParam,
-    u64 filterParamNum) {
-    return Libraries::Np::NpWebApi::sceNpWebApiIntCreateServicePushEventFilter(
-        libCtxId, handleId, pNpServiceName, npServiceLabel, pFilterParam, filterParamNum);
-}
-
-HOOK_INIT(sceNpWebApiIntInitialize);
-static s32 sceNpWebApiIntInitialize_hook(const OrbisNpWebApiInitializeParameter* args) {
-    return Libraries::Np::NpWebApi::sceNpWebApiIntInitialize(args);
-}
-
-HOOK_INIT(sceNpWebApiIntRegisterServicePushEventCallback);
-static s32 sceNpWebApiIntRegisterServicePushEventCallback_hook(
-    s32 titleUserCtxId, s32 filterId,
-    Libraries::Np::NpWebApi::OrbisNpWebApiInternalServicePushEventCallback cbFunc, void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiIntRegisterServicePushEventCallback(
-        titleUserCtxId, filterId, cbFunc, pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiIntRegisterServicePushEventCallbackA);
-static s32 sceNpWebApiIntRegisterServicePushEventCallbackA_hook(
-    s32 titleUserCtxId, s32 filterId,
-    Libraries::Np::NpWebApi::OrbisNpWebApiInternalServicePushEventCallbackA cbFunc,
-    void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiIntRegisterServicePushEventCallbackA(
-        titleUserCtxId, filterId, cbFunc, pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiReadData);
-static s32 sceNpWebApiReadData_hook(s64 requestId, void* pData, u64 size) {
-    return Libraries::Np::NpWebApi::sceNpWebApiReadData(requestId, pData, size);
-}
-
-HOOK_INIT(sceNpWebApiRegisterExtdPushEventCallbackA);
-static s32 sceNpWebApiRegisterExtdPushEventCallbackA_hook(
-    s32 titleUserCtxId, s32 filterId, OrbisNpWebApiExtdPushEventCallbackA cbFunc, void* pUserArg) {
-    return Libraries::Np::NpWebApi::sceNpWebApiRegisterExtdPushEventCallbackA(
-        titleUserCtxId, filterId, cbFunc, pUserArg);
-}
-
-HOOK_INIT(sceNpWebApiSendMultipartRequest);
-static s32 sceNpWebApiSendMultipartRequest_hook(s64 requestId, s32 partIndex, const void* pData,
-                                                u64 dataSize) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSendMultipartRequest(requestId, partIndex, pData,
-                                                                    dataSize);
-}
-
-HOOK_INIT(sceNpWebApiSendMultipartRequest2);
-static s32 sceNpWebApiSendMultipartRequest2_hook(
-    s64 requestId, s32 partIndex, const void* pData, u64 dataSize,
-    OrbisNpWebApiResponseInformationOption* pRespInfoOption) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSendMultipartRequest2(requestId, partIndex, pData,
-                                                                     dataSize, pRespInfoOption);
-}
-
-HOOK_INIT(sceNpWebApiSendRequest);
-static s32 sceNpWebApiSendRequest_hook(s64 requestId, const void* pData, u64 dataSize) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSendRequest(requestId, pData, dataSize);
-}
-
-HOOK_INIT(sceNpWebApiSendRequest2);
-static s32 sceNpWebApiSendRequest2_hook(s64 requestId, const void* pData, u64 dataSize,
-                                        OrbisNpWebApiResponseInformationOption* pRespInfoOption) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSendRequest2(requestId, pData, dataSize,
-                                                            pRespInfoOption);
-}
-
-HOOK_INIT(sceNpWebApiSetHandleTimeout);
-static s32 sceNpWebApiSetHandleTimeout_hook(s32 libCtxId, s32 handleId, u32 timeout) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSetHandleTimeout(libCtxId, handleId, timeout);
-}
-
-HOOK_INIT(sceNpWebApiSetMaxConnection);
-static s32 sceNpWebApiSetMaxConnection_hook(s32 libCtxId, s32 maxConnection) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSetMaxConnection(libCtxId, maxConnection);
-}
-
-HOOK_INIT(sceNpWebApiSetMultipartContentType);
-static s32 sceNpWebApiSetMultipartContentType_hook(s64 requestId, const char* pTypeName,
-                                                   const char* pBoundary) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSetMultipartContentType(requestId, pTypeName,
-                                                                       pBoundary);
-}
-
-HOOK_INIT(sceNpWebApiSetRequestTimeout);
-static s32 sceNpWebApiSetRequestTimeout_hook(s64 requestId, u32 timeout) {
-    return Libraries::Np::NpWebApi::sceNpWebApiSetRequestTimeout(requestId, timeout);
-}
-
-HOOK_INIT(sceNpWebApiTerminate);
-static s32 sceNpWebApiTerminate_hook(s32 libCtxId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiTerminate(libCtxId);
-}
-
-HOOK_INIT(sceNpWebApiUnregisterExtdPushEventCallback);
-static s32 sceNpWebApiUnregisterExtdPushEventCallback_hook(s32 titleUserCtxId, s32 callbackId) {
-    return Libraries::Np::NpWebApi::sceNpWebApiUnregisterExtdPushEventCallback(titleUserCtxId,
-                                                                               callbackId);
-}
-
-HOOK_INIT(sceNpWebApiVshInitialize);
-static s32 sceNpWebApiVshInitialize_hook(s32 libHttpCtxId, u64 poolSize) {
-    return Libraries::Np::NpWebApi::sceNpWebApiVshInitialize(libHttpCtxId, poolSize);
-}
-
-void RegisterNpWebApiHooks() {
-    HOOK(sceNpWebApiCreateContext);
-    HOOK(sceNpWebApiCreatePushEventFilter);
-    HOOK(sceNpWebApiCreateServicePushEventFilter);
-    HOOK(sceNpWebApiDeletePushEventFilter);
-    HOOK(sceNpWebApiDeleteServicePushEventFilter);
-    HOOK(sceNpWebApiRegisterExtdPushEventCallback);
-    HOOK(sceNpWebApiRegisterNotificationCallback);
-    HOOK(sceNpWebApiRegisterPushEventCallback);
-    HOOK(sceNpWebApiRegisterServicePushEventCallback);
-    HOOK(sceNpWebApiUnregisterNotificationCallback);
-    HOOK(sceNpWebApiUnregisterPushEventCallback);
-    HOOK(sceNpWebApiUnregisterServicePushEventCallback);
-    HOOK(sceNpWebApiAbortHandle);
-    HOOK(sceNpWebApiAbortRequest);
-    HOOK(sceNpWebApiAddHttpRequestHeader);
-    HOOK(sceNpWebApiAddMultipartPart);
-    HOOK(sceNpWebApiCheckTimeout);
-    HOOK(sceNpWebApiClearAllUnusedConnection);
-    HOOK(sceNpWebApiClearUnusedConnection);
-    HOOK(sceNpWebApiCreateContext);
-    HOOK(sceNpWebApiCreateContextA);
-    HOOK(sceNpWebApiCreateExtdPushEventFilter);
-    HOOK(sceNpWebApiCreateHandle);
-    HOOK(sceNpWebApiCreateMultipartRequest);
-    HOOK(sceNpWebApiCreatePushEventFilter);
-    HOOK(sceNpWebApiCreateRequest);
-    HOOK(sceNpWebApiCreateServicePushEventFilter);
-    HOOK(sceNpWebApiDeleteContext);
-    HOOK(sceNpWebApiDeleteExtdPushEventFilter);
-    HOOK(sceNpWebApiDeleteHandle);
-    HOOK(sceNpWebApiDeletePushEventFilter);
-    HOOK(sceNpWebApiDeleteRequest);
-    HOOK(sceNpWebApiDeleteServicePushEventFilter);
-    HOOK(sceNpWebApiGetConnectionStats);
-    HOOK(sceNpWebApiGetHttpResponseHeaderValue);
-    HOOK(sceNpWebApiGetHttpResponseHeaderValueLength);
-    HOOK(sceNpWebApiGetHttpStatusCode);
-    HOOK(sceNpWebApiGetMemoryPoolStats);
-    HOOK(sceNpWebApiInitialize);
-    HOOK(sceNpWebApiInitializeForPresence);
-    HOOK(sceNpWebApiIntCreateCtxIndExtdPushEventFilter);
-    HOOK(sceNpWebApiIntCreateRequest);
-    HOOK(sceNpWebApiIntCreateServicePushEventFilter);
-    HOOK(sceNpWebApiIntInitialize);
-    HOOK(sceNpWebApiIntRegisterServicePushEventCallback);
-    HOOK(sceNpWebApiIntRegisterServicePushEventCallbackA);
-    HOOK(sceNpWebApiReadData);
-    HOOK(sceNpWebApiRegisterExtdPushEventCallback);
-    HOOK(sceNpWebApiRegisterExtdPushEventCallbackA);
-    HOOK(sceNpWebApiRegisterNotificationCallback);
-    HOOK(sceNpWebApiRegisterPushEventCallback);
-    HOOK(sceNpWebApiRegisterServicePushEventCallback);
-    HOOK(sceNpWebApiSendMultipartRequest);
-    HOOK(sceNpWebApiSendMultipartRequest2);
-    HOOK(sceNpWebApiSendRequest);
-    HOOK(sceNpWebApiSendRequest2);
-    HOOK(sceNpWebApiSetHandleTimeout);
-    HOOK(sceNpWebApiSetMaxConnection);
-    HOOK(sceNpWebApiSetMultipartContentType);
-    HOOK(sceNpWebApiSetRequestTimeout);
-    HOOK(sceNpWebApiTerminate);
-    HOOK(sceNpWebApiUnregisterExtdPushEventCallback);
-    HOOK(sceNpWebApiUnregisterNotificationCallback);
-    HOOK(sceNpWebApiUnregisterPushEventCallback);
-    HOOK(sceNpWebApiUnregisterServicePushEventCallback);
-    HOOK(sceNpWebApiVshInitialize);
 }
 
 namespace Libraries::Np::NpWebApi {
@@ -995,7 +703,7 @@ s32 sceNpWebApiVshInitialize(s32 libHttpCtxId, u64 poolSize) {
 }
 
 void RegisterHooks() {
-    RegisterNpWebApiHooks();
+    RegisterLibraryHooks();
     Libraries::Np::NpManager::RegisterNpCallback("npwebapi_push", DrainPushEvents);
 };
 

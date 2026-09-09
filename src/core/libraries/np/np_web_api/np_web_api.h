@@ -165,8 +165,7 @@ s32 sceNpWebApiSendRequest2(s64 requestId, const void* pData, u64 dataSize,
                             OrbisNpWebApiResponseInformationOption* pRespInfoOption);
 s32 sceNpWebApiSetHandleTimeout(s32 libCtxId, s32 handleId, u32 timeout);
 s32 sceNpWebApiSetMaxConnection(s32 libCtxId, s32 maxConnection);
-s32 sceNpWebApiSetMultipartContentType(s64 requestId, const char* pTypeName,
-                                       const char* pBoundary);
+s32 sceNpWebApiSetMultipartContentType(s64 requestId, const char* pTypeName, const char* pBoundary);
 s32 sceNpWebApiSetRequestTimeout(s64 requestId, u32 timeout);
 s32 sceNpWebApiTerminate(s32 libCtxId);
 s32 sceNpWebApiUnregisterExtdPushEventCallback(s32 titleUserCtxId, s32 callbackId);

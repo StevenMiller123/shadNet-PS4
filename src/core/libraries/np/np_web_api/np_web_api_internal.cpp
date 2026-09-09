@@ -1223,7 +1223,8 @@ s32 createPushEventFilterInternal(OrbisNpWebApiContext* context,
         for (u64 param_idx = 0; param_idx < filterParamNum; param_idx++) {
             OrbisNpWebApiPushEventFilterParameter copy = OrbisNpWebApiPushEventFilterParameter{};
             memcpy(&copy, &pFilterParam[param_idx], sizeof(OrbisNpWebApiPushEventFilterParameter));
-            LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}'", param_idx, copy.data_type.val);
+            LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}'", param_idx,
+                     copy.data_type.val);
             filter->filterParams.emplace_back(copy);
         }
     }
@@ -1961,7 +1962,7 @@ s32 PS4_SYSV_ABI readDataInternal(s64 requestId, void* pData, u64 size) {
 
     if (remainingSize != 0) {
         lockContext(context);
-        setRequestState(request, 5); 
+        setRequestState(request, 5);
 
         if (!hasRequestTimedOut(request) && isRequestAborted(request)) {
             unlockContext(context);
@@ -2009,18 +2010,19 @@ s32 PS4_SYSV_ABI readDataInternal(s64 requestId, void* pData, u64 size) {
     return result;
 }
 
-using ServiceCb = PS4_SYSV_ABI void (*)(s32, s32, const char*, u32,
-                                        const OrbisNpPeerAddress*, const OrbisNpPeerAddress*,
+using ServiceCb = PS4_SYSV_ABI void (*)(s32, s32, const char*, u32, const OrbisNpPeerAddress*,
+                                        const OrbisNpPeerAddress*,
                                         const OrbisNpWebApiPushEventDataType*, const char*, u64,
                                         void*);
-using BasicCb = PS4_SYSV_ABI void (*)(s32, s32, const OrbisNpPeerAddress*, const OrbisNpPeerAddress*,
+using BasicCb = PS4_SYSV_ABI void (*)(s32, s32, const OrbisNpPeerAddress*,
+                                      const OrbisNpPeerAddress*,
                                       const OrbisNpWebApiPushEventDataType*, const char*, u64,
                                       void*);
-using ExtdCbA = PS4_SYSV_ABI void (*)(s32, s32, const char*, u32,
-                                      const OrbisNpPeerAddressA*, const OrbisNpOnlineId*,
-                                      const OrbisNpPeerAddressA*, const OrbisNpOnlineId*,
-                                      const OrbisNpWebApiPushEventDataType*, const char*, u64,
-                                      const OrbisNpWebApiExtdPushEventExtdData*, u64, void*);
+using ExtdCbA = PS4_SYSV_ABI void (*)(s32, s32, const char*, u32, const OrbisNpPeerAddressA*,
+                                      const OrbisNpOnlineId*, const OrbisNpPeerAddressA*,
+                                      const OrbisNpOnlineId*, const OrbisNpWebApiPushEventDataType*,
+                                      const char*, u64, const OrbisNpWebApiExtdPushEventExtdData*,
+                                      u64, void*);
 
 std::mutex g_push_mutex;
 std::deque<PushEventInput> g_push_queue;
