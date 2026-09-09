@@ -9,6 +9,7 @@
 #include <orbis/Net.h>
 #include "common/elf_info.h"
 #include "common/logging/log.h"
+#include "common/scm_rev.h"
 #include "common/thread.h"
 #include "shadnet.pb.h"
 #include "shadnet/client.h"
@@ -276,14 +277,16 @@ bool ShadNetClient::DoConnect() {
 
     s32 netpool_id = sceNetPoolCreate("shadNet Pool", 0x1000, 0);
     if (netpool_id < 0) {
-        LOG_WARNING(shadNet, "Failed to create net pool, error = {:#x}", static_cast<u32>(netpool_id));
+        LOG_WARNING(shadNet, "Failed to create net pool, error = {:#x}",
+                    static_cast<u32>(netpool_id));
         m_state = ShadNetState::FailureConnect;
         return false;
     }
 
     s32 resolver = sceNetResolverCreate("shadNet Resolver", netpool_id, 0);
     if (resolver < 0) {
-        LOG_WARNING(shadNet, "Failed to create resolver, error = {:#x}", static_cast<u32>(resolver));
+        LOG_WARNING(shadNet, "Failed to create resolver, error = {:#x}",
+                    static_cast<u32>(resolver));
         m_state = ShadNetState::FailureConnect;
         return false;
     }
@@ -519,6 +522,33 @@ u64 ShadNetClient::SetAppearOffline(bool enable) {
     return SubmitRequest(CommandType::SetAppearOffline, MakeProtoPayload(req));
 }
 
+std::string ShadNetClient::BuildVersionString() {
+    const std::string remote_url(Common::g_scm_remote_url);
+    const std::string remote_host = Common::GetRemoteNameFromLink();
+    const bool official = false;
+
+    return official ? fmt::format("shadNet-PS4 {} {}", Common::g_scm_branch, Common::g_scm_desc)
+                    : fmt::format("shadNet-PS4 {}/{} {}", remote_host, Common::g_scm_branch,
+                                  Common::g_scm_desc);
+}
+
+u64 ShadNetClient::ReportClientVersion() {
+    shadnet::SetClientVersionRequest req;
+    req.set_version(BuildVersionString());
+    const std::string blob = req.SerializeAsString();
+
+    std::vector<u8> payload;
+    payload.reserve(4 + blob.size());
+    const u32 sz = static_cast<u32>(blob.size());
+    payload.push_back(static_cast<u8>(sz));
+    payload.push_back(static_cast<u8>(sz >> 8));
+    payload.push_back(static_cast<u8>(sz >> 16));
+    payload.push_back(static_cast<u8>(sz >> 24));
+    payload.insert(payload.end(), blob.begin(), blob.end());
+
+    return SubmitRequest(CommandType::SetClientVersion, payload);
+}
+
 bool ShadNetClient::RequestServerFeatures() {
     const u64 pkt_id = m_pkt_counter.fetch_add(1);
     std::vector<u8> empty_payload;
@@ -611,7 +641,8 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                     m_friends = res.friends;
                 }
                 m_authenticated = true;
-                LOG_INFO(shadNet, "{} logged in, userId={} friends={}", m_npid, m_user_id, m_friends.size());
+                LOG_INFO(shadNet, "{} logged in, userId={} friends={}", m_npid, m_user_id,
+                         m_friends.size());
 
                 const u64 pkt_id = m_pkt_counter.fetch_add(1);
                 std::vector<u8> empty_payload;
@@ -699,12 +730,16 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
                 parsed = true;
             }
         } else {
-            LOG_WARNING(shadNet, "returned error {} - assuming Matching2 disabled", magic_enum::enum_name(err));
+            LOG_WARNING(shadNet, "returned error {} - assuming Matching2 disabled",
+                        magic_enum::enum_name(err));
         }
     }
 
     m_matching2_enabled.store(matching2_enabled);
     m_server_features_received.store(parsed);
+
+    ReportClientVersion();
+
     LOG_INFO(shadNet, "Server features: matching2_enabled {}", matching2_enabled);
     sem_post(&m_sem_authenticated);
 }
@@ -884,8 +919,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
                 n.extdData.emplace_back(std::move(key), std::move(val));
             }
         }
-        LOG_INFO(shadNet, "WebApiPushEvent svc='{}' type='{}' from='{}' bytes={} extd={}", n.npServiceName,
-                 n.dataType, n.fromNpid, n.data.size(), n.extdData.size());
+        LOG_INFO(shadNet, "WebApiPushEvent svc='{}' type='{}' from='{}' bytes={} extd={}",
+                 n.npServiceName, n.dataType, n.fromNpid, n.data.size(), n.extdData.size());
         if (onWebApiPushEvent)
             onWebApiPushEvent(n);
         break;

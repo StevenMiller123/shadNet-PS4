@@ -3,6 +3,7 @@
 
 #include <orbis/UserService.h>
 #include <string.h>
+#include "client_main.h"
 #include "common/logging/log.h"
 #include "common/plugin_common.h"
 #include "core/libraries/np/np_handler.h"
@@ -19,14 +20,44 @@ s32 sceUserServiceGetUserName_hook(s32 user_id, char* user_name, u64 name_len) {
     return result;
 }
 
+SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize);
+SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize2);
+
 void RegisterUserServiceHooks() {
     HOOK(sceUserServiceGetUserName);
+    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize);
+    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize2);
 }
 
 namespace Libraries::System::UserService {
 
+static bool g_lib_init = false;
+
+s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params) {
+    u32 res = SHADNET_HOOK_CONTINUE(sceUserServiceInitialize, params);
+    LOG_INFO(Lib_UserService, "called, res: {:#x}", res);
+    if (res != ORBIS_OK) {
+        return res;
+    }
+    g_lib_init = true;
+    return client_start() == ORBIS_OK ? ORBIS_OK : ORBIS_USER_SERVICE_ERROR_INTERNAL;
+}
+
+s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask) {
+    u32 res = SHADNET_HOOK_CONTINUE(sceUserServiceInitialize2, thread_prio, cpu_mask);
+    LOG_INFO(Lib_UserService, "called, res: {:#x}", res);
+    if (res != ORBIS_OK) {
+        return res;
+    }
+    g_lib_init = true;
+    return client_start() == ORBIS_OK ? ORBIS_OK : ORBIS_USER_SERVICE_ERROR_INTERNAL;
+}
+
 s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
     LOG_INFO(Lib_UserService, "called");
+    if (!g_lib_init) {
+        return ORBIS_USER_SERVICE_ERROR_NOT_INITIALIZED;
+    }
     if (!user_name) {
         return ORBIS_USER_SERVICE_ERROR_INVALID_ARGUMENT;
     }

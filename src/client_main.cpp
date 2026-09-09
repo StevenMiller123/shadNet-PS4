@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <orbis/Sysmodule.h>
+#include <orbis/UserService.h>
 #include <orbis/libkernel.h>
 #include "client_main.h"
 #include "common/elf_info.h"
@@ -16,9 +17,8 @@
 #include "core/libraries/system/user_service.h"
 #include "shadnet/config.h"
 
-extern "C" s32 client_start() {
-    LOG_INFO(shadNet, "Starting shadNet Client");
-
+extern "C" s32 client_preinit() {
+    LOG_INFO(shadNet, "Initializing shadNet Client");
     // Preload modules used by the plugin
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
@@ -29,16 +29,18 @@ extern "C" s32 client_start() {
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
 
+    // Init kernel hooks
+    Libraries::Kernel::Kernel::RegisterHooks();
+    Libraries::System::UserService::RegisterHooks();
+    return 0;
+}
+
+extern "C" s32 client_start() {
+    LOG_INFO(shadNet, "Starting shadNet Client");
     // Initialize config backend
     ShadNet::Settings::GetInstance().Initialize();
-
-    // Init kernel hooks
-    // This must be first because it hooks mmap to reduce the plugin's flexible memory usage.
-    Libraries::Kernel::Kernel::RegisterHooks();
-
     // Init other library hooks
     Libraries::Network::Net::RegisterHooks();
-    Libraries::System::UserService::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();
     Libraries::Np::NpScore::RegisterHooks();
     Libraries::Np::NpWebApi::RegisterHooks();
