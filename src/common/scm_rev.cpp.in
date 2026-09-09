@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
+// SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <string>
@@ -20,12 +20,12 @@ const std::string GetRemoteNameFromLink() {
     std::string remote_url(Common::g_scm_remote_url);
     std::string remote_host;
     try {
-        if (remote_url.starts_with("http")) {
+        if (remote_url.substr(0, 4).compare("http") == 0) {
             if (*remote_url.rbegin() == '/') {
                 remote_url.pop_back();
             }
             remote_host = remote_url.substr(19, remote_url.rfind('/') - 19);
-        } else if (remote_url.starts_with("git@")) {
+        } else if (remote_url.substr(0, 4).compare("git@") == 0) {
             auto after_comma_pos = remote_url.find(':') + 1, slash_pos = remote_url.find('/');
             remote_host = remote_url.substr(after_comma_pos, slash_pos - after_comma_pos);
         } else {
