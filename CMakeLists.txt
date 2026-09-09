@@ -182,6 +182,7 @@ set(PLUGIN_LIBS
     -lSceNpScore
     -lSceSysUtil
     -lSceUserService
+    -lSceSystemService
 )
 
 set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
@@ -191,6 +192,7 @@ set(COMMON_SOURCES src/common/error.cpp
                    src/common/goldhen_hook16.cpp
                    src/common/plugin_common.cpp
                    src/common/thread.cpp
+                   src/common/assert.cpp
                    ${CMAKE_CURRENT_BINARY_DIR}/src/common/scm_rev.cpp
 )
 

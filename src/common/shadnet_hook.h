@@ -6,15 +6,31 @@
 
 #define SHADNET_HOOK_DECLARE(name_space, func)                                                     \
     HOOK_INIT(func);                                                                               \
-    static auto func##_hook = [](auto... args) {                                                   \
+    template <class ReturnType, class... Args>                                                     \
+    static ReturnType func##_hook(Args... args) {                                                  \
         return name_space::func(args...);                                                          \
     }
 
-#define SHADNET_HOOK(name_space, name) do { \
-    klog("%s:%d HOOK64() Create " #name "\n", __FUNCTION__, __LINE__);  \
-    Detour_Construct( (&(Detour_##name)), DetourMode_x64);                                 \
-    Detour_DetourFunction( (&(Detour_##name)), (uint64_t)name, (void *)((decltype(&name_space::name))(name##_hook)) ); \
-} while (0)
+#define SHADNET_HOOK_DECLARE1(name_space, func)                                                    \
+    HOOK_INIT(func);                                                                               \
+    template <class ReturnType, class... Args>                                                     \
+    static ReturnType func##_hook(Args... args) {                                                  \
+        return name_space::func(args...);                                                          \
+    }
+
+#define SHADNET_HOOK(name_space, name)                                                             \
+    do {                                                                                           \
+        LOG_INFO(Hooks, "Creating hook for {}", #name);                                            \
+        Detour_Construct((&(Detour_##name)), DetourMode_x64);                                      \
+        Detour_DetourFunction((&(Detour_##name)), (uint64_t)::name, (void*)(&name_space::name));    \
+    } while (0)
+
+#define SHADNET_HOOK1(name)                                                             \
+    do {                                                                                           \
+        LOG_INFO(Hooks, "Creating hook for {}", #name);                                            \
+        Detour_Construct((&(Detour_##name)), DetourMode_x64);                                      \
+        Detour_DetourFunction((&(Detour_##name)), (uint64_t)::name, (void*)(&name));    \
+    } while (0)
 
 template <auto f>
 struct HookContinueWrapperImpl;

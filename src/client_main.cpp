@@ -18,23 +18,25 @@
 
 extern "C" s32 client_preinit() {
     LOG_INFO(shadNet, "Initializing shadNet Client");
+
     // Preload modules used by the plugin
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
-    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
 
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
-
-    // Init kernel hooks
     Libraries::Kernel::Kernel::RegisterHooks();
     Libraries::System::UserService::RegisterHooks();
+
     return 0;
 }
 
 extern "C" s32 client_start() {
     LOG_INFO(shadNet, "Starting shadNet Client");
+
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
+
     // Initialize config backend
     ShadNet::Settings::GetInstance().Initialize();
     // Init other library hooks

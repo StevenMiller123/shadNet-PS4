@@ -10,8 +10,6 @@
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/np/np_manager.h"
 
-extern "C" {
-
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetState);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetNpId);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetOnlineId);
@@ -20,7 +18,6 @@ void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetNpId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetOnlineId);
-}
 }
 
 namespace Libraries::Np::NpManager {
