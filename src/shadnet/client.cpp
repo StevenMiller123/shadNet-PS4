@@ -525,11 +525,9 @@ u64 ShadNetClient::SetAppearOffline(bool enable) {
 std::string ShadNetClient::BuildVersionString() {
     const std::string remote_url(Common::g_scm_remote_url);
     const std::string remote_host = Common::GetRemoteNameFromLink();
-    const bool official = false;
 
-    return official ? fmt::format("shadNet-PS4 {} {}", Common::g_scm_branch, Common::g_scm_desc)
-                    : fmt::format("shadNet-PS4 {}/{} {}", remote_host, Common::g_scm_branch,
-                                  Common::g_scm_desc);
+    return fmt::format("shadNet-PS4 v{} {}/{} {}", Common::g_scm_app_version, remote_host,
+                       Common::g_scm_branch, Common::g_scm_desc);
 }
 
 u64 ShadNetClient::ReportClientVersion() {
