@@ -70,6 +70,16 @@ s32 createLibraryContext(s32 libHttpCtxId, u64 poolSize, const char* name, s32 t
     new_context->type = type;
     new_context->userCount = 0;
     new_context->terminated = false;
+
+    // Manually init mutex to get around issues
+    pthread_mutex_t* lock = new_context->contextLock.native_handle();
+    LOG_INFO(Lib_NpWebApi, "manually initializing lock {:#x}", (u64)lock);
+    pthread_mutexattr_t mtx_attr{};
+    pthread_mutexattr_init(&mtx_attr);
+    pthread_mutexattr_settype(&mtx_attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(lock, &mtx_attr);
+    pthread_mutexattr_destroy(&mtx_attr);
+
     if (name != nullptr) {
         new_context->name = std::string(name);
     }
