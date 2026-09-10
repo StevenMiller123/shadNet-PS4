@@ -17,7 +17,7 @@
 #include "core/libraries/system/user_service.h"
 #include "shadnet/config.h"
 
-extern "C" s32 client_preinit() {
+extern "C" s32 client_start() {
     LOG_INFO(shadNet, "Initializing shadNet Client");
     // Preload modules used by the plugin
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
@@ -29,16 +29,13 @@ extern "C" s32 client_preinit() {
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
 
-    // Init kernel hooks
+    // Init kernel and UserService hooks
     Libraries::Kernel::Kernel::RegisterHooks();
     Libraries::System::UserService::RegisterHooks();
-    return 0;
-}
 
-extern "C" s32 client_start() {
-    LOG_INFO(shadNet, "Starting shadNet Client");
-    // Initialize config backend
+    // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
+
     // Init other library hooks
     Libraries::Network::Net::RegisterHooks();
     Libraries::Np::NpManager::RegisterHooks();

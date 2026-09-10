@@ -24,6 +24,10 @@ SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize);
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize2);
 
 void RegisterUserServiceHooks() {
+    s32 ret = sceUserServiceInitialize(nullptr);
+    if (ret != 0) {
+        LOG_INFO(Lib_UserService, "sceUserServiceInitialize returned {:#x}", ret);
+    }
     HOOK(sceUserServiceGetUserName);
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize);
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize2);
@@ -34,23 +38,21 @@ namespace Libraries::System::UserService {
 static bool g_lib_init = false;
 
 s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params) {
-    u32 res = SHADNET_HOOK_CONTINUE(sceUserServiceInitialize, params);
-    LOG_INFO(Lib_UserService, "called, res: {:#x}", res);
-    if (res != ORBIS_OK) {
-        return res;
+    LOG_INFO(Lib_UserService, "called");
+    if (!g_lib_init) {
+        return ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED;
     }
     g_lib_init = true;
-    return client_start() == ORBIS_OK ? ORBIS_OK : ORBIS_USER_SERVICE_ERROR_INTERNAL;
+    return ORBIS_OK;
 }
 
 s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask) {
-    u32 res = SHADNET_HOOK_CONTINUE(sceUserServiceInitialize2, thread_prio, cpu_mask);
-    LOG_INFO(Lib_UserService, "called, res: {:#x}", res);
-    if (res != ORBIS_OK) {
-        return res;
+    LOG_INFO(Lib_UserService, "called");
+    if (!g_lib_init) {
+        return ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED;
     }
     g_lib_init = true;
-    return client_start() == ORBIS_OK ? ORBIS_OK : ORBIS_USER_SERVICE_ERROR_INTERNAL;
+    return ORBIS_OK;
 }
 
 s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
