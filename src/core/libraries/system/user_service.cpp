@@ -29,7 +29,7 @@ static bool g_lib_init = false;
 
 s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params) {
     LOG_INFO(Lib_UserService, "called");
-    if (!g_lib_init) {
+    if (g_lib_init) {
         return ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED;
     }
     g_lib_init = true;
@@ -38,7 +38,7 @@ s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params) {
 
 s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask) {
     LOG_INFO(Lib_UserService, "called");
-    if (!g_lib_init) {
+    if (g_lib_init) {
         return ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED;
     }
     g_lib_init = true;
