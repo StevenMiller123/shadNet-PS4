@@ -6,7 +6,7 @@
 #include <orbis/libkernel.h>
 #include "client_main.h"
 #include "common/elf_info.h"
-#include "common/libjbc/utils.h"
+#include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
 #include "common/types.h"
 #include "core/libraries/kernel/kernel.h"
@@ -68,54 +68,44 @@ extern "C" s32 client_start() {
 
     } else {
         // We want to retrieve the param.sfo and npbind.dat
-        // These aren't mounted in the sandbox, so use libjbc to mount them to somewhere accessible.
-        std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
-        result = jbc_mount_in_sandbox(meta_path.data(), "/metamnt");
-        if (result != 0) {
-            LOG_INFO(shadNet, "result = {}", result);
-        }
+        // These aren't mounted in the sandbox, so use libjbc to jailbreak the process
+        jbc_cred cred;
+        jbc_get_cred(&cred);
+        jbc_cred root_cred = cred;
+        jbc_jailbreak_cred(&root_cred);
+        // We want to change our working dir to the fs root for this
+        root_cred.cdir = cred.rdir;
+        jbc_set_cred(&root_cred);
 
-        if (std::filesystem::exists("/metamnt/param.sfo")) {
+        // Check files in appmeta
+        std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
+        if (std::filesystem::exists(meta_path + "/param.sfo")) {
             // Extract param.sfo
 
         } else {
             LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
         }
 
-        if (std::filesystem::exists("/metamnt/npbind.dat")) {
+        if (std::filesystem::exists(meta_path + "npbind.dat")) {
             // Extract npbind.dat
 
         } else {
             LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
         }
 
-        // Once we have the info we need, unmount the path
-        result = jbc_unmount_in_sandbox("/metamnt");
-        if (result != 0) {
-            LOG_INFO(shadNet, "result = {}", result);
-        }
-
-        // Trophy data is also not in the sandbox, but in a different path.
-        // They are stored by NP communication ID, so we need that first.
+        // Check for trophy files in user folder
         for (auto& np_comm_id : game_info.npCommIds) {
             std::string trop_path = "/user/trophy/conf/" + np_comm_id;
-            result = jbc_mount_in_sandbox(trop_path.data(), "/tropmnt");
-            if (result != 0) {
-                LOG_INFO(shadNet, "result = {}", result);
-            }
-
-            if (std::filesystem::exists("/tropmnt/TROPHY.TRP")) {
+            if (std::filesystem::exists(trop_path + "/TROPHY.TRP")) {
                 // Extract trophy files
-                
+
             } else {
                 LOG_WARNING(shadNet, "np trophy file in {}", trop_path);
             }
-
-            result = jbc_unmount_in_sandbox("/tropmnt");
-            if (result != 0) {
-                LOG_INFO(shadNet, "result = {}", result);
-            }
         }
+
+        // Un-jailbreak the process by restoring the original cred.
+        jbc_set_cred(&cred);
     }
 
     // Initialize NpHandler
