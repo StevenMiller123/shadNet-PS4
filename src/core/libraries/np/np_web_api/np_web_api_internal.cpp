@@ -73,7 +73,7 @@ s32 createLibraryContext(s32 libHttpCtxId, u64 poolSize, const char* name, s32 t
 
     // Manually init mutex to get around issues
     pthread_mutex_t* lock = new_context->contextLock.native_handle();
-    LOG_INFO(Lib_NpWebApi, "manually initializing lock {:#x}", (u64)lock);
+    LOG_INFO(Lib_NpWebApi, "manually initializing lock {:#x} for context {:#x}", (u64)lock, ctx_id);
     pthread_mutexattr_t mtx_attr{};
     pthread_mutexattr_init(&mtx_attr);
     pthread_mutexattr_settype(&mtx_attr, PTHREAD_MUTEX_RECURSIVE);
