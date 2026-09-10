@@ -64,20 +64,57 @@ extern "C" s32 client_start() {
 
     if (std::filesystem::exists("/app0/sce_sys/param.sfo")) {
         // If param.sfo is in the sandbox, then this is likely an emulator mounting a folder dump.
+        LOG_WARNING(shadNet, "param.sfo present in sandbox");
 
     } else {
-        // We want to retrieve the param.sfo, npbind.dat, and nptitle.dat
+        // We want to retrieve the param.sfo and npbind.dat
         // These aren't mounted in the sandbox, so use libjbc to mount them to somewhere accessible.
-        std::string abs_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
-        result = jbc_mount_in_sandbox(abs_path.data(), "/metamnt");
+        std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
+        result = jbc_mount_in_sandbox(meta_path.data(), "/metamnt");
         if (result != 0) {
             LOG_INFO(shadNet, "result = {}", result);
+        }
+
+        if (std::filesystem::exists("/metamnt/param.sfo")) {
+            // Extract param.sfo
+
+        } else {
+            LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
+        }
+
+        if (std::filesystem::exists("/metamnt/npbind.dat")) {
+            // Extract npbind.dat
+
+        } else {
+            LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
         }
 
         // Once we have the info we need, unmount the path
         result = jbc_unmount_in_sandbox("/metamnt");
         if (result != 0) {
             LOG_INFO(shadNet, "result = {}", result);
+        }
+
+        // Trophy data is also not in the sandbox, but in a different path.
+        // They are stored by NP communication ID, so we need that first.
+        for (auto& np_comm_id : game_info.npCommIds) {
+            std::string trop_path = "/user/trophy/conf/" + np_comm_id;
+            result = jbc_mount_in_sandbox(trop_path.data(), "/tropmnt");
+            if (result != 0) {
+                LOG_INFO(shadNet, "result = {}", result);
+            }
+
+            if (std::filesystem::exists("/tropmnt/TROPHY.TRP")) {
+                // Extract trophy files
+                
+            } else {
+                LOG_WARNING(shadNet, "np trophy file in {}", trop_path);
+            }
+
+            result = jbc_unmount_in_sandbox("/tropmnt");
+            if (result != 0) {
+                LOG_INFO(shadNet, "result = {}", result);
+            }
         }
     }
 
