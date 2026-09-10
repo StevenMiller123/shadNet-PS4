@@ -194,6 +194,9 @@ set(COMMON_SOURCES src/common/error.cpp
                    src/common/plugin_common.cpp
                    src/common/thread.cpp
                    ${CMAKE_CURRENT_BINARY_DIR}/src/common/scm_rev.cpp
+                   src/common/libjbc/jailbreak.c
+                   src/common/libjbc/kernelrw.c
+                   src/common/libjbc/utils.c
 )
 
 set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp

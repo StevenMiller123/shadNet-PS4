@@ -6,6 +6,7 @@
 #include <orbis/libkernel.h>
 #include "client_main.h"
 #include "common/elf_info.h"
+#include "common/libjbc/utils.h"
 #include "common/logging/log.h"
 #include "common/types.h"
 #include "core/libraries/kernel/kernel.h"
@@ -29,7 +30,7 @@ extern "C" s32 client_preinit() {
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
 
-    // Init kernel hooks
+    // Initialize minimal hooks needed for init
     Libraries::Kernel::Kernel::RegisterHooks();
     Libraries::System::UserService::RegisterHooks();
     return 0;
@@ -60,6 +61,25 @@ extern "C" s32 client_start() {
     sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
     game_info.initialized = true;
     game_info.game_serial = std::string{app_info.TitleId};
+
+    if (std::filesystem::exists("/app0/sce_sys/param.sfo")) {
+        // If param.sfo is in the sandbox, then this is likely an emulator mounting a folder dump.
+
+    } else {
+        // We want to retrieve the param.sfo, npbind.dat, and nptitle.dat
+        // These aren't mounted in the sandbox, so use libjbc to mount them to somewhere accessible.
+        std::string abs_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
+        result = jbc_mount_in_sandbox(abs_path.data(), "/metamnt");
+        if (result != 0) {
+            LOG_INFO(shadNet, "result = {}", result);
+        }
+
+        // Once we have the info we need, unmount the path
+        result = jbc_unmount_in_sandbox("/metamnt");
+        if (result != 0) {
+            LOG_INFO(shadNet, "result = {}", result);
+        }
+    }
 
     // Initialize NpHandler
     Libraries::Np::NpHandler::Instance().Initialize();
