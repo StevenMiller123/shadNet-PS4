@@ -17,6 +17,14 @@ string(TIMESTAMP BUILD_DATE "%Y-%m-%d %H:%M:%S")
 
 message("start git things")
 
+execute_process(
+  COMMAND git rev-list --count @
+  OUTPUT_VARIABLE GIT_REV_LIST_NUMBER
+  RESULT_VARIABLE GIT_REV_LIST_RESULT
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 # Try to get the upstream remote and branch
 message("check for remote and branch")
 execute_process(
@@ -105,9 +113,7 @@ execute_process(
 )
 
 # Set Version
-set(EMULATOR_VERSION_MAJOR "0")
-set(EMULATOR_VERSION_MINOR "18")
-set(EMULATOR_VERSION_PATCH "1")
+set(APP_VERSION "${GIT_REV_LIST_NUMBER}")
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/common/scm_rev.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/common/scm_rev.cpp" @ONLY)
 
