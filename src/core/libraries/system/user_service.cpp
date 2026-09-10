@@ -28,29 +28,34 @@ namespace Libraries::System::UserService {
 static bool g_lib_init = false;
 
 s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params) {
-    LOG_INFO(Lib_UserService, "called");
     if (g_lib_init) {
+        LOG_ERROR(Lib_UserService, "already initialized");
         return ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED;
     }
+
+    LOG_INFO(Lib_UserService, "called");
     g_lib_init = true;
     return ORBIS_OK;
 }
 
 s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask) {
-    LOG_INFO(Lib_UserService, "called");
     if (g_lib_init) {
+        LOG_ERROR(Lib_UserService, "already initialized");
         return ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED;
     }
+
+    LOG_INFO(Lib_UserService, "called");
     g_lib_init = true;
     return ORBIS_OK;
 }
 
 s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
-    LOG_INFO(Lib_UserService, "called");
     if (!g_lib_init) {
+        LOG_ERROR(Lib_UserService, "not initialized");
         return ORBIS_USER_SERVICE_ERROR_NOT_INITIALIZED;
     }
     if (!user_name) {
+        LOG_ERROR(Lib_UserService, "null user_name buffer");
         return ORBIS_USER_SERVICE_ERROR_INVALID_ARGUMENT;
     }
 
@@ -60,9 +65,11 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
         const OrbisNpId& np_id = Np::NpHandler::Instance().GetNpId(user_id);
         u64 copy_len = std::min<u64>(name_len, strnlen(np_id.handle.data, 16));
         strncpy(user_name, np_id.handle.data, copy_len);
+        LOG_INFO(Lib_UserService, "called, returning user_name {}", user_name);
         return ORBIS_OK;
     }
     // Fallback to the real function instead.
+    LOG_INFO(Lib_UserService, "called, returning host user_name");
     return SHADNET_HOOK_CONTINUE(sceUserServiceGetUserName, user_id, user_name, name_len);
 }
 
