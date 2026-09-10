@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <map>
 #include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
+#include <absl/container/flat_hash_map.h>
 #include "common/logging/log.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 
@@ -32,12 +32,12 @@ struct OrbisNpWebApiContext {
     s32 libCtxId;
     s32 libHttpCtxId;
     std::recursive_mutex contextLock;
-    std::map<s32, OrbisNpWebApiUserContext*> userContexts;
-    std::map<s32, OrbisNpWebApiHandle*> handles;
-    std::map<s32, OrbisNpWebApiTimerHandle*> timerHandles;
-    std::map<s32, OrbisNpWebApiPushEventFilter*> pushEventFilters;
-    std::map<s32, OrbisNpWebApiServicePushEventFilter*> servicePushEventFilters;
-    std::map<s32, OrbisNpWebApiExtendedPushEventFilter*> extendedPushEventFilters;
+    absl::flat_hash_map<s32, OrbisNpWebApiUserContext*> userContexts;
+    absl::flat_hash_map<s32, OrbisNpWebApiHandle*> handles;
+    absl::flat_hash_map<s32, OrbisNpWebApiTimerHandle*> timerHandles;
+    absl::flat_hash_map<s32, OrbisNpWebApiPushEventFilter*> pushEventFilters;
+    absl::flat_hash_map<s32, OrbisNpWebApiServicePushEventFilter*> servicePushEventFilters;
+    absl::flat_hash_map<s32, OrbisNpWebApiExtendedPushEventFilter*> extendedPushEventFilters;
     std::string name;
     bool terminated;
 };
@@ -47,10 +47,12 @@ struct OrbisNpWebApiUserContext {
     s32 userCount;
     s32 userCtxId;
     s32 userId;
-    std::map<s64, OrbisNpWebApiRequest*> requests;
-    std::map<s32, OrbisNpWebApiRegisteredPushEventCallback*> pushEventCallbacks;
-    std::map<s32, OrbisNpWebApiRegisteredServicePushEventCallback*> servicePushEventCallbacks;
-    std::map<s32, OrbisNpWebApiRegisteredExtendedPushEventCallback*> extendedPushEventCallbacks;
+    absl::flat_hash_map<s64, OrbisNpWebApiRequest*> requests;
+    absl::flat_hash_map<s32, OrbisNpWebApiRegisteredPushEventCallback*> pushEventCallbacks;
+    absl::flat_hash_map<s32, OrbisNpWebApiRegisteredServicePushEventCallback*>
+        servicePushEventCallbacks;
+    absl::flat_hash_map<s32, OrbisNpWebApiRegisteredExtendedPushEventCallback*>
+        extendedPushEventCallbacks;
     bool deleted;
     OrbisNpWebApiNotificationCallback notificationCallbackFunction;
     void* pNotificationCallbackUserArgs;

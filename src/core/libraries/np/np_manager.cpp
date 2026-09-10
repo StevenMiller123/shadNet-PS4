@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <deque>
+#include <absl/container/flat_hash_map.h>
 #include <orbis/NpManager.h>
 #include <orbis/libkernel.h>
 #include "common/elf_info.h"
@@ -80,13 +81,13 @@ s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
 }
 
 // Np callback handling
-static std::vector<std::function<void()>> g_np_callbacks;
+static absl::flat_hash_map<std::string, std::function<void()>> g_np_callbacks;
 static std::mutex g_np_callbacks_mutex;
 
 void RegisterNpCallback(std::string key, std::function<void()> cb) {
     std::scoped_lock lk{g_np_callbacks_mutex};
     LOG_DEBUG(Lib_NpManager, "registering callback processing for {}", key);
-    g_np_callbacks.emplace_back(cb);
+    g_np_callbacks.emplace(key, cb);
 }
 
 struct PendingNpStateEvent {

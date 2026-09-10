@@ -8,6 +8,7 @@
 #include <deque>
 #include <string>
 #include <string_view>
+#include <absl/container/flat_hash_map.h>
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/Http.h>
 #include <orbis/UserService.h>
@@ -21,7 +22,7 @@
 namespace Libraries::Np::NpWebApi {
 
 static std::recursive_mutex g_global_mutex;
-static std::map<s32, OrbisNpWebApiContext*> g_contexts;
+static absl::flat_hash_map<s32, OrbisNpWebApiContext*> g_contexts;
 static s32 g_library_context_count = 0;
 
 // Last WebApi error code parsed from an error response body
