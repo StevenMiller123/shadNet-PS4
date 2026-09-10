@@ -9,17 +9,7 @@
 #include "core/libraries/np/np_handler.h"
 #include "core/libraries/system/user_service.h"
 
-HOOK_INIT(sceUserServiceGetUserName);
-s32 sceUserServiceGetUserName_hook(s32 user_id, char* user_name, u64 name_len) {
-    s32 result =
-        Libraries::System::UserService::sceUserServiceGetUserName(user_id, user_name, name_len);
-    if (result == 1) {
-        // placeholder return to indicate we need to get the actual user name.
-        return SHADNET_HOOK_CONTINUE(sceUserServiceGetUserName, user_id, user_name, name_len);
-    }
-    return result;
-}
-
+SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceGetUserName);
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize);
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize2);
 
@@ -28,7 +18,7 @@ void RegisterUserServiceHooks() {
     if (ret != 0) {
         LOG_INFO(Lib_UserService, "sceUserServiceInitialize returned {:#x}", ret);
     }
-    HOOK(sceUserServiceGetUserName);
+    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetUserName);
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize);
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize2);
 }
@@ -73,7 +63,7 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
         return ORBIS_OK;
     }
     // Fallback to the real function instead.
-    return 1;
+    return SHADNET_HOOK_CONTINUE(sceUserServiceGetUserName, user_id, user_name, name_len);
 }
 
 void RegisterHooks() {
