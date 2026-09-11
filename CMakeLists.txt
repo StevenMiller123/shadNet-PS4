@@ -200,7 +200,8 @@ set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/net.cpp
                  src/core/libraries/system/user_service.cpp
                  src/core/libraries/np/np_handler.cpp
-                 src/core/libraries/np/np_manager.cpp
+                 src/core/libraries/np/np_manager/np_manager.cpp
+                 src/core/libraries/np/np_manager/np_callbacks.cpp
                  src/core/libraries/np/np_score.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp

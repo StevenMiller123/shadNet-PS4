@@ -7,7 +7,7 @@
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
-#include "core/libraries/np/np_manager.h"
+#include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/np/np_web_api/np_web_api_internal.h"
 
@@ -704,7 +704,7 @@ s32 sceNpWebApiVshInitialize(s32 libHttpCtxId, u64 poolSize) {
 
 void RegisterHooks() {
     RegisterLibraryHooks();
-    Libraries::Np::NpManager::RegisterNpCallback("npwebapi_push", DrainPushEvents);
+    NpManager::RegisterNpCallback("npwebapi_push", DrainPushEvents);
 };
 
 } // namespace Libraries::Np::NpWebApi

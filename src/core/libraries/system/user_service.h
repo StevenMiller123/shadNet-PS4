@@ -9,5 +9,6 @@ namespace Libraries::System::UserService {
 s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params);
 s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask);
 s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len);
+s32 sceUserServiceGetEvent(OrbisUserServiceEvent* event);
 void RegisterHooks();
 } // namespace Libraries::System::UserService

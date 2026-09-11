@@ -10,18 +10,37 @@
 #include "common/plugin_common.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler.h"
-#include "core/libraries/np/np_manager.h"
+#include "core/libraries/np/np_manager/np_callbacks.h"
+#include "core/libraries/np/np_manager/np_manager.h"
 
 extern "C" {
+// void sceNpRegisterStateCallbackForToolkit();
+// void sceNpUnregisterStateCallbackForToolkit();
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetState);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetNpId);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetOnlineId);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
+// SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
+// SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
 
 void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetNpId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetOnlineId);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckCallback);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallback);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
+    // SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
+    // SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
 }
 }
 
@@ -30,86 +49,64 @@ namespace Libraries::Np::NpManager {
 static s32 g_firmware_version = 0;
 
 s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
-    LOG_INFO(Lib_NpManager, "called");
     if (user_id == -1 && g_firmware_version >= Common::ElfInfo::FW_900) {
         // FW < 9.00 behavior needs validating.
+        LOG_ERROR(Lib_NpManager, "invalid user id {}", user_id);
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
     if (!state) {
+        LOG_ERROR(Lib_NpManager, "null state pointer");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
-    if (NpHandler::Instance().IsActive()) {
+    
+    if (NpHandler::Instance().IsSignedIn(user_id)) {
+        LOG_INFO(Lib_NpManager, "called, returning signed in state");
         *state = ORBIS_NP_STATE_SIGNED_IN;
     } else {
+        LOG_INFO(Lib_NpManager, "called, returning signed out state");
         *state = ORBIS_NP_STATE_SIGNED_OUT;
     }
     return ORBIS_OK;
 }
 
 s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id) {
-    LOG_INFO(Lib_NpManager, "called");
     if (user_id == -1) {
+        LOG_ERROR(Lib_NpManager, "invalid user id {}", user_id);
         return g_firmware_version >= Common::ElfInfo::FW_900 ? ORBIS_NP_ERROR_INVALID_ARGUMENT
                                                              : ORBIS_NP_ERROR_USER_NOT_FOUND;
     }
     if (!np_id) {
+        LOG_ERROR(Lib_NpManager, "null np_id");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
-    if (!NpHandler::Instance().IsActive()) {
+    if (!NpHandler::Instance().IsSignedIn(user_id)) {
         // Not currently connected to shadNet, treat this as signed out.
+        LOG_INFO(Lib_NpManager, "called, returning signed out");
         return ORBIS_NP_ERROR_SIGNED_OUT;
     }
+    LOG_INFO(Lib_NpManager, "called");
     *np_id = NpHandler::Instance().GetNpId(user_id);
     return ORBIS_OK;
 }
 
 s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
-    LOG_INFO(Lib_NpManager, "called");
     if (user_id == -1) {
+        LOG_ERROR(Lib_NpManager, "invalid user id {}", user_id);
         return g_firmware_version >= Common::ElfInfo::FW_900 ? ORBIS_NP_ERROR_INVALID_ARGUMENT
                                                              : ORBIS_NP_ERROR_USER_NOT_FOUND;
     }
     if (!online_id) {
+        LOG_ERROR(Lib_NpManager, "null online_id");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
-    if (!NpHandler::Instance().IsActive()) {
+    if (!NpHandler::Instance().IsSignedIn(user_id)) {
         // Not currently connected to shadNet, treat this as signed out.
+        LOG_INFO(Lib_NpManager, "called, returning signed out");
         return ORBIS_NP_ERROR_SIGNED_OUT;
     }
+    LOG_INFO(Lib_NpManager, "called");
     *online_id = NpHandler::Instance().GetNpId(user_id).handle;
     return ORBIS_OK;
-}
-
-// Np callback handling
-static absl::flat_hash_map<std::string, std::function<void()>> g_np_callbacks;
-static std::mutex g_np_callbacks_mutex;
-
-void RegisterNpCallback(std::string key, std::function<void()> cb) {
-    std::scoped_lock lk{g_np_callbacks_mutex};
-    LOG_DEBUG(Lib_NpManager, "registering callback processing for {}", key);
-    g_np_callbacks.emplace(key, cb);
-}
-
-struct PendingNpStateEvent {
-    s32 user_id;
-    OrbisNpState state;
-    OrbisNpId np_id;
-    bool has_np_id;
-};
-static std::deque<PendingNpStateEvent> g_np_state_events;
-static std::mutex g_np_state_events_mutex;
-
-static void QueueNpStateEvent(s32 user_id, OrbisNpState state) {
-    PendingNpStateEvent event{};
-    event.user_id = user_id;
-    event.state = state;
-    event.has_np_id = state == ORBIS_NP_STATE_SIGNED_IN;
-    if (event.has_np_id) {
-        event.np_id = Libraries::Np::NpHandler::Instance().GetNpId(user_id);
-    }
-
-    std::scoped_lock lk{g_np_state_events_mutex};
-    g_np_state_events.emplace_back(event);
 }
 
 void RegisterHooks() {

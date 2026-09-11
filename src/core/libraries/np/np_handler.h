@@ -19,9 +19,15 @@ public:
     }
 
     void Initialize();
+    void OnUserLoggedIn(s32 user_id);
+    void OnUserLoggedOut(s32 user_id);
 
     bool IsActive() {
         return m_initialized;
+    };
+
+    bool IsSignedIn(s32 user_id) {
+        return m_clients[user_id]->IsAuthenticated();
     };
 
     OrbisNpId& GetNpId(s32 user_id) {
@@ -36,11 +42,35 @@ public:
     void UnregisterStateCallback(s32 handle);
 
 private:
+    // User management
     bool ConnectUser(s32 user_id, const std::string& host, u16 port, const std::string& npid,
                      const std::string& password);
+    bool ConnectUserById(s32 user_id);
+    void MarkForReconnect(s32 user_id);
+    void TryReconnect();
+    void DisconnectUser(s32 user_id);
 
-    void FireStateCallback(s32 user_id, OrbisNpState state);
+    // Workers
+    void StartWorker();
+    void WorkerThread();
 
+    // Per-user worker threads
+    std::atomic<bool> m_initialized{false};
+    std::atomic<bool> m_worker_running{false};
+    std::thread m_worker_thread;
+
+    struct ReconnectState {
+        std::chrono::steady_clock::time_point next_attempt{};
+        std::chrono::milliseconds backoff{0};
+    };
+    std::unordered_map<s32, ReconnectState> m_reconnects;
+
+    // Client
+    mutable std::mutex m_mutex_clients;
+    absl::flat_hash_map<s32, std::shared_ptr<ShadNet::ShadNetClient>> m_clients;
+    absl::flat_hash_map<s32, OrbisNpId> m_np_ids;
+
+    // Client callbacks
     void OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n);
     void OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n);
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
@@ -49,14 +79,6 @@ private:
     // void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType
     // error, const std::vector<u8>& body);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
-
-    std::atomic<bool> m_initialized{false};
-    std::atomic<bool> m_worker_running{false};
-
-    // Client
-    mutable std::mutex m_mutex_clients;
-    absl::flat_hash_map<s32, std::shared_ptr<ShadNet::ShadNetClient>> m_clients;
-    absl::flat_hash_map<s32, OrbisNpId> m_np_ids;
 
     // State callbacks
     struct CbEntry {
@@ -67,6 +89,8 @@ private:
     mutable std::mutex m_mutex_cbs;
     absl::flat_hash_map<s32, CbEntry> m_state_cbs;
     std::atomic<s32> m_next_handle;
+
+    void FireStateCallback(s32 user_id, OrbisNpState state);
 
     // Friend state
     struct FriendInfo {

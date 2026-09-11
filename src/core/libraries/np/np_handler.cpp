@@ -12,7 +12,6 @@
 
 namespace Libraries::Np {
 
-// Init procedures
 void NpHandler::Initialize() {
     if (m_initialized.exchange(true)) {
         LOG_WARNING(NpHandler, "Initialize called more than once");
@@ -38,6 +37,15 @@ void NpHandler::Initialize() {
         return;
     }
 
+    const ShadNet::ProbeInfo probe = ShadNet::ProbeServer(hostname, port);
+    if (probe.result != ShadNet::ProbeResult::Ok) {
+        LOG_INFO(NpHandler, "Failed to connect to shadNet server, error {}",
+                 magic_enum::enum_name(probe.result));
+        m_initialized.exchange(false);
+    } else {
+        LOG_INFO(NpHandler, "shadNet server is accessible");
+    }
+
     // Log in any logged in users
     OrbisUserServiceLoginUserIdList user_list{};
     s32 result = sceUserServiceGetLoginUserIdList(&user_list);
@@ -53,22 +61,43 @@ void NpHandler::Initialize() {
         }
 
         if (!config.IsShadNetEnabled(user_id)) {
-            LOG_NOTIFICATION(NpHandler, "shadNet is currently disabled");
+            LOG_NOTIFICATION(NpHandler, "user {} has shadNet disabled", user_id);
             m_initialized.exchange(false);
             return;
         }
 
-        const ShadNet::ProbeInfo probe = ShadNet::ProbeServer(hostname, port);
-        if (probe.result != ShadNet::ProbeResult::Ok) {
-            LOG_NOTIFICATION(NpHandler, "Failed to connect to shadNet server, error {}",
-                             magic_enum::enum_name(probe.result));
-            m_initialized.exchange(false);
-        } else {
-            LOG_NOTIFICATION(NpHandler, "shadNet server is accessible");
-        }
-
         ConnectUser(user_id, hostname, port, config.GetNpId(user_id), config.GetPassword(user_id));
     }
+}
+
+bool NpHandler::ConnectUserById(s32 user_id) {
+    if (IsSignedIn(user_id)) {
+        LOG_WARNING(NpHandler, "user {} is already signed in", user_id);
+        return true;
+    }
+
+    auto& config = ShadNet::Settings::GetInstance();
+    static std::string server_url = config.GetServerUrl();
+    static const u64 colon = server_url.rfind(':');
+    if (colon == std::string::npos) {
+        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
+        return false;
+    }
+    static std::string hostname = server_url.substr(0, colon);
+    u16 port{};
+    try {
+        port = static_cast<u16>(std::stoi(server_url.substr(colon + 1)));
+    } catch (const std::exception&) {
+        LOG_WARNING(NpHandler, "Invalid server url {}", server_url);
+        return false;
+    }
+
+    if (!config.IsShadNetEnabled(user_id)) {
+        LOG_NOTIFICATION(NpHandler, "user {} has shadNet disabled", user_id);
+        return false;
+    }
+    return ConnectUser(user_id, hostname, port, config.GetNpId(user_id),
+                       config.GetPassword(user_id));
 }
 
 bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, const std::string& npid,
@@ -167,6 +196,116 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
 
     FireStateCallback(user_id, ORBIS_NP_STATE_SIGNED_IN);
     return true;
+}
+
+void NpHandler::DisconnectUser(s32 user_id) {
+    std::shared_ptr<ShadNet::ShadNetClient> client;
+    {
+        std::lock_guard lock(m_mutex_clients);
+        auto it = m_clients.find(user_id);
+        if (it == m_clients.end())
+            return;
+        client = std::move(it->second);
+        m_clients.erase(it);
+    }
+    {
+        std::lock_guard lock(m_mutex_friend_state);
+        m_friend_states.erase(user_id);
+    }
+    client->Stop();
+    // Nothing that needs to be marked as failing yet. Update this later.
+    // FailPendingRequests(user_id, ORBIS_NP_ERROR_SIGNED_OUT);
+    FireStateCallback(user_id, ORBIS_NP_STATE_SIGNED_OUT);
+    LOG_NOTIFICATION(NpHandler, "user {} disconnected", user_id);
+}
+
+void NpHandler::StartWorker() {
+    bool expected = false;
+    if (m_worker_running.compare_exchange_strong(expected, true)) {
+        m_worker_thread = std::thread(&NpHandler::WorkerThread, this);
+    }
+}
+
+void NpHandler::OnUserLoggedIn(s32 user_id) {
+    if (ConnectUserById(user_id)) {
+        StartWorker();
+    }
+}
+
+void NpHandler::OnUserLoggedOut(s32 user_id) {
+    {
+        std::lock_guard lock(m_mutex_clients);
+        m_reconnects.erase(user_id);
+    }
+    DisconnectUser(user_id);
+}
+
+void NpHandler::WorkerThread() {
+    while (m_worker_running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        // Collect ids of dropped clients
+        std::vector<s32> dropped;
+        {
+            std::lock_guard lock(m_mutex_clients);
+            for (auto& [user_id, client] : m_clients) {
+                if (!client->IsConnected())
+                    dropped.push_back(user_id);
+            }
+        }
+
+        for (s32 user_id : dropped) {
+            LOG_WARNING(NpHandler, "connection lost for user_id {}", user_id);
+            DisconnectUser(user_id);
+            MarkForReconnect(user_id);
+        }
+        TryReconnect();
+    }
+}
+
+void NpHandler::MarkForReconnect(s32 user_id) {
+    if (!IsActive()) {
+        return;
+    }
+    std::lock_guard lock(m_mutex_clients);
+    auto& st = m_reconnects[user_id];
+    st.backoff = std::chrono::milliseconds(2000);
+    st.next_attempt = std::chrono::steady_clock::now() + st.backoff;
+}
+
+void NpHandler::TryReconnect() {
+    std::vector<s32> due;
+    {
+        std::lock_guard lock(m_mutex_clients);
+        for (auto& [user_id, st] : m_reconnects) {
+            if (m_clients.count(user_id) || std::chrono::steady_clock::now() >= st.next_attempt) {
+                due.push_back(user_id);
+            }
+        }
+    }
+
+    for (s32 user_id : due) {
+        if (!m_worker_running) {
+            return;
+        }
+        if (!IsActive()) {
+            std::lock_guard lock(m_mutex_clients);
+            m_reconnects.erase(user_id);
+            continue;
+        }
+
+        const bool ok = ConnectUserById(user_id);
+        std::lock_guard lock(m_mutex_clients);
+        if (ok || m_clients.count(user_id)) {
+            m_reconnects.erase(user_id);
+            LOG_INFO(NpHandler, "user_id {} reconnected to shadNet", user_id);
+        } else if (auto it = m_reconnects.find(user_id); it != m_reconnects.end()) {
+            it->second.backoff = std::min(it->second.backoff * 2, std::chrono::milliseconds(30000));
+            it->second.next_attempt = std::chrono::steady_clock::now() + it->second.backoff;
+            LOG_DEBUG(NpHandler, "failed to reconnect user_id {}, retrying in {}ms", user_id,
+                      it->second.backoff.count());
+        }
+    }
 }
 
 std::string NpHandler::GetBearerToken(s32 user_id) const {
