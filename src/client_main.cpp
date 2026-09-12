@@ -33,6 +33,15 @@ extern "C" s32 client_preinit() {
     // Initialize minimal hooks needed for init
     Libraries::Kernel::Kernel::RegisterHooks();
     Libraries::System::UserService::RegisterHooks();
+
+    OrbisUserServiceInitializeParams param;
+    param.priority = ORBIS_KERNEL_PRIO_FIFO_LOWEST;
+    LOG_ORBIS_RET(Lib_UserService, sceUserServiceInitialize(nullptr));
+
+    client_start();
+
+    LOG_ORBIS_RET(Lib_UserService, sceUserServiceTerminate());
+
     return 0;
 }
 
@@ -81,6 +90,7 @@ extern "C" s32 client_start() {
         std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
         if (std::filesystem::exists(meta_path + "/param.sfo")) {
             // Extract param.sfo
+            LOG_NOTIFICATION(shadNet, "todo parse {}", meta_path + "/param.sfo");
 
         } else {
             LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
