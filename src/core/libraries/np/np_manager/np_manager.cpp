@@ -34,7 +34,7 @@ void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetNpId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetOnlineId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckCallback);
-    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
+    SHADNET_HOOK32(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
     // SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);

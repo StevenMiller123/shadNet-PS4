@@ -23,7 +23,7 @@ s32 sceNetResolverStartNtoa_hook(s32 rid, const char* hostname, OrbisNetInAddr* 
 }
 
 void RegisterNetHooks() {
-    HOOK(sceNetSocket);
+    HOOK16(sceNetSocket);
     HOOK(sceNetResolverStartNtoa);
 }
 

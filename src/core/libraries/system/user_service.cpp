@@ -37,6 +37,7 @@ s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params) {
     }
 
     LOG_INFO(Lib_UserService, "called");
+    client_start();
     g_lib_init = true;
     return ORBIS_OK;
 }
@@ -49,6 +50,7 @@ s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask) {
 
     LOG_INFO(Lib_UserService, "called");
     g_lib_init = true;
+    client_start();
     return ORBIS_OK;
 }
 
