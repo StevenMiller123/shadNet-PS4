@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <pthread.h>
 #include <pthread_np.h>
 #include "fmt/format.h"
 #include "orbis/SysUtil.h"
