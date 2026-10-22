@@ -21,8 +21,8 @@ void RegisterUserServiceHooks() {
         LOG_INFO(Lib_UserService, "sceUserServiceInitialize returned {:#x}", ret);
     }
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetUserName);
-    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize);
-    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceInitialize2);
+    SHADNET_HOOK16(Libraries::System::UserService, sceUserServiceInitialize);
+    SHADNET_HOOK16(Libraries::System::UserService, sceUserServiceInitialize2);
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetEvent);
 }
 

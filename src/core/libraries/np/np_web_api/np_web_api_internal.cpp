@@ -22,7 +22,7 @@
 namespace Libraries::Np::NpWebApi {
 
 static std::recursive_mutex g_global_mutex;
-static absl::flat_hash_map<s32, OrbisNpWebApiContext*> g_contexts;
+static std::map<s32, OrbisNpWebApiContext*> g_contexts;
 static s32 g_library_context_count = 0;
 
 // Last WebApi error code parsed from an error response body

@@ -19,8 +19,8 @@ s32 __sys_socketex_hook(const char* name, s32 family, s32 type, s32 protocol) {
 }
 
 void RegisterKernelHooks() {
-    HOOK(socket);
-    HOOK(__sys_socketex);
+    HOOK32(socket);
+    HOOK32(__sys_socketex);
 }
 
 namespace Libraries::Kernel::Kernel {
