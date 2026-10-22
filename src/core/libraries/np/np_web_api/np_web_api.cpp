@@ -74,6 +74,7 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEvent
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
 
 static void RegisterLibraryHooks() {
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeletePushEventFilter);
@@ -92,20 +93,15 @@ static void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCheckTimeout);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiClearAllUnusedConnection);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiClearUnusedConnection);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContextA);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateExtdPushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateHandle);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateMultipartRequest);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateRequest);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteContext);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteExtdPushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteHandle);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeletePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteRequest);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeleteServicePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetConnectionStats);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetHttpResponseHeaderValue);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiGetHttpResponseHeaderValueLength);
@@ -120,11 +116,7 @@ static void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntRegisterServicePushEventCallback);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiIntRegisterServicePushEventCallbackA);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiReadData);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallback);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterExtdPushEventCallbackA);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterNotificationCallback);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterPushEventCallback);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiRegisterServicePushEventCallback);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendMultipartRequest);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendMultipartRequest2);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSendRequest);
@@ -135,9 +127,6 @@ static void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiSetRequestTimeout);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterNotificationCallback);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterPushEventCallback);
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterServicePushEventCallback);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
 }
 }
