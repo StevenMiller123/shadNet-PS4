@@ -11,8 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout Plugin
+      uses: actions/checkout@main
+      with:
+        submodules: recursive
+
     - name: Install dependencies
-      run: sudo apt install llvm
+      run: sudo apt install -y llvm lld
 
     - name: Fetch OpenOrbis
       run: curl -sL https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain/releases/latest/download/openorbis_toolchain.tar.gz | tar xz -C ./
@@ -28,11 +33,6 @@ jobs:
       env:
         OO_PS4_TOOLCHAIN: "${{ github.workspace }}/OpenOrbis/PS4Toolchain"
       run: make all
-    
-    - name: Checkout Plugin
-      uses: actions/checkout@main
-      with:
-        submodules: recursive
 
     - name: Compile Plugin
       env:
@@ -43,6 +43,7 @@ jobs:
         cmake --build build --parallel $(nproc)
     
     - name: Create Release
+      if: github.ref == 'refs/heads/main' && github.repository == 'StevenMiller123/shadNet-PS4' && github.event_name == 'push'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release create release-${{ GITHUB.SHA }} build/prx_final/shadNet-PS4.prx --target ${{ GITHUB.SHA }} -t "Automated Release ${{ GITHUB.SHA }}"
+      run: gh release create release-${{ GITHUB.SHA }} bin/plugins/prx_final/shadNet-PS4.prx --target ${{ GITHUB.SHA }} -t "Automated Release ${{ GITHUB.SHA }}"
