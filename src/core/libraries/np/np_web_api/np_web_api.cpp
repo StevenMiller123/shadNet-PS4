@@ -74,7 +74,6 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEvent
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
 
 static void RegisterLibraryHooks() {
-    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiDeletePushEventFilter);
