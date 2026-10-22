@@ -27,6 +27,9 @@ public:
     };
 
     bool IsSignedIn(s32 user_id) {
+        if (!m_clients.contains(user_id)) {
+            return false;
+        }
         return m_clients[user_id]->IsAuthenticated();
     };
 
