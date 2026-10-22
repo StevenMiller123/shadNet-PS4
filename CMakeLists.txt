@@ -117,23 +117,44 @@ set(APP_VERSION "${GIT_REV_LIST_NUMBER}")
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/common/scm_rev.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/common/scm_rev.cpp" @ONLY)
 
-get_filename_component(PLUGIN_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-project(${PLUGIN_NAME} LANGUAGES C CXX)
-set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
-
-execute_process(COMMAND uname -s OUTPUT_VARIABLE HOST_UNAME_S OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(HOST_UNAME_S STREQUAL "Linux")
-    set(PLUGIN_LD   "ld.lld")
-    set(PLUGIN_CDIR "linux")
-elseif(HOST_UNAME_S STREQUAL "Darwin")
-    set(PLUGIN_LD   "/usr/local/opt/llvm/bin/ld.lld")
-    set(PLUGIN_CDIR "macos")
-else()
-    message(FATAL_ERROR "Unsupported host platform: ${HOST_UNAME_S}")
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
+    message(FATAL_ERROR "Visual Studio build system is not supported, use Ninja")
 endif()
 
-option(PLUGIN_DEBUG "Build debug configuration (Makefile DEBUG=1)" OFF)
+get_filename_component(PLUGIN_NAME "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
+project(${PLUGIN_NAME} LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+
+set(PLUGIN_HOST_EXE_SUFFIX "")
+set(PLUGIN_LLVM_HINTS "")
+foreach(LLVM_ENV_VAR LLVM_DIR LLVM_PATH)
+    if(NOT "$ENV{${LLVM_ENV_VAR}}" STREQUAL "")
+        file(TO_CMAKE_PATH "$ENV{${LLVM_ENV_VAR}}" LLVM_ENV_PATH)
+        list(APPEND PLUGIN_LLVM_HINTS "${LLVM_ENV_PATH}/bin")
+    endif()
+endforeach()
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+    set(PLUGIN_CDIR "linux")
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(PLUGIN_CDIR "macos")
+    list(APPEND PLUGIN_LLVM_HINTS "/usr/local/opt/llvm/bin" "/opt/homebrew/opt/llvm/bin")
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    set(PLUGIN_CDIR "windows")
+    set(PLUGIN_HOST_EXE_SUFFIX ".exe")
+    list(APPEND PLUGIN_LLVM_HINTS "C:/Program Files/LLVM/bin")
+else()
+    message(FATAL_ERROR "Unsupported host platform: ${CMAKE_HOST_SYSTEM_NAME}")
+endif()
+
+find_program(PLUGIN_LD NAMES ld.lld HINTS ${PLUGIN_LLVM_HINTS})
+if(NOT PLUGIN_LD)
+    message(FATAL_ERROR "ld.lld not found")
+endif()
+
+option(PLUGIN_DEBUG "Build debug configuration" OFF)
 
 if(PLUGIN_DEBUG)
     set(PLUGIN_DEBUG_FLAG "-D__FINAL__=0")
@@ -156,6 +177,14 @@ endif()
 if(GOLDHEN_SDK STREQUAL "")
     message(FATAL_ERROR "GOLDHEN_SDK is not set")
 endif()
+
+file(TO_CMAKE_PATH "${OO_PS4_TOOLCHAIN}" OO_PS4_TOOLCHAIN)
+file(TO_CMAKE_PATH "${GOLDHEN_SDK}" GOLDHEN_SDK)
+string(REGEX REPLACE "/+$" "" OO_PS4_TOOLCHAIN "${OO_PS4_TOOLCHAIN}")
+string(REGEX REPLACE "/+$" "" GOLDHEN_SDK "${GOLDHEN_SDK}")
+
+set(PLUGIN_CREATE_FSELF "${OO_PS4_TOOLCHAIN}/bin/${PLUGIN_CDIR}/create-fself${PLUGIN_HOST_EXE_SUFFIX}"
+    CACHE FILEPATH "Path to OpenOrbis create-fself for this host")
 
 set(PROJ_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(EXTERNALS_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/externals")
@@ -241,7 +270,20 @@ target_compile_options(plugin_objects PRIVATE
 
 set(PROTOBUF_HOST_SOURCE_DIR "${EXTERNALS_DIR}/protobuf")
 set(PROTOBUF_HOST_BUILD_DIR  "${CMAKE_CURRENT_BINARY_DIR}/protobuf-host")
-set(PROTOC_EXECUTABLE "${PROTOBUF_HOST_BUILD_DIR}/protoc")
+set(PROTOC_EXECUTABLE "${PROTOBUF_HOST_BUILD_DIR}/protoc${PLUGIN_HOST_EXE_SUFFIX}")
+
+set(PROTOC_HOST_C_COMPILER   "" CACHE FILEPATH "Optional C compiler for the host-native protoc build")
+set(PROTOC_HOST_CXX_COMPILER "" CACHE FILEPATH "Optional C++ compiler for the host-native protoc build")
+set(PROTOC_HOST_EXTRA_ARGS "")
+if(PROTOC_HOST_C_COMPILER)
+    list(APPEND PROTOC_HOST_EXTRA_ARGS "-DCMAKE_C_COMPILER=${PROTOC_HOST_C_COMPILER}")
+endif()
+if(PROTOC_HOST_CXX_COMPILER)
+    list(APPEND PROTOC_HOST_EXTRA_ARGS "-DCMAKE_CXX_COMPILER=${PROTOC_HOST_CXX_COMPILER}")
+endif()
+if(CMAKE_MAKE_PROGRAM)
+    list(APPEND PROTOC_HOST_EXTRA_ARGS "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
+endif()
 
 if(IS_DIRECTORY "${PROTOBUF_HOST_SOURCE_DIR}")
     ExternalProject_Add(protobuf_host
@@ -253,6 +295,7 @@ if(IS_DIRECTORY "${PROTOBUF_HOST_SOURCE_DIR}")
             -Dprotobuf_BUILD_SHARED_LIBS=OFF
             -Dprotobuf_ABSL_PROVIDER=module
             -Dprotobuf_WITH_ZLIB=OFF
+            ${PROTOC_HOST_EXTRA_ARGS}
         BUILD_BYPRODUCTS "${PROTOC_EXECUTABLE}"
         INSTALL_COMMAND ""
     )
@@ -409,28 +452,41 @@ endif()
 
 set(ALL_LINK_OBJECTS "$<TARGET_OBJECTS:plugin_objects>" ${EXTERNAL_LINK_FILES})
 
+set(PLUGIN_LINK_RSP "${CMAKE_CURRENT_BINARY_DIR}/plugin_link.rsp")
+set(PLUGIN_RSP_CONTENT "--start-group\n")
+foreach(ITEM ${ALL_LINK_OBJECTS})
+    string(APPEND PLUGIN_RSP_CONTENT "\"$<JOIN:${ITEM},\"\n\">\"\n")
+endforeach()
+foreach(LIB ${PLUGIN_LIBS})
+    string(APPEND PLUGIN_RSP_CONTENT "${LIB}\n")
+endforeach()
+string(APPEND PLUGIN_RSP_CONTENT "--end-group\n")
+file(GENERATE OUTPUT "${PLUGIN_LINK_RSP}" CONTENT "${PLUGIN_RSP_CONTENT}")
+
+if(CMAKE_HOST_WIN32)
+    set(PLUGIN_CHMOD_COMMAND "")
+else()
+    set(PLUGIN_CHMOD_COMMAND COMMAND chmod +x "${TARGET_PRX}")
+endif()
+
 add_custom_command(
     OUTPUT "${TARGET_PRX}"
-    COMMAND ${PLUGIN_LD}
+    COMMAND "${PLUGIN_LD}"
             -m elf_x86_64 -pie
-            --script ${OO_PS4_TOOLCHAIN}/link.x
+            --script "${OO_PS4_TOOLCHAIN}/link.x"
             -e _init --eh-frame-hdr
-            -L${OO_PS4_TOOLCHAIN}/lib
-            -L${GOLDHEN_SDK}
-            ${GOLDHEN_SDK}/build/crtprx.o
-            --start-group
-            ${ALL_LINK_OBJECTS}
-            ${PLUGIN_LIBS}
-            --end-group
-            -o ${TARGET_ELF}.elf
-    COMMAND ${OO_PS4_TOOLCHAIN}/bin/${PLUGIN_CDIR}/create-fself
-            -in=${TARGET_ELF}.elf
-            -out=${TARGET_ELF}.oelf
-            --lib=${TARGET_PRX}
+            "-L${OO_PS4_TOOLCHAIN}/lib"
+            "-L${GOLDHEN_SDK}"
+            "${GOLDHEN_SDK}/build/crtprx.o"
+            "@${PLUGIN_LINK_RSP}"
+            -o "${TARGET_ELF}.elf"
+    COMMAND "${PLUGIN_CREATE_FSELF}"
+            "-in=${TARGET_ELF}.elf"
+            "-out=${TARGET_ELF}.oelf"
+            "--lib=${TARGET_PRX}"
             --paid 0x3800000000000011
-    COMMAND chmod +x "${TARGET_PRX}"
-    COMMAND_EXPAND_LISTS
-    DEPENDS plugin_objects ${EXTERNAL_BUILD_DEPS} ${ALL_LINK_OBJECTS}
+    ${PLUGIN_CHMOD_COMMAND}
+    DEPENDS plugin_objects ${EXTERNAL_BUILD_DEPS} ${ALL_LINK_OBJECTS} "${PLUGIN_LINK_RSP}"
     COMMENT "Linking ${PLUGIN_NAME}.prx"
     VERBATIM
 )
