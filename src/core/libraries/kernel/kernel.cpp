@@ -14,7 +14,8 @@ s32 socket_hook(s32 family, s32 type, s32 protocol) {
 
 HOOK_INIT(__sys_socketex);
 s32 __sys_socketex_hook(const char* name, s32 family, s32 type, s32 protocol) {
-    LOG_INFO(Lib_Kernel, "called, name = {}, family = {}, type = {}, protocol = {}", name, family, type, protocol);
+    LOG_INFO(Lib_Kernel, "called, name = {}, family = {}, type = {}, protocol = {}",
+             name ? name : "(null)", family, type, protocol);
     return SHADNET_HOOK_CONTINUE(__sys_socketex, name, family, type, protocol);
 }
 
