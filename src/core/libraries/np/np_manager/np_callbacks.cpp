@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <mutex>
-#include <absl/container/flat_hash_map.h>
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler.h"
@@ -20,7 +19,7 @@ struct NpReachabilityStateCallback {
     void* userdata;
 };
 NpReachabilityStateCallback g_np_reachability_state_cb;
-static absl::flat_hash_map<s32, OrbisNpReachabilityState> g_np_reachability_state_last;
+static std::map<s32, OrbisNpReachabilityState> g_np_reachability_state_last;
 
 s32 sceNpRegisterNpReachabilityStateCallback(OrbisNpReachabilityStateCallback callback,
                                              void* userdata) {
@@ -205,12 +204,17 @@ void QueueNpStateEvent(s32 user_id, OrbisNpState state) {
     g_np_state_events.emplace_back(event);
 }
 
-static absl::flat_hash_map<std::string, std::function<void()>> g_np_callbacks;
-
+static std::map<std::string, std::function<void()>> g_np_callbacks;
 void RegisterNpCallback(std::string key, std::function<void()> cb) {
     std::scoped_lock lk{g_np_callbacks_mutex};
     LOG_DEBUG(Lib_NpManager, "registering callback processing for {}", key);
     g_np_callbacks.emplace(key, cb);
+}
+
+void DeregisterNpCallback(std::string key) {
+    std::scoped_lock lk{g_np_callbacks_mutex};
+    LOG_DEBUG(Lib_NpManager, "deregistering callback processing for {}", key);
+    g_np_callbacks.erase(key);
 }
 
 void UpdateNpStateFromEvent(s32 event_type, s32 user_id) {
