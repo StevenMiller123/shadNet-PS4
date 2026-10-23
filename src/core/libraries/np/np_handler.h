@@ -38,6 +38,7 @@ public:
     };
 
     std::string GetBearerToken(s32 user_id) const;
+    u64 GetAccountId(s32 user_id) const;
 
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);

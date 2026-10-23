@@ -314,6 +314,12 @@ std::string NpHandler::GetBearerToken(s32 user_id) const {
     return it != m_clients.end() ? it->second->GetBearerToken() : std::string{};
 }
 
+u64 NpHandler::GetAccountId(s32 user_id) const {
+    std::lock_guard lock(m_mutex_clients);
+    auto it = m_clients.find(user_id);
+    return it != m_clients.end() ? static_cast<u64>(it->second->GetUserId()) : 0;
+}
+
 // State callbacks
 s32 NpHandler::RegisterStateCallback(StateCallback cb, void* userdata) {
     std::lock_guard lock(m_mutex_cbs);
@@ -434,6 +440,25 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
         std::memcpy(ev.toOnlineId.data, n.toNpid.data(), copy_len);
     }
     ev.extdData = n.extdData;
+    ev.toAccountId = n.toAccountId != 0 ? n.toAccountId : GetAccountId(user_id);
+    ev.fromAccountId = n.fromAccountId;
+    if (ev.fromAccountId == 0) {
+        for (const auto& kv : n.extdData) {
+            if (kv.first == "fromAccountId") {
+                ev.fromAccountId = std::strtoull(kv.second.c_str(), nullptr, 10);
+                break;
+            }
+        }
+    }
+    if (ev.toAccountId != 0) {
+        ev.hasTo = true;
+        if (n.toNpid.empty()) {
+            std::lock_guard lock(m_mutex_clients);
+            if (const auto it = m_np_ids.find(user_id); it != m_np_ids.end()) {
+                std::memcpy(ev.toOnlineId.data, it->second.handle.data, sizeof(ev.toOnlineId.data));
+            }
+        }
+    }
     NpWebApi::EnqueuePushEvent(ev);
 
     if (n.npServiceName == "sessionInvitation") {
