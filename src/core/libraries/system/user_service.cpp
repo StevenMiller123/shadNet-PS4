@@ -10,9 +10,10 @@
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/system/user_service.h"
 
-SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceGetUserName);
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize);
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize2);
+SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceTerminate);
+SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceGetUserName);
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceGetEvent);
 
 void RegisterUserServiceHooks() {
@@ -20,9 +21,10 @@ void RegisterUserServiceHooks() {
     if (ret != 0) {
         LOG_INFO(Lib_UserService, "sceUserServiceInitialize returned {:#x}", ret);
     }
-    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetUserName);
     SHADNET_HOOK16(Libraries::System::UserService, sceUserServiceInitialize);
     SHADNET_HOOK16(Libraries::System::UserService, sceUserServiceInitialize2);
+    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceTerminate);
+    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetUserName);
     SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetEvent);
 }
 
@@ -49,6 +51,17 @@ s32 sceUserServiceInitialize2(s32 thread_prio, u64 cpu_mask) {
 
     LOG_INFO(Lib_UserService, "called");
     g_lib_init = true;
+    return ORBIS_OK;
+}
+
+s32 sceUserServiceTerminate() {
+    if (!g_lib_init) {
+        LOG_ERROR(Lib_UserService, "not initialized");
+        return ORBIS_USER_SERVICE_ERROR_NOT_INITIALIZED;
+    }
+
+    LOG_INFO(Lib_UserService, "called");
+    g_lib_init = false;
     return ORBIS_OK;
 }
 
