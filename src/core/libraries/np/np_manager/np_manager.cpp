@@ -9,13 +9,13 @@
 #include "common/logging/log.h"
 #include "common/plugin_common.h"
 #include "core/libraries/np/np_error.h"
-#include "core/libraries/np/np_handler.h"
+#include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 
 extern "C" {
-// void sceNpRegisterStateCallbackForToolkit();
-// void sceNpUnregisterStateCallbackForToolkit();
+void sceNpRegisterStateCallbackForToolkit();
+void sceNpUnregisterStateCallbackForToolkit();
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetState);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetNpId);
@@ -24,10 +24,10 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
 
 void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
@@ -37,10 +37,10 @@ void RegisterLibraryHooks() {
     SHADNET_HOOK16(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
-    // SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
-    // SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
 }
 }
 

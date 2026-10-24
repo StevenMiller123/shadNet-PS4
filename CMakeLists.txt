@@ -208,6 +208,7 @@ set(PLUGIN_LIBS
     -lSceNet
     -lSceNetCtl
     -lSceNpManager
+    -lSceNpManagerForToolkit
     -lSceNpScore
     -lSceNpWebApi
     -lSceSysUtil
