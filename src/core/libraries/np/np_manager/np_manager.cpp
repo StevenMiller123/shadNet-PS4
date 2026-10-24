@@ -60,10 +60,8 @@ s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
     }
     
     if (NpHandler::Instance().IsSignedIn(user_id)) {
-        LOG_INFO(Lib_NpManager, "called, returning signed in state");
         *state = ORBIS_NP_STATE_SIGNED_IN;
     } else {
-        LOG_INFO(Lib_NpManager, "called, returning signed out state");
         *state = ORBIS_NP_STATE_SIGNED_OUT;
     }
     return ORBIS_OK;
@@ -84,7 +82,6 @@ s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id) {
         LOG_INFO(Lib_NpManager, "called, returning signed out");
         return ORBIS_NP_ERROR_SIGNED_OUT;
     }
-    LOG_INFO(Lib_NpManager, "called");
     *np_id = NpHandler::Instance().GetNpId(user_id);
     return ORBIS_OK;
 }
@@ -104,7 +101,6 @@ s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
         LOG_INFO(Lib_NpManager, "called, returning signed out");
         return ORBIS_NP_ERROR_SIGNED_OUT;
     }
-    LOG_INFO(Lib_NpManager, "called");
     *online_id = NpHandler::Instance().GetNpId(user_id).handle;
     return ORBIS_OK;
 }
