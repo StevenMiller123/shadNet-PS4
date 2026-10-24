@@ -383,8 +383,8 @@ private:
     std::atomic<bool> m_authenticated{false};
     std::atomic<ShadNetState> m_state{ShadNetState::Ok};
 
-    std::binary_semaphore m_sem_connected{0};
-    std::binary_semaphore m_sem_authenticated{0};
+    sem_t m_sem_connected{};
+    sem_t m_sem_authenticated{};
     std::mutex m_mutex_connected;
     std::mutex m_mutex_authenticated;
 
