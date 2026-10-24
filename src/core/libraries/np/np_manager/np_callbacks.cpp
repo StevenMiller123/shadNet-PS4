@@ -10,6 +10,7 @@
 #include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_types.h"
+#include "core/libraries/system/user_service.h"
 
 namespace Libraries::Np::NpManager {
 
@@ -220,7 +221,7 @@ void DeregisterNpCallback(std::string key) {
     g_np_callbacks.erase(key);
 }
 
-void UpdateNpStateFromEvent(s32 event_type, s32 user_id) {
+void UpdateNpStateFromEvent(UserService::OrbisUserServiceEventType event_type, s32 user_id) {
     auto& np_handler = NpHandler::Instance();
     if (!np_handler.IsActive()) {
         QueueNpStateEvent(user_id, OrbisNpState::SignedOut);
@@ -228,10 +229,10 @@ void UpdateNpStateFromEvent(s32 event_type, s32 user_id) {
     }
 
     switch (event_type) {
-    case 0:
+    case UserService::OrbisUserServiceEventType::Login:
         np_handler.OnUserLoggedIn(user_id);
         break;
-    case 1:
+    case UserService::OrbisUserServiceEventType::Logout:
         np_handler.OnUserLoggedOut(user_id);
         break;
     default:

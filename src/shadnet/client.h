@@ -8,6 +8,7 @@
 #include <functional>
 #include <mutex>
 #include <optional>
+#include <semaphore>
 #include <string>
 #include <thread>
 #include <utility>
@@ -22,7 +23,7 @@
 #include <unistd.h>
 #include "common/types.h"
 
-using ShadSocketHandle = int;
+using ShadSocketHandle = s32;
 static constexpr ShadSocketHandle SHAD_INVALID_SOCK = -1;
 #define SHAD_CLOSE(s) ::close(s)
 
@@ -30,15 +31,12 @@ namespace ShadNet {
 
 // Protocol constants
 static constexpr u32 SHAD_HEADER_SIZE = 15;
-static constexpr u32 SHAD_CONNECT_TIMEOUT_MS = 10000; // 10 second connect/handshake timeout
-// MAX_ATTEMPTS * CONNECT_TIMEOUT + sum(backoffs).
+static constexpr u32 SHAD_CONNECT_TIMEOUT_MS = 10000;
 static constexpr u32 SHAD_CONNECT_MAX_ATTEMPTS = 4;
-static constexpr u32 SHAD_CONNECT_RETRY_BACKOFF_MS =
-    1000; // base backoff, doubled per retry (cap 8s)
+static constexpr u32 SHAD_CONNECT_RETRY_BACKOFF_MS = 1000;
 static constexpr u32 SHAD_PROTOCOL_VERSION = 1;
-static constexpr u32 SHAD_MAX_PACKET_SIZE = 0x800000; // 8 MiB
+static constexpr u32 SHAD_MAX_PACKET_SIZE = 0x800000;
 
-// Protocol enumerations (must match shadnet server protocol.h)
 enum class PacketType : u8 {
     Request = 0,
     Reply = 1,
@@ -119,9 +117,9 @@ enum class NotificationType : u16 {
     FriendStatus = 8,
     RoomEvent = 10,
     RoomMessage = 11,
-    WebApiPushEvent = 17,    // Generic NP WebApi push event
-    ServiceUnavailable = 18, // Server refused a service (e.g. matchmaking full)
-    ClientRejected = 19,     // Server is signing this client out (e.g. version not accepted)
+    WebApiPushEvent = 17,
+    ServiceUnavailable = 18,
+    ClientRejected = 19,
 };
 
 enum class ErrorType : uint8_t {
@@ -159,7 +157,7 @@ enum class ErrorType : uint8_t {
     ScoreHasData = 31,
     CondFail = 32,
     Unsupported = 33,
-    TooLarge = 34, // TSS file on the server exceeds the slot's documented maximum
+    TooLarge = 34,
 };
 
 enum class ShadNetState {
@@ -178,7 +176,6 @@ enum class ShadNetState {
 };
 
 // Callback data structures
-
 struct FriendEntry {
     std::string npid;
     bool online = false;
@@ -197,32 +194,50 @@ struct LoginResult {
 struct NotifyFriendQuery {
     std::string fromNpid;
 };
+
 struct NotifyFriendNew {
     std::string npid;
     bool online = false;
 };
+
 struct NotifyFriendLost {
     std::string npid;
 };
+
 struct NotifyFriendStatus {
     std::string npid;
     bool online = false;
     u64 timestamp = 0;
 };
+
+struct NotifyServiceUnavailable {
+    enum : u32 { ServiceMatching2 = 1 };
+    enum : u32 { ReasonServerFull = 1, ReasonNotAllowed = 2, ReasonDisabled = 3 };
+    u32 service = 0;
+    u32 reason = 0;
+    u32 inUse = 0;
+    u32 limit = 0;
+};
+
+struct NotifyClientRejected {
+    enum : u32 { ReasonVersion = 1 };
+    u32 reason = 0;
+    std::string message;
+    std::string version;
+};
+
 struct NotifyWebApiPushEvent {
-    std::string npServiceName; // may be empty (catch-all listeners match any)
+    std::string npServiceName;
     u32 npServiceLabel = 0;
-    std::string dataType; // e.g. "np:service:..."
-    std::string data;     // raw event body (typically PSN-format JSON)
-    std::string fromNpid; // may be empty
-    std::string toNpid;   // may be empty
-    // Optional extended-data (key,value) pairs (e.g. friendlist trigger/additionalTrigger,
-    // presence gameStatus/gameData). Empty when the server sends none / is older.
+    std::string dataType;
+    std::string data;
+    std::string fromNpid;
+    std::string toNpid;
     std::vector<std::pair<std::string, std::string>> extdData;
-    // Optional trailing account ids (server >= push-account-ids). 0 = unknown / not sent.
     u64 fromAccountId = 0;
     u64 toAccountId = 0;
 };
+
 struct MatchingBinAttr {
     u32 attr_id = 0;
     u64 update_date = 0;
@@ -270,8 +285,6 @@ struct NotifyRoomMessage {
     std::vector<u8> msg;
 };
 
-// ShadNetClient
-
 class ShadNetClient {
 public:
     ShadNetClient();
@@ -292,7 +305,6 @@ public:
 
     const std::string& GetAvatarUrl() const;
     u64 GetUserId() const;
-    // Online ID this client logged in with (set once in Start()).
     const std::string& GetNpid() const;
     u32 GetServerProtocolVersion() const {
         return m_server_protocol_version.load();
@@ -316,17 +328,11 @@ public:
     std::function<void(const NotifyRoomEvent&)> onRoomEvent;
     std::function<void(const NotifyRoomMessage&)> onRoomMessage;
     std::function<void(const NotifyWebApiPushEvent&)> onWebApiPushEvent;
-    // Async reply callback.
-    //   cmd    —command this reply is for (matches the request's cmd)
-    //   pkt_id —packet id echoed back from the original request header
-    //   error  —ErrorType byte that prefixes every reply body
-    //   body   —reply payload AFTER the error byte (may be empty)
+    std::function<void(const NotifyServiceUnavailable&)> onServiceUnavailable;
+    std::function<void(const NotifyClientRejected&)> onClientRejected;
     std::function<void(CommandType cmd, u64 pkt_id, ErrorType error, const std::vector<u8>& body)>
         onAsyncReply;
 
-    // Submit a Request packet for async processing.
-    // Allocates a packet id, builds the packet, pushes it to the writer queue.
-    // Returns the packet id so callers can correlate the eventual reply.
     u64 SubmitRequest(CommandType cmd, const std::vector<u8>& payload);
 
     // Friend / block commands.
@@ -334,8 +340,9 @@ public:
     u64 RemoveFriend(const std::string& npid);
     u64 AddBlock(const std::string& npid);
     u64 RemoveBlock(const std::string& npid);
-    // Set the Appear-Offline preference mid-session (server handles us as offline while set).
     u64 SetAppearOffline(bool enable);
+    u64 LookupOnlineId(const std::string& npid);
+    u64 GetAuthorizationCode(const std::string& client_id, const std::string& scope);
 
 private:
     void ConnectThread();
@@ -353,7 +360,6 @@ private:
     void HandleNotification(u16 cmd_raw, const std::vector<u8>& payload);
     bool RequestServerFeatures();
 
-    // Helper: read a u32-LE-prefixed proto blob from a byte vector at pos.
     static std::string ExtractBlob(const std::vector<u8>& p, int pos);
 
     static void PutLE16(std::vector<u8>& b, size_t off, u16 v);
@@ -369,15 +375,15 @@ private:
     std::string m_npid;
     std::string m_password;
     std::string m_token;
-    bool m_appear_offline = false; // user's Appear-Offline preference (sent at login)
+    bool m_appear_offline = false;
 
     std::atomic<bool> m_terminate{false};
     std::atomic<bool> m_connected{false};
     std::atomic<bool> m_authenticated{false};
     std::atomic<ShadNetState> m_state{ShadNetState::Ok};
 
-    sem_t m_sem_connected{};
-    sem_t m_sem_authenticated{};
+    std::binary_semaphore m_sem_connected{0};
+    std::binary_semaphore m_sem_authenticated{0};
     std::mutex m_mutex_connected;
     std::mutex m_mutex_authenticated;
 

@@ -5,6 +5,7 @@
 
 #include "common/types.h"
 #include "core/libraries/np/np_types.h"
+#include "core/libraries/system/user_service.h"
 
 namespace Libraries::Np::NpManager {
 s32 sceNpGetState(s32 user_id, OrbisNpState* state);
@@ -13,6 +14,6 @@ s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id);
 
 void RegisterNpCallback(std::string key, std::function<void()> cb);
 void QueueNpStateEvent(s32 user_id, OrbisNpState state);
-void UpdateNpStateFromEvent(s32 event_type, s32 user_id);
+void UpdateNpStateFromEvent(UserService::OrbisUserServiceEventType event_type, s32 user_id);
 void RegisterHooks();
 } // namespace Libraries::Np::NpManager

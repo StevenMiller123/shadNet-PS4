@@ -25,9 +25,9 @@ void RegisterKernelHooks() {
     HOOK32(__sys_socketex);
 }
 
-namespace Libraries::Kernel::Kernel {
+namespace Libraries::Kernel {
 
 void RegisterHooks() {
     return RegisterKernelHooks();
 }
-} // namespace Libraries::Kernel::Kernel
+} // namespace Libraries::Kernel

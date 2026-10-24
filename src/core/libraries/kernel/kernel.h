@@ -5,7 +5,7 @@
 
 #include "common/types.h"
 
-namespace Libraries::Kernel::Kernel {
+namespace Libraries::Kernel {
 
 void RegisterHooks();
 }

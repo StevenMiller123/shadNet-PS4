@@ -7,6 +7,7 @@
 #include <map>
 #include "common/singleton.h"
 #include "common/types.h"
+#include "core/libraries/np/np_auth/np_auth_ctx.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_types.h"
 #include "shadnet/client.h"
@@ -17,6 +18,11 @@ class NpHandler {
 public:
     static NpHandler& Instance() {
         return *Common::Singleton<NpHandler>::Instance();
+    }
+
+    // For compatibility
+    static NpHandler& GetInstance() {
+        return Instance();
     }
 
     void Initialize();
@@ -39,7 +45,12 @@ public:
     };
 
     std::string GetBearerToken(s32 user_id) const;
+    s32 RequestAuthorizationCode(s32 user_id, const std::string& client_id,
+                                 const std::string& scope,
+                                 std::shared_ptr<NpAuth::AuthRequestCtx> ctx);
     u64 GetAccountId(s32 user_id) const;
+    s32 GetUserIdByAccountId(u64 account_id) const;
+    s32 GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const;
 
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
@@ -83,7 +94,19 @@ private:
     void OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n);
     void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
                       const std::vector<u8>& body);
+    void OnServiceUnavailable(s32 user_id, const ShadNet::NotifyServiceUnavailable& n);
+    void OnClientRejected(s32 user_id, const ShadNet::NotifyClientRejected& n);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
+
+    // Auth callbacks
+    struct PendingAuthRequest {
+        std::shared_ptr<NpAuth::AuthRequestCtx> req;
+        s32 user_id = -1;
+    };
+    mutable std::mutex m_mutex_pending_auth;
+    std::map<u64, PendingAuthRequest> m_pending_auth;
+    void OnAuthReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
+                     const std::vector<u8>& body);
 
     // State callbacks
     struct CbEntry {

@@ -11,25 +11,25 @@
 #include "core/libraries/np/np_types.h"
 #include "core/libraries/system/user_service.h"
 
-SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize);
-SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize2);
-SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceTerminate);
-SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceGetUserName);
-SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceGetEvent);
+SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceInitialize);
+SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceInitialize2);
+SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceTerminate);
+SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceGetUserName);
+SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceGetEvent);
 
 void RegisterUserServiceHooks() {
     s32 ret = sceUserServiceInitialize(nullptr);
     if (ret != 0) {
         LOG_INFO(Lib_UserService, "sceUserServiceInitialize returned {:#x}", ret);
     }
-    SHADNET_HOOK16(Libraries::System::UserService, sceUserServiceInitialize);
-    SHADNET_HOOK16(Libraries::System::UserService, sceUserServiceInitialize2);
-    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceTerminate);
-    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetUserName);
-    SHADNET_HOOK(Libraries::System::UserService, sceUserServiceGetEvent);
+    SHADNET_HOOK16(Libraries::UserService, sceUserServiceInitialize);
+    SHADNET_HOOK16(Libraries::UserService, sceUserServiceInitialize2);
+    SHADNET_HOOK(Libraries::UserService, sceUserServiceTerminate);
+    SHADNET_HOOK(Libraries::UserService, sceUserServiceGetUserName);
+    SHADNET_HOOK(Libraries::UserService, sceUserServiceGetEvent);
 }
 
-namespace Libraries::System::UserService {
+namespace Libraries::UserService {
 
 static bool g_lib_init = false;
 
@@ -93,8 +93,10 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
 
 s32 sceUserServiceGetEvent(OrbisUserServiceEvent* event) {
     s32 result = SHADNET_HOOK_CONTINUE(sceUserServiceGetEvent, event);
-    if (result == 0 && (event->event == 0 || event->event == 1)) {
-        LOG_INFO(Lib_UserService, "Handling {} event", event->event == 0 ? "login" : "logout");
+    if (result == 0 && (event->event == OrbisUserServiceEventType::Login ||
+                        event->event == OrbisUserServiceEventType::Logout)) {
+        LOG_INFO(Lib_UserService, "Handling {} event",
+                 event->event == OrbisUserServiceEventType::Login ? "login" : "logout");
         Np::NpManager::UpdateNpStateFromEvent(event->event, event->userId);
     } else if (result == 0) {
         LOG_INFO(Lib_UserService, "returned event type {}", event->event);
@@ -107,4 +109,4 @@ s32 sceUserServiceGetEvent(OrbisUserServiceEvent* event) {
 void RegisterHooks() {
     return RegisterUserServiceHooks();
 }
-} // namespace Libraries::System::UserService
+} // namespace Libraries::UserService

@@ -207,6 +207,7 @@ set(PLUGIN_LIBS
     -lSceSysmodule
     -lSceNet
     -lSceNetCtl
+    -lSceNpAuth
     -lSceNpManager
     -lSceNpManagerForToolkit
     -lSceNpScore
@@ -228,6 +229,8 @@ set(COMMON_SOURCES src/common/error.cpp
 set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/net.cpp
                  src/core/libraries/system/user_service.cpp
+                 src/core/libraries/np/np_auth/np_auth.cpp
+                 src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
                  src/core/libraries/np/np_handler/np_handler_web_api.cpp
                  src/core/libraries/np/np_handler/np_handler.cpp

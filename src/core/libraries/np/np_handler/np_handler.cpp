@@ -129,15 +129,21 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     client->onFriendStatus = [this, user_id](const ShadNet::NotifyFriendStatus& n) {
         OnFriendStatus(user_id, n);
     };
-    client->onLoginResult = [this, user_id](const ShadNet::LoginResult& res) {
-        OnLoginResult(user_id, res);
-    };
     client->onWebApiPushEvent = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
         OnWebApiPushEvent(user_id, n);
+    };
+    client->onServiceUnavailable = [this, user_id](const ShadNet::NotifyServiceUnavailable& n) {
+        OnServiceUnavailable(user_id, n);
+    };
+    client->onClientRejected = [this, user_id](const ShadNet::NotifyClientRejected& n) {
+        OnClientRejected(user_id, n);
     };
     client->onAsyncReply = [this, user_id](ShadNet::CommandType cmd, u64 pkt_id,
                                            ShadNet::ErrorType err, const std::vector<u8>& body) {
         OnAsyncReply(user_id, cmd, pkt_id, err, body);
+    };
+    client->onLoginResult = [this, user_id](const ShadNet::LoginResult& res) {
+        OnLoginResult(user_id, res);
     };
 
     // Set whether the user should appear as offline or online during this session.
@@ -180,13 +186,6 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
 
     LOG_NOTIFICATION(NpHandler, "{} successfully signed in to shadNet, accountId={}", npid,
                      client->GetUserId());
-
-    // Net::UPnPClient::Instance().SetP2PFeaturesEnabled(client->IsMatching2Enabled());
-    // if (client->IsMatching2Enabled() && config.IsUpnpEnabled()) {
-    //     Net::UPnPClient::Instance().Start();
-    // }
-
-    // NpMatching2::SetMmShadNetClient(client, host, port);
 
     // Build OrbisNpId
     {
@@ -255,8 +254,9 @@ void NpHandler::WorkerThread() {
         {
             std::lock_guard lock(m_mutex_clients);
             for (auto& [user_id, client] : m_clients) {
-                if (!client->IsConnected())
+                if (!client->IsConnected()) {
                     dropped.push_back(user_id);
+                }
             }
         }
 
@@ -326,6 +326,26 @@ u64 NpHandler::GetAccountId(s32 user_id) const {
     return it != m_clients.end() ? static_cast<u64>(it->second->GetUserId()) : 0;
 }
 
+s32 NpHandler::GetUserIdByAccountId(u64 account_id) const {
+    std::lock_guard lock(m_mutex_clients);
+    for (auto& [uid, client] : m_clients) {
+        if (static_cast<u64>(client->GetUserId()) == account_id) {
+            return uid;
+        }
+    }
+    return -1;
+}
+
+s32 NpHandler::GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const {
+    std::lock_guard lock(m_mutex_clients);
+    for (auto& [uid, np_id] : m_np_ids) {
+        if (strncmp(np_id.handle.data, online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH) == 0) {
+            return uid;
+        }
+    }
+    return -1;
+}
+
 // State callbacks
 s32 NpHandler::RegisterStateCallback(StateCallback cb, void* userdata) {
     std::lock_guard lock(m_mutex_cbs);
@@ -350,8 +370,14 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
 
 void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
                              ShadNet::ErrorType error, const std::vector<u8>& body) {
-    const auto cmd_val = static_cast<u16>(cmd);
-    LOG_INFO(NpHandler, "Unsupported async command {} received", cmd_val);
+    const u16 cmd_val = static_cast<u16>(cmd);
+    if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
+        OnAuthReply(user_id, cmd, pkt_id, error, body);
+    } else {
+        LOG_INFO(NpHandler, "Unsupported async command {} received",
+                 magic_enum::enum_name(cmd));
+    }
+
     /*
     if (cmd_val >= 100 && cmd_val <= 200) {
         NpMatching2::OnMatchingReply(cmd, pkt_id, error, body);
@@ -365,6 +391,47 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
         OnScoreReply(user_id, cmd, pkt_id, error, body);
     }
     */
+}
+
+void NpHandler::OnClientRejected(s32 user_id, const ShadNet::NotifyClientRejected& n) {
+    {
+        std::lock_guard lock(m_mutex_clients);
+        m_reconnects.erase(user_id);
+        m_initialized.exchange(false);
+    }
+    const std::string text =
+        n.message.empty() ? std::string("The shadNet server doesn't accept this shadPS4 build. "
+                                        "Online features are off for this session.")
+                          : n.message + " Online features are off for this session.";
+    LOG_NOTIFICATION(NpHandler, "{}", text);
+}
+
+void NpHandler::OnServiceUnavailable(s32 user_id, const ShadNet::NotifyServiceUnavailable& n) {
+    using N = ShadNet::NotifyServiceUnavailable;
+    if (n.service != N::ServiceMatching2) {
+        LOG_INFO(NpHandler, "user_id={} server refused service {} (reason {})", user_id, n.service,
+                 n.reason);
+        return;
+    }
+    std::string text;
+    switch (n.reason) {
+    case N::ReasonServerFull:
+        text = n.limit > 0 ? fmt::format("Online matchmaking is full right now ({}/{} players). "
+                                         "Try again in a few minutes.",
+                                         n.inUse, n.limit)
+                           : "Online matchmaking is full right now. Try again in a few minutes.";
+        break;
+    case N::ReasonNotAllowed:
+        text = "Your shadNet account isn't allowed to use online matchmaking.";
+        break;
+    case N::ReasonDisabled:
+        text = "Online matchmaking is turned off on this shadNet server.";
+        break;
+    default:
+        text = "The shadNet server refused online matchmaking.";
+        break;
+    }
+    LOG_NOTIFICATION(NpHandler, "matchmaking unavailable: {}", user_id, text);
 }
 
 }; // namespace Libraries::Np

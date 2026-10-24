@@ -10,6 +10,7 @@
 #include "common/types.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/net.h"
+#include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_score.h"
@@ -28,10 +29,11 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API);
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_AUTH);
 
     // Init kernel and UserService hooks
-    Libraries::Kernel::Kernel::RegisterHooks();
-    Libraries::System::UserService::RegisterHooks();
+    Libraries::Kernel::RegisterHooks();
+    Libraries::UserService::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
@@ -41,6 +43,7 @@ extern "C" s32 client_start() {
     Libraries::Np::NpManager::RegisterHooks();
     Libraries::Np::NpScore::RegisterHooks();
     Libraries::Np::NpWebApi::RegisterHooks();
+    Libraries::Np::NpAuth::RegisterHooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
