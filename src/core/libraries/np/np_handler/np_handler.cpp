@@ -52,6 +52,7 @@ void NpHandler::Initialize() {
     if (result != 0) {
         LOG_ERROR(Config, "Failed to retrieve logged in users: {:#x}", (u32)result);
         m_initialized.exchange(false);
+        return;
     }
 
     for (s32 i = 0; i < ORBIS_USER_SERVICE_MAX_LOGIN_USERS; i++) {
