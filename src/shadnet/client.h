@@ -312,6 +312,7 @@ public:
     u32 GetAddrLocal() const;
     u32 GetAddrServer() const;
     bool IsMatching2Enabled() const;
+    static bool OnReaderThread();
     u32 GetNumFriends() const;
     std::optional<std::string> GetFriendNpid(u32 index) const;
     u64 ReportClientVersion();

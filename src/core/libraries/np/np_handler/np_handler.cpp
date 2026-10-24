@@ -370,7 +370,6 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
 
 void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
                              ShadNet::ErrorType error, const std::vector<u8>& body) {
-    const u16 cmd_val = static_cast<u16>(cmd);
     if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
         OnAuthReply(user_id, cmd, pkt_id, error, body);
     } else {
