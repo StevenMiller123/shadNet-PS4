@@ -20,6 +20,7 @@ void sceNpWebApiInitializeForPresence();
 void sceNpWebApiIntCreateRequest();
 void sceNpWebApiIntRegisterServicePushEventCallback();
 void sceNpWebApiIntRegisterServicePushEventCallbackA();
+};
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
@@ -76,7 +77,7 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
 
-static void RegisterWebApiHooks() {
+static void RegisterNpWebApiHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreatePushEventFilter);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateServicePushEventFilter);
@@ -131,7 +132,6 @@ static void RegisterWebApiHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
-}
 }
 
 namespace Libraries::Np::NpWebApi {
@@ -694,7 +694,7 @@ s32 sceNpWebApiVshInitialize(s32 libHttpCtxId, u64 poolSize) {
 }
 
 void RegisterHooks() {
-    RegisterWebApiHooks();
+    RegisterNpWebApiHooks();
     NpManager::RegisterNpCallback("npwebapi_push", DrainPushEvents);
 };
 

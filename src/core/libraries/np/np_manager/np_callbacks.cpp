@@ -10,7 +10,7 @@
 #include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_types.h"
-#include "core/libraries/system/user_service.h"
+#include "core/libraries/user_service/user_service.h"
 
 namespace Libraries::Np::NpManager {
 

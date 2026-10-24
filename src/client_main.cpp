@@ -9,13 +9,13 @@
 #include "common/logging/log.h"
 #include "common/types.h"
 #include "core/libraries/kernel/kernel.h"
-#include "core/libraries/network/net.h"
+#include "core/libraries/network/net/net.h"
 #include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
-#include "core/libraries/np/np_score.h"
+#include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
-#include "core/libraries/system/user_service.h"
+#include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
 
 extern "C" s32 client_start() {

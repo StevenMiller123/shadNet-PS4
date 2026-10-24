@@ -7,7 +7,7 @@
 
 #include "common/elf_info.h"
 #include "common/logging/log.h"
-#include "common/plugin_common.h"
+#include "common/shadnet_hook.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_callbacks.h"
@@ -17,6 +17,7 @@
 extern "C" {
 void sceNpRegisterStateCallbackForToolkit();
 void sceNpUnregisterStateCallbackForToolkit();
+}
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetState);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetNpId);
@@ -30,7 +31,7 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
 
-void RegisterLibraryHooks() {
+static void RegisterNpManagerHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetNpId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetOnlineId);
@@ -42,7 +43,6 @@ void RegisterLibraryHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
-}
 }
 
 namespace Libraries::Np::NpManager {
@@ -111,6 +111,6 @@ void RegisterHooks() {
     NpHandler::Instance().RegisterStateCallback(
         [](s32 user_id, OrbisNpState state) { QueueNpStateEvent(user_id, state); }, nullptr);
 
-    return RegisterLibraryHooks();
+    return RegisterNpManagerHooks();
 }
 } // namespace Libraries::Np::NpManager

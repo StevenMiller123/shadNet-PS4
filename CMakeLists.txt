@@ -227,18 +227,18 @@ set(COMMON_SOURCES src/common/error.cpp
 )
 
 set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
-                 src/core/libraries/network/net.cpp
-                 src/core/libraries/system/user_service.cpp
+                 src/core/libraries/network/net/net.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
+                 src/core/libraries/np/np_manager/np_callbacks.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
                  src/core/libraries/np/np_handler/np_handler_web_api.cpp
                  src/core/libraries/np/np_handler/np_handler.cpp
                  src/core/libraries/np/np_manager/np_manager.cpp
-                 src/core/libraries/np/np_manager/np_callbacks.cpp
-                 src/core/libraries/np/np_score.cpp
+                 src/core/libraries/np/np_score/np_score.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp
+                 src/core/libraries/user_service/user_service.cpp
 )
 
 set(SHADNET_SOURCES src/shadnet/client.cpp

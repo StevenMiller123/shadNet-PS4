@@ -5,7 +5,7 @@
 
 #include "common/types.h"
 #include "core/libraries/np/np_types.h"
-#include "core/libraries/system/user_service.h"
+#include "core/libraries/user_service/user_service.h"
 
 namespace Core::Loader {
 class SymbolsResolver;

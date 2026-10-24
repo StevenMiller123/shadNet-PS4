@@ -9,7 +9,7 @@
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_types.h"
-#include "core/libraries/system/user_service.h"
+#include "core/libraries/user_service/user_service.h"
 
 SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceInitialize);
 SHADNET_HOOK_DECLARE(Libraries::UserService, sceUserServiceInitialize2);

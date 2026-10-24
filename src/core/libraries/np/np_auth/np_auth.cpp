@@ -15,7 +15,7 @@
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_types.h"
-#include "core/libraries/system/user_service.h"
+#include "core/libraries/user_service/user_service.h"
 
 extern "C" {
 void sceNpAuthCreateRequest();
@@ -31,6 +31,7 @@ void sceNpAuthAbortRequest();
 void sceNpAuthWaitAsync();
 void sceNpAuthPollAsync();
 void sceNpAuthDeleteRequest();
+};
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpAuth, sceNpAuthCreateRequest);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpAuth, sceNpAuthCreateAsyncRequest);
@@ -46,7 +47,7 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpAuth, sceNpAuthWaitAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpAuth, sceNpAuthPollAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpAuth, sceNpAuthDeleteRequest);
 
-static void RegisterAuthHooks() {
+static void RegisterNpAuthHooks() {
     SHADNET_HOOK(Libraries::Np::NpAuth, sceNpAuthCreateRequest);
     SHADNET_HOOK(Libraries::Np::NpAuth, sceNpAuthCreateAsyncRequest);
     SHADNET_HOOK(Libraries::Np::NpAuth, sceNpAuthGetAuthorizationCode);
@@ -60,7 +61,6 @@ static void RegisterAuthHooks() {
     SHADNET_HOOK(Libraries::Np::NpAuth, sceNpAuthWaitAsync);
     SHADNET_HOOK(Libraries::Np::NpAuth, sceNpAuthPollAsync);
     SHADNET_HOOK(Libraries::Np::NpAuth, sceNpAuthDeleteRequest);
-}
 }
 
 namespace Libraries::Np::NpAuth {
@@ -442,7 +442,7 @@ s32 sceNpAuthGetIdTokenV3(s32 req_id, const OrbisNpAuthGetIdTokenParameterA* par
 }
 
 void RegisterHooks() {
-    RegisterAuthHooks();
+    RegisterNpAuthHooks();
 }
 
 } // namespace Libraries::Np::NpAuth
