@@ -36,22 +36,22 @@ void from_json(const nlohmann::json& j, Setting<T>& s) {
 
 struct ServerSettings {
     Setting<bool> shadnet_enable_upnp{true};
+    Setting<s32> shadnet_p2p_port{3658};
     Setting<std::string> shadnet_server{"srv.shadps4.net:31313"};
     Setting<std::string> shadnet_webapi_server{"http://srv.shadps4.net:31315"};
-    Setting<std::string> shadnet_signaling_info{""};
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ServerSettings, shadnet_enable_upnp, shadnet_server,
-                                   shadnet_webapi_server, shadnet_signaling_info)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ServerSettings, shadnet_enable_upnp, shadnet_p2p_port,
+                                   shadnet_server, shadnet_webapi_server)
 
 struct UserSettings {
-    Setting<bool> shadnet_enabled{false};
     Setting<bool> shadnet_appear_offline{false};
+    Setting<bool> shadnet_enabled{false};
     Setting<std::string> shadnet_npid{""};
     Setting<std::string> shadnet_password{""};
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UserSettings, shadnet_enabled, shadnet_appear_offline,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(UserSettings, shadnet_appear_offline, shadnet_enabled,
                                    shadnet_npid, shadnet_password)
 
 class Settings {
@@ -67,6 +67,10 @@ public:
         return m_server.shadnet_enable_upnp.get();
     };
 
+    s32 GetP2PPort() {
+        return m_server.shadnet_p2p_port.get();
+    };
+
     std::string GetServerUrl() {
         return m_server.shadnet_server.get();
     };
@@ -75,17 +79,13 @@ public:
         return m_server.shadnet_webapi_server.get();
     };
 
-    std::string GetSignalingInfo() {
-        return m_server.shadnet_signaling_info.get();
-    };
+    bool IsAppearOfflineEnabled(s32 user_id) {
+        return m_user[user_id].shadnet_appear_offline.get();
+    }
 
     bool IsShadNetEnabled(s32 user_id) {
         return m_user[user_id].shadnet_enabled.get();
     };
-
-    bool IsAppearOfflineEnabled(s32 user_id) {
-        return m_user[user_id].shadnet_appear_offline.get();
-    }
 
     std::string GetNpId(s32 user_id) {
         return m_user[user_id].shadnet_npid.get();
