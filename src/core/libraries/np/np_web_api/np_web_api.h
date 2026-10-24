@@ -75,6 +75,8 @@ struct PushEventInput {
     bool hasFrom = false;
     OrbisNpOnlineId toOnlineId{};
     bool hasTo = false;
+    u64 fromAccountId = 0;
+    u64 toAccountId = 0;
     std::vector<std::pair<std::string, std::string>> extdData;
 };
 

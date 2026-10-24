@@ -10,7 +10,7 @@
 #include "common/types.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/net.h"
-#include "core/libraries/np/np_handler.h"
+#include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_score.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"

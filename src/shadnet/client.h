@@ -72,6 +72,8 @@ enum class CommandType : u16 {
     GetScoreGameDataByAccId = 38,
     GetToken = 39,
     SetAppearOffline = 40,
+    LookupOnlineId = 41,
+    GetAuthorizationCode = 42,
     // Matchmaking
     ContextStart = 100,
     CreateRoom = 101,
@@ -89,6 +91,7 @@ enum class CommandType : u16 {
     GetUserInfoList = 113,
     GetRoomMemberDataExternalList = 114,
     SendRoomMessage = 115,
+    SetRoomMemberDataInternal = 116,
     // Title User Storage (TUS)
     TusSetData = 201,
     TusGetData = 202,
@@ -103,6 +106,10 @@ enum class CommandType : u16 {
     TusTryAndSetVariable = 211,
     TusGetFriendsVariable = 212,
     TusDeleteMultiSlotVariable = 213,
+    TssGetData = 214,
+    // Trophies
+    UnlockTrophy = 301,
+    SyncTrophies = 302,
 };
 
 enum class NotificationType : u16 {
@@ -112,7 +119,9 @@ enum class NotificationType : u16 {
     FriendStatus = 8,
     RoomEvent = 10,
     RoomMessage = 11,
-    WebApiPushEvent = 17, // Generic NP WebApi push event
+    WebApiPushEvent = 17,    // Generic NP WebApi push event
+    ServiceUnavailable = 18, // Server refused a service (e.g. matchmaking full)
+    ClientRejected = 19,     // Server is signing this client out (e.g. version not accepted)
 };
 
 enum class ErrorType : uint8_t {
@@ -150,6 +159,7 @@ enum class ErrorType : uint8_t {
     ScoreHasData = 31,
     CondFail = 32,
     Unsupported = 33,
+    TooLarge = 34, // TSS file on the server exceeds the slot's documented maximum
 };
 
 enum class ShadNetState {
@@ -209,8 +219,10 @@ struct NotifyWebApiPushEvent {
     // Optional extended-data (key,value) pairs (e.g. friendlist trigger/additionalTrigger,
     // presence gameStatus/gameData). Empty when the server sends none / is older.
     std::vector<std::pair<std::string, std::string>> extdData;
+    // Optional trailing account ids (server >= push-account-ids). 0 = unknown / not sent.
+    u64 fromAccountId = 0;
+    u64 toAccountId = 0;
 };
-
 struct MatchingBinAttr {
     u32 attr_id = 0;
     u64 update_date = 0;
