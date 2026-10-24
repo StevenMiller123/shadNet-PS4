@@ -4,7 +4,7 @@
 #pragma once
 
 #include <atomic>
-#include <absl/container/flat_hash_map.h>
+#include <map>
 #include <orbis/NpManager.h>
 #include "common/singleton.h"
 #include "common/types.h"
@@ -71,8 +71,8 @@ private:
 
     // Client
     mutable std::mutex m_mutex_clients;
-    absl::flat_hash_map<s32, std::shared_ptr<ShadNet::ShadNetClient>> m_clients;
-    absl::flat_hash_map<s32, OrbisNpId> m_np_ids;
+    std::map<s32, std::shared_ptr<ShadNet::ShadNetClient>> m_clients;
+    std::map<s32, OrbisNpId> m_np_ids;
 
     // Client callbacks
     void OnFriendQuery(s32 user_id, const ShadNet::NotifyFriendQuery& n);
@@ -91,7 +91,7 @@ private:
         void* userdata;
     };
     mutable std::mutex m_mutex_cbs;
-    absl::flat_hash_map<s32, CbEntry> m_state_cbs;
+    std::map<s32, CbEntry> m_state_cbs;
     std::atomic<s32> m_next_handle;
 
     void FireStateCallback(s32 user_id, OrbisNpState state);
@@ -108,7 +108,7 @@ private:
         std::vector<std::string> blocked;
     };
     mutable std::mutex m_mutex_friend_state;
-    absl::flat_hash_map<s32, FriendListSnapshot> m_friend_states;
+    std::map<s32, FriendListSnapshot> m_friend_states;
 
     // Invitations
     struct PendingInvitation {
@@ -119,7 +119,7 @@ private:
         int64_t valid_until = 0;
     };
     mutable std::mutex m_mutex_pending_invites;
-    absl::flat_hash_map<s32, std::vector<PendingInvitation>> m_pending_invites;
+    std::map<s32, std::vector<PendingInvitation>> m_pending_invites;
 };
 
 } // namespace Libraries::Np

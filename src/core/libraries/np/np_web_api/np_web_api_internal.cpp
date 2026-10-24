@@ -15,7 +15,7 @@
 #include <orbis/libkernel.h>
 #include "common/elf_info.h"
 #include "core/libraries/np/np_error.h"
-#include "core/libraries/np/np_handler.h"
+#include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_web_api/np_web_api_internal.h"
 #include "shadnet/config.h"
 
