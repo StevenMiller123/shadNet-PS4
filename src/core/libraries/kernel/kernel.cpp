@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 
 #include "common/logging/log.h"
+#include "common/shadnet_hook.h"
 #include "core/libraries/kernel/kernel.h"
 
 HOOK_INIT(socket);

@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <orbis/NpWebApi.h>
+
 #include "common/types.h"
 
 namespace Core::Loader {
@@ -15,12 +15,31 @@ class SymbolsResolver;
 
 namespace Libraries::Np::NpWebApi {
 
+#define ORBIS_NP_WEBAPI_DEFAULT_CONNECTION_NUM 1
+#define ORBIS_NP_WEBAPI_MAX_CONNECTION_NUM 16
+#define ORBIS_NP_WEBAPI_PUSH_EVENT_DATA_TYPE_LEN_MAX 64
+#define ORBIS_NP_WEBAPI_EXTD_PUSH_EVENT_EXTD_DATA_KEY_LEN_MAX 32
+
+struct OrbisNpWebApiPushEventDataType {
+    char val[ORBIS_NP_WEBAPI_PUSH_EVENT_DATA_TYPE_LEN_MAX + 1];
+};
+
+struct OrbisNpWebApiExtdPushEventExtdDataKey {
+    char val[ORBIS_NP_WEBAPI_EXTD_PUSH_EVENT_EXTD_DATA_KEY_LEN_MAX + 1];
+};
+
 struct OrbisNpWebApiPushEventFilterParameter {
-    OrbisNpWebApiPushEventDataType data_type;
+    OrbisNpWebApiPushEventDataType dataType;
 };
 
 struct OrbisNpWebApiServicePushEventFilterParameter {
-    OrbisNpWebApiPushEventDataType data_type;
+    OrbisNpWebApiPushEventDataType dataType;
+};
+
+struct OrbisNpWebApiExtdPushEventFilterParameter {
+    OrbisNpWebApiPushEventDataType dataType;
+    OrbisNpWebApiExtdPushEventExtdDataKey* pExtdDataKey;
+    u64 extdDataKeyNum;
 };
 
 struct OrbisNpWebApiExtdPushEventExtdData {
@@ -40,6 +59,27 @@ struct OrbisNpWebApiMultipartPartParameter {
     u64 contentLength;
 };
 
+enum OrbisNpWebApiHttpMethod : s32 {
+    ORBIS_NP_WEBAPI_HTTP_METHOD_GET,
+    ORBIS_NP_WEBAPI_HTTP_METHOD_POST,
+    ORBIS_NP_WEBAPI_HTTP_METHOD_PUT,
+    ORBIS_NP_WEBAPI_HTTP_METHOD_DELETE,
+    ORBIS_NP_WEBAPI_HTTP_METHOD_PATCH
+};
+
+struct OrbisNpWebApiContentParameter {
+    u64 contentLength;
+    const char* pContentType;
+    u8 reserved[16];
+};
+
+struct OrbisNpWebApiResponseInformationOption {
+    s32 httpStatus;
+    char* pErrorObject;
+    u64 errorObjectSize;
+    u64 responseDataSize;
+};
+
 struct OrbisNpWebApiMemoryPoolStats {
     u64 poolSize;
     u64 maxInuseSize;
@@ -55,12 +95,45 @@ struct OrbisNpWebApiConnectionStats {
     u64 reserved;
 };
 
+struct OrbisNpWebApiInitializeParameter {
+    u32 libHttpCtxId;
+    u8 reserved[4];
+    u64 poolSize;
+    const char* pName;
+    u64 structSize;
+};
+
 // Needs reversing
 struct OrbisNpWebApiIntCreateRequestExtraArgs {
     void* unk_0;
     void* unk_1;
     void* unk_2;
 };
+
+using OrbisNpWebApiPushEventCallback = void (*)(s32 userCtxId, s32 callbackId,
+                                                OrbisNpPeerAddress* pTo, OrbisNpPeerAddress* pFrom,
+                                                OrbisNpWebApiPushEventDataType* pDataType,
+                                                const char* pData, u64 dataLen, void* pUserArg);
+
+using OrbisNpWebApiServicePushEventCallback = void (*)(
+    s32 userCtxId, s32 callbackId, const char* pNpServiceName, OrbisNpServiceLabel npServiceLabel,
+    OrbisNpPeerAddress* pTo, OrbisNpPeerAddress* pFrom, OrbisNpWebApiPushEventDataType* pDataType,
+    const char* pData, u64 dataLen, void* pUserArg);
+
+using OrbisNpWebApiExtdPushEventCallback = void (*)(
+    s32 userCtxId, s32 callbackId, const char* pNpServiceName, OrbisNpServiceLabel npServiceLabel,
+    OrbisNpPeerAddress* pTo, OrbisNpPeerAddress* pFrom, OrbisNpWebApiPushEventDataType* pDataType,
+    const char* pData, u64 dataLen, const OrbisNpWebApiExtdPushEventExtdData* pExtdData,
+    uint64_t extdDataNum, void* pUserArg);
+
+using OrbisNpWebApiExtdPushEventCallbackA = void (*)(
+    s32 userCtxId, s32 callbackId, const char* pNpServiceName, OrbisNpServiceLabel npServiceLabel,
+    const OrbisNpPeerAddressA* pTo, const OrbisNpOnlineId* pToOnlineId,
+    const OrbisNpPeerAddressA* pFrom, const OrbisNpOnlineId* pFromOnlineId,
+    const OrbisNpWebApiPushEventDataType* pDataType, const char* pData, u64 dataLen,
+    const OrbisNpWebApiExtdPushEventExtdData* pExtdData, u64 extdDataNum, void* pUserArg);
+
+// Needs reversing
 using OrbisNpWebApiInternalServicePushEventCallback = PS4_SYSV_ABI void (*)();
 using OrbisNpWebApiInternalServicePushEventCallbackA = PS4_SYSV_ABI void (*)();
 using OrbisNpWebApiNotificationCallback = PS4_SYSV_ABI void (*)();

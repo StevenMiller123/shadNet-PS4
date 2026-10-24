@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-s32 client_start();
+int client_start();
 
 #ifdef __cplusplus
 }

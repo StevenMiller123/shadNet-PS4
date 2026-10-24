@@ -3,11 +3,13 @@
 
 #include <deque>
 #include <mutex>
+
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_types.h"
 
 namespace Libraries::Np::NpManager {
 
@@ -196,7 +198,7 @@ void QueueNpStateEvent(s32 user_id, OrbisNpState state) {
     PendingNpStateEvent event{};
     event.user_id = user_id;
     event.state = state;
-    event.has_np_id = state == ORBIS_NP_STATE_SIGNED_IN;
+    event.has_np_id = state == OrbisNpState::SignedIn;
     if (event.has_np_id) {
         event.np_id = Libraries::Np::NpHandler::Instance().GetNpId(user_id);
     }
@@ -221,7 +223,7 @@ void DeregisterNpCallback(std::string key) {
 void UpdateNpStateFromEvent(s32 event_type, s32 user_id) {
     auto& np_handler = NpHandler::Instance();
     if (!np_handler.IsActive()) {
-        QueueNpStateEvent(user_id, ORBIS_NP_STATE_SIGNED_OUT);
+        QueueNpStateEvent(user_id, OrbisNpState::SignedOut);
         return;
     }
 
@@ -258,7 +260,7 @@ static void DispatchPendingNpStateCallbacks() {
 
         if (reachability_callback.func) {
             for (const auto& event : pending_events) {
-                const OrbisNpReachabilityState reach = event.state == ORBIS_NP_STATE_SIGNED_IN
+                const OrbisNpReachabilityState reach = event.state == OrbisNpState::SignedIn
                                                            ? OrbisNpReachabilityState::Reachable
                                                            : OrbisNpReachabilityState::Unavailable;
                 auto it = g_np_reachability_state_last.find(event.user_id);

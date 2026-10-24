@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <deque>
-#include <absl/container/flat_hash_map.h>
 #include <orbis/NpManager.h>
 #include <orbis/libkernel.h>
+
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/plugin_common.h"
@@ -12,6 +12,7 @@
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_types.h"
 
 extern "C" {
 void sceNpRegisterStateCallbackForToolkit();
@@ -58,11 +59,11 @@ s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
         LOG_ERROR(Lib_NpManager, "null state pointer");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
-    
+
     if (NpHandler::Instance().IsSignedIn(user_id)) {
-        *state = ORBIS_NP_STATE_SIGNED_IN;
+        *state = OrbisNpState::SignedIn;
     } else {
-        *state = ORBIS_NP_STATE_SIGNED_OUT;
+        *state = OrbisNpState::SignedOut;
     }
     return ORBIS_OK;
 }

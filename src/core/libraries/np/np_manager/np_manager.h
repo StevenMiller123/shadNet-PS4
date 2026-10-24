@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <orbis/NpManager.h>
 #include "common/types.h"
+#include "core/libraries/np/np_types.h"
 
 namespace Libraries::Np::NpManager {
 s32 sceNpGetState(s32 user_id, OrbisNpState* state);

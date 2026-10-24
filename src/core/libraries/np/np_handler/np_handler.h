@@ -5,9 +5,10 @@
 
 #include <atomic>
 #include <map>
-#include <orbis/NpManager.h>
 #include "common/singleton.h"
 #include "common/types.h"
+#include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_types.h"
 #include "shadnet/client.h"
 
 namespace Libraries::Np {

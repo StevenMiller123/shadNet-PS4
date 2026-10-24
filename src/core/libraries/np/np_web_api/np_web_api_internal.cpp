@@ -8,14 +8,15 @@
 #include <deque>
 #include <string>
 #include <string_view>
-#include <absl/container/flat_hash_map.h>
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/Http.h>
 #include <orbis/UserService.h>
 #include <orbis/libkernel.h>
+
 #include "common/elf_info.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
+#include "core/libraries/np/np_types.h"
 #include "core/libraries/np/np_web_api/np_web_api_internal.h"
 #include "shadnet/config.h"
 
@@ -486,9 +487,9 @@ s32 createRequest(s32 titleUserCtxId, const char* pApiGroup, const char* pPath,
     }
 
     if (pContentParameter != nullptr) {
-        request->userContentLength = pContentParameter->content_length;
-        if (pContentParameter->content_type != nullptr) {
-            request->userContentType = std::string(pContentParameter->content_type);
+        request->userContentLength = pContentParameter->contentLength;
+        if (pContentParameter->pContentType != nullptr) {
+            request->userContentType = std::string(pContentParameter->pContentType);
         }
     }
 
@@ -887,7 +888,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
         s32 status = 0;
         if (sceHttpGetStatusCode(request->http_request_id, &status) >= 0) {
             if (pRespInfoOption != nullptr) {
-                pRespInfoOption->http_status = status;
+                pRespInfoOption->httpStatus = status;
             }
             if (status >= 400) {
                 std::string errBody;
@@ -901,9 +902,9 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
                         break; // sanity cap on a runaway error body
                 }
                 if (pRespInfoOption != nullptr) {
-                    pRespInfoOption->response_data_size = errBody.size();
-                    char* const dst = reinterpret_cast<char* const>(pRespInfoOption->error_object);
-                    const u64 cap = pRespInfoOption->error_object_size;
+                    pRespInfoOption->responseDataSize = errBody.size();
+                    char* const dst = reinterpret_cast<char* const>(pRespInfoOption->pErrorObject);
+                    const u64 cap = pRespInfoOption->errorObjectSize;
                     if (dst != nullptr && cap > 0) {
                         const u64 n = std::min<u64>(errBody.size(), cap - 1);
                         if (n > 0)
@@ -1221,7 +1222,7 @@ s32 createPushEventFilterInternal(OrbisNpWebApiContext* context,
             OrbisNpWebApiPushEventFilterParameter copy = OrbisNpWebApiPushEventFilterParameter{};
             memcpy(&copy, &pFilterParam[param_idx], sizeof(OrbisNpWebApiPushEventFilterParameter));
             LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}'", param_idx,
-                     copy.data_type.val);
+                     copy.dataType.val);
             filter->filterParams.emplace_back(copy);
         }
     }
@@ -1376,7 +1377,7 @@ s32 createServicePushEventFilterInternal(
             memcpy(&copy, &pFilterParam[param_idx],
                    sizeof(OrbisNpWebApiServicePushEventFilterParameter));
             LOG_INFO(Lib_NpWebApi, "  filterParam[{}] data_type='{}'", param_idx,
-                     copy.data_type.val);
+                     copy.dataType.val);
             filter->filterParams.emplace_back(copy);
         }
     }
@@ -1556,18 +1557,17 @@ s32 createExtendedPushEventFilterInternal(
             memcpy(&copy, &pFilterParam[param_idx],
                    sizeof(OrbisNpWebApiExtdPushEventFilterParameter));
             LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}' extdKeys={}", param_idx,
-                     copy.data_type.val, copy.extd_data_key_num);
+                     copy.dataType.val, copy.extdDataKeyNum);
             std::vector<std::string> keys;
-            if (copy.extd_data_key != nullptr) {
-                for (u64 k = 0; k < copy.extd_data_key_num; k++) {
-                    LOG_INFO(Lib_NpWebApi, "    extdDataKey[{}]='{}'", k,
-                             copy.extd_data_key[k].val);
+            if (copy.pExtdDataKey != nullptr) {
+                for (u64 k = 0; k < copy.extdDataKeyNum; k++) {
+                    LOG_INFO(Lib_NpWebApi, "    extdDataKey[{}]='{}'", k, copy.pExtdDataKey[k].val);
                     keys.emplace_back(
-                        copy.extd_data_key[k].val,
-                        strnlen(copy.extd_data_key[k].val, sizeof(copy.extd_data_key[k].val)));
+                        copy.pExtdDataKey[k].val,
+                        strnlen(copy.pExtdDataKey[k].val, sizeof(copy.pExtdDataKey[k].val)));
                 }
             }
-            copy.extd_data_key = nullptr;
+            copy.pExtdDataKey = nullptr;
             filter->filterParams.emplace_back(copy);
             filter->extdDataKeys.emplace_back(std::move(keys));
         }
@@ -2005,20 +2005,6 @@ s32 PS4_SYSV_ABI readDataInternal(s64 requestId, void* pData, u64 size) {
     return result;
 }
 
-using ServiceCb = PS4_SYSV_ABI void (*)(s32, s32, const char*, u32, const OrbisNpPeerAddress*,
-                                        const OrbisNpPeerAddress*,
-                                        const OrbisNpWebApiPushEventDataType*, const char*, u64,
-                                        void*);
-using BasicCb = PS4_SYSV_ABI void (*)(s32, s32, const OrbisNpPeerAddress*,
-                                      const OrbisNpPeerAddress*,
-                                      const OrbisNpWebApiPushEventDataType*, const char*, u64,
-                                      void*);
-using ExtdCbA = PS4_SYSV_ABI void (*)(s32, s32, const char*, u32, const OrbisNpPeerAddressA*,
-                                      const OrbisNpOnlineId*, const OrbisNpPeerAddressA*,
-                                      const OrbisNpOnlineId*, const OrbisNpWebApiPushEventDataType*,
-                                      const char*, u64, const OrbisNpWebApiExtdPushEventExtdData*,
-                                      u64, void*);
-
 std::mutex g_push_mutex;
 std::deque<PushEventInput> g_push_queue;
 
@@ -2034,7 +2020,7 @@ bool filterMatches(const Filter* flt, const std::string& evServiceName, bool evH
         return false;
     }
     for (const auto& p : flt->filterParams) {
-        if (evDataType == p.data_type.val) {
+        if (evDataType == p.dataType.val) {
             return true;
         }
     }
@@ -2066,10 +2052,10 @@ void DrainPushEvents() {
         const OrbisNpOnlineId* to_p = ev.hasTo ? &ev.toOnlineId : nullptr;
         OrbisNpPeerAddressA to_addr{};
         OrbisNpPeerAddressA from_addr{};
-        to_addr.account_id = ev.toAccountId;
-        to_addr.platform = 3;
-        from_addr.account_id = ev.fromAccountId;
-        from_addr.platform = 3;
+        to_addr.accountId = ev.toAccountId;
+        to_addr.platform = OrbisNpPlatformType::PS4;
+        from_addr.accountId = ev.fromAccountId;
+        from_addr.platform = OrbisNpPlatformType::PS4;
         const OrbisNpPeerAddressA* to_addr_p = ev.toAccountId != 0 ? &to_addr : nullptr;
         const OrbisNpPeerAddressA* from_addr_p = ev.fromAccountId != 0 ? &from_addr : nullptr;
 
@@ -2108,7 +2094,7 @@ void DrainPushEvents() {
                     }
                     const std::vector<std::string>* wanted_keys = nullptr;
                     for (size_t i = 0; i < flt->filterParams.size(); ++i) {
-                        if (ev.dataType == flt->filterParams[i].data_type.val) {
+                        if (ev.dataType == flt->filterParams[i].dataType.val) {
                             if (i < flt->extdDataKeys.size()) {
                                 wanted_keys = &flt->extdDataKeys[i];
                             }
@@ -2139,7 +2125,7 @@ void DrainPushEvents() {
                     const OrbisNpWebApiExtdPushEventExtdData* ext_arr =
                         exarr.empty() ? nullptr : exarr.data();
 
-                    reinterpret_cast<ExtdCbA>(raw)(
+                    reinterpret_cast<OrbisNpWebApiExtdPushEventCallbackA>(raw)(
                         title_user_ctx_id, cbId, svc, flt->npServiceLabel, to_addr_p, to_p,
                         from_addr_p, from_p, &dt, ext_data, ev.data.size(), ext_arr, exarr.size(),
                         cb->pUserArg);
@@ -2164,12 +2150,13 @@ void DrainPushEvents() {
                     OrbisNpPeerAddress to_peer{};
                     OrbisNpPeerAddress from_peer{};
                     if (ev.hasTo) {
-                        to_peer.online_id = ev.toOnlineId;
+                        to_peer.onlineId = ev.toOnlineId;
                     }
                     if (ev.hasFrom) {
-                        from_peer.online_id = ev.fromOnlineId;
+                        from_peer.onlineId = ev.fromOnlineId;
                     }
-                    reinterpret_cast<ServiceCb>(reinterpret_cast<void (*)()>(cb->cbFunc))(
+                    reinterpret_cast<OrbisNpWebApiServicePushEventCallback>(
+                        reinterpret_cast<void (*)()>(cb->cbFunc))(
                         title_user_ctx_id, cbId, svc, flt->npServiceLabel, &to_peer, &from_peer,
                         &dt, svc_data, ev.data.size(), cb->pUserArg);
                 }
@@ -2187,7 +2174,7 @@ void DrainPushEvents() {
                         const OrbisNpWebApiPushEventFilter* flt = fit->second;
                         bool matched = false;
                         for (const auto& p : flt->filterParams) {
-                            if (ev.dataType == p.data_type.val) {
+                            if (ev.dataType == p.dataType.val) {
                                 matched = true;
                                 break;
                             }
@@ -2198,13 +2185,14 @@ void DrainPushEvents() {
                         OrbisNpPeerAddress to_peer{};
                         OrbisNpPeerAddress from_peer{};
                         if (ev.hasTo) {
-                            to_peer.online_id = ev.toOnlineId;
+                            to_peer.onlineId = ev.toOnlineId;
                         }
                         if (ev.hasFrom) {
-                            from_peer.online_id = ev.fromOnlineId;
+                            from_peer.onlineId = ev.fromOnlineId;
                         }
                         const char* p_data = ev.data.empty() ? nullptr : ev.data.data();
-                        reinterpret_cast<BasicCb>(reinterpret_cast<void (*)()>(cb->cbFunc))(
+                        reinterpret_cast<OrbisNpWebApiPushEventCallback>(
+                            reinterpret_cast<void (*)()>(cb->cbFunc))(
                             title_user_ctx_id, cbId, &to_peer, &from_peer, &dt, p_data,
                             ev.data.size(), cb->pUserArg);
                     }

@@ -200,7 +200,7 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
         m_clients[user_id] = std::move(client);
     }
 
-    FireStateCallback(user_id, ORBIS_NP_STATE_SIGNED_IN);
+    FireStateCallback(user_id, OrbisNpState::SignedIn);
     return true;
 }
 
@@ -221,7 +221,7 @@ void NpHandler::DisconnectUser(s32 user_id) {
     client->Stop();
     // Nothing that needs to be marked as failing yet. Update this later.
     // FailPendingRequests(user_id, ORBIS_NP_ERROR_SIGNED_OUT);
-    FireStateCallback(user_id, ORBIS_NP_STATE_SIGNED_OUT);
+    FireStateCallback(user_id, OrbisNpState::SignedOut);
     LOG_NOTIFICATION(NpHandler, "user {} disconnected", user_id);
 }
 

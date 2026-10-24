@@ -3,11 +3,12 @@
 
 #include <orbis/UserService.h>
 #include <string.h>
-#include "client_main.h"
+
 #include "common/logging/log.h"
-#include "common/plugin_common.h"
+#include "common/shadnet_hook.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_types.h"
 #include "core/libraries/system/user_service.h"
 
 SHADNET_HOOK_DECLARE(Libraries::System::UserService, sceUserServiceInitialize);
@@ -78,7 +79,8 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
     if (Np::NpHandler::Instance().IsSignedIn(user_id)) {
         // If we're signed into shadNet, supply the npid instead.
         // Still need to reverse this and figure out remaining error cases.
-        const OrbisNpId& np_id = Np::NpHandler::Instance().GetNpId(user_id);
+        const Libraries::Np::OrbisNpId& np_id =
+            Libraries::Np::NpHandler::Instance().GetNpId(user_id);
         u64 copy_len = std::min<u64>(name_len, strnlen(np_id.handle.data, 16));
         strncpy(user_name, np_id.handle.data, copy_len);
         LOG_INFO(Lib_UserService, "called, returning user_name {}", user_name);

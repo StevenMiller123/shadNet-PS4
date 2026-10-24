@@ -4,10 +4,13 @@
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/NpWebApi.h>
 #include <orbis/UserService.h>
+
 #include "common/elf_info.h"
 #include "common/logging/log.h"
+#include "common/shadnet_hook.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_types.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/np/np_web_api/np_web_api_internal.h"
 
@@ -351,8 +354,8 @@ s32 sceNpWebApiCreateRequest(s32 titleUserCtxId, const char* pApiGroup, const ch
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
-    if (pContentParameter != nullptr && pContentParameter->content_length != 0 &&
-        pContentParameter->content_type == nullptr) {
+    if (pContentParameter != nullptr && pContentParameter->contentLength != 0 &&
+        pContentParameter->pContentType == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_CONTENT_PARAMETER;
     }
 
@@ -496,8 +499,8 @@ s32 sceNpWebApiIntCreateRequest(s32 titleUserCtxId, const char* pApiGroup, const
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
-    if (pContentParameter != nullptr && pContentParameter->content_length != 0 &&
-        pContentParameter->content_type == nullptr) {
+    if (pContentParameter != nullptr && pContentParameter->contentLength != 0 &&
+        pContentParameter->pContentType == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_CONTENT_PARAMETER;
     }
 
@@ -525,7 +528,7 @@ s32 sceNpWebApiIntCreateServicePushEventFilter(
 
 s32 sceNpWebApiIntInitialize(const OrbisNpWebApiInitializeParameter* args) {
     LOG_INFO(Lib_NpWebApi, "called");
-    if (args == nullptr || args->size != sizeof(OrbisNpWebApiInitializeParameter)) {
+    if (args == nullptr || args->poolSize != sizeof(OrbisNpWebApiInitializeParameter)) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
@@ -537,7 +540,7 @@ s32 sceNpWebApiIntInitialize(const OrbisNpWebApiInitializeParameter* args) {
         }
     }
 
-    s32 result = createLibraryContext(args->libhttp_ctx_id, args->pool_size, args->name, 2);
+    s32 result = createLibraryContext(args->libHttpCtxId, args->poolSize, args->pName, 2);
     if (result >= ORBIS_OK) {
         g_active_library_contexts++;
     }

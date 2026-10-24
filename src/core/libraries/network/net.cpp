@@ -4,6 +4,7 @@
 #include <orbis/Net.h>
 
 #include "common/logging/log.h"
+#include "common/shadnet_hook.h"
 #include "core/libraries/network/net.h"
 
 HOOK_INIT(sceNetSocket);
