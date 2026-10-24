@@ -80,8 +80,8 @@ private:
     void OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n);
     void OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n);
     void OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n);
-    // void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType
-    // error, const std::vector<u8>& body);
+    void OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
+                      const std::vector<u8>& body);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
 
     // State callbacks

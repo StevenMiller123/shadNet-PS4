@@ -135,12 +135,10 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     client->onWebApiPushEvent = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
         OnWebApiPushEvent(user_id, n);
     };
-    /*
     client->onAsyncReply = [this, user_id](ShadNet::CommandType cmd, u64 pkt_id,
                                            ShadNet::ErrorType err, const std::vector<u8>& body) {
         OnAsyncReply(user_id, cmd, pkt_id, err, body);
     };
-    */
 
     // Set whether the user should appear as offline or online during this session.
     client->SetAppearOffline(config.IsAppearOfflineEnabled(user_id));
@@ -348,6 +346,25 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
             e.second.cb(user_id, state);
         }
     }
+}
+
+void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
+                             ShadNet::ErrorType error, const std::vector<u8>& body) {
+    const auto cmd_val = static_cast<u16>(cmd);
+    LOG_INFO(NpHandler, "Unsupported async command {} received", cmd_val);
+    /*
+    if (cmd_val >= 100 && cmd_val <= 200) {
+        NpMatching2::OnMatchingReply(cmd, pkt_id, error, body);
+    } else if (cmd_val >= 201 && cmd_val <= 300) {
+        OnTusReply(user_id, cmd, pkt_id, error, body);
+    } else if (cmd_val >= 301 && cmd_val <= 400) {
+        OnTrophyReply(user_id, cmd, pkt_id, error, body);
+    } else if (cmd == ShadNet::CommandType::LookupOnlineId) {
+        OnLookupReply(user_id, cmd, pkt_id, error, body);
+    } else {
+        OnScoreReply(user_id, cmd, pkt_id, error, body);
+    }
+    */
 }
 
 }; // namespace Libraries::Np

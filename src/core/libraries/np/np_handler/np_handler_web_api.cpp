@@ -77,22 +77,4 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
     }
 }
 
-/*
-void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
-                             ShadNet::ErrorType error, const std::vector<u8>& body) {
-    const auto cmd_val = static_cast<u16>(cmd);
-    if (cmd_val >= 100 && cmd_val <= 200) {
-        NpMatching2::OnMatchingReply(cmd, pkt_id, error, body);
-    } else if (cmd_val >= 201 && cmd_val <= 300) {
-        OnTusReply(user_id, cmd, pkt_id, error, body);
-    } else if (cmd_val >= 301 && cmd_val <= 400) {
-        OnTrophyReply(user_id, cmd, pkt_id, error, body);
-    } else if (cmd == ShadNet::CommandType::LookupOnlineId) {
-        OnLookupReply(user_id, cmd, pkt_id, error, body);
-    } else {
-        OnScoreReply(user_id, cmd, pkt_id, error, body);
-    }
-}
-*/
-
 } // namespace Libraries::Np
