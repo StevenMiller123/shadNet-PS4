@@ -442,6 +442,7 @@ s32 sceNpAuthGetIdTokenV3(s32 req_id, const OrbisNpAuthGetIdTokenParameterA* par
 }
 
 void RegisterHooks() {
+    g_shadnet_enabled = NpHandler::Instance().IsActive();
     RegisterNpAuthHooks();
 }
 
