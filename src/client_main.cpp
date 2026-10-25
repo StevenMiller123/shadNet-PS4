@@ -34,16 +34,10 @@ extern "C" s32 client_start() {
     // Init kernel and UserService hooks
     Libraries::Kernel::RegisterHooks();
     Libraries::UserService::RegisterHooks();
+    Libraries::Network::Net::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
-
-    // Init other library hooks
-    Libraries::Network::Net::RegisterHooks();
-    Libraries::Np::NpManager::RegisterHooks();
-    Libraries::Np::NpScore::RegisterHooks();
-    Libraries::Np::NpWebApi::RegisterHooks();
-    Libraries::Np::NpAuth::RegisterHooks();
 
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
@@ -63,5 +57,11 @@ extern "C" s32 client_start() {
 
     // Initialize NpHandler
     Libraries::Np::NpHandler::Instance().Initialize();
+
+    // Init other library hooks
+    Libraries::Np::NpManager::RegisterHooks();
+    Libraries::Np::NpScore::RegisterHooks();
+    Libraries::Np::NpWebApi::RegisterHooks();
+    Libraries::Np::NpAuth::RegisterHooks();
     return 0;
 }
