@@ -232,8 +232,9 @@ OrbisNpWebApiUserContext* findUserContextByUserId(OrbisNpWebApiContext* context,
     std::scoped_lock lk{context->contextLock};
     for (auto& user_context : context->userContexts) {
         if (user_context.second->userId == userId) {
-            user_context.second->userCount++;
-            return user_context.second;
+            OrbisNpWebApiUserContext* user_ctx = user_context.second;
+            user_ctx->userCount++;
+            return user_ctx;
         }
     }
     return nullptr;
@@ -520,7 +521,6 @@ OrbisNpWebApiRequest* findRequestAndMarkBusy(OrbisNpWebApiUserContext* userConte
         request->userCount++;
         return request;
     }
-
     return nullptr;
 }
 
@@ -1152,6 +1152,7 @@ s32 abortHandle(s32 libCtxId, s32 handleId) {
 s32 deleteHandleInternal(OrbisNpWebApiContext* context, s32 handleId) {
     lockContext(context);
     if (!context->handles.contains(handleId)) {
+        unlockContext(context);
         return ORBIS_NP_WEBAPI_ERROR_HANDLE_NOT_FOUND;
     }
 
@@ -1220,8 +1221,7 @@ s32 createPushEventFilterInternal(OrbisNpWebApiContext* context,
         for (u64 param_idx = 0; param_idx < filterParamNum; param_idx++) {
             OrbisNpWebApiPushEventFilterParameter copy = OrbisNpWebApiPushEventFilterParameter{};
             memcpy(&copy, &pFilterParam[param_idx], sizeof(OrbisNpWebApiPushEventFilterParameter));
-            LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}'", param_idx,
-                     copy.dataType.val);
+            LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}'", param_idx, copy.dataType.val);
             filter->filterParams.emplace_back(copy);
         }
     }
@@ -1277,7 +1277,6 @@ s32 registerPushEventCallbackInternal(OrbisNpWebApiUserContext* userContext, s32
     cb->filterId = filterId;
     cb->cbFunc = cbFunc;
     cb->pUserArg = pUserArg;
-
     return cbId;
 }
 
@@ -1448,7 +1447,6 @@ s32 registerServicePushEventCallbackInternal(
     cb->internalCbFunc = intCbFunc;
     cb->internalCbFuncA = intCbFuncA;
     cb->pUserArg = pUserArg;
-
     return cbId;
 }
 
@@ -1638,7 +1636,6 @@ s32 registerExtdPushEventCallbackInternal(OrbisNpWebApiUserContext* userContext,
     cb->cbFunc = cbFunc;
     cb->cbFuncA = cbFuncA;
     cb->pUserArg = pUserArg;
-
     return cbId;
 }
 
@@ -1872,8 +1869,9 @@ s32 PS4_SYSV_ABI getHttpStatusCodeInternal(s64 requestId, s32* out_status_code) 
         s32 httpReqId = getHttpRequestIdFromRequest(request);
         s32 err = sceHttpGetStatusCode(httpReqId, &status_code);
 
-        if (out_status_code != nullptr)
+        if (out_status_code != nullptr) {
             *out_status_code = status_code;
+        }
 
         releaseRequest(request);
         releaseUserContext(user_context);
@@ -1968,8 +1966,9 @@ s32 PS4_SYSV_ABI readDataInternal(s64 requestId, void* pData, u64 size) {
             s32 httpRead =
                 sceHttpReadData(httpReqId, reinterpret_cast<u8*>(pData) + offset, remainingSize);
 
-            if (httpRead < 0)
+            if (httpRead < 0) {
                 httpRead = 0;
+            }
 
             offset += httpRead;
         }

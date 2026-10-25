@@ -438,7 +438,7 @@ s32 sceNpWebApiGetHttpStatusCode(s64 requestId, s32* out_status_code) {
 }
 
 s32 sceNpWebApiGetMemoryPoolStats(s32 libCtxId, OrbisNpWebApiMemoryPoolStats* pCurrentStat) {
-    LOG_ERROR(Lib_NpWebApi, "called (STUBBED), libCtxId = {:#x}, pCurrentStat = {}", libCtxId,
+    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called, libCtxId = {:#x}, pCurrentStat = {}", libCtxId,
               fmt::ptr(pCurrentStat));
     return ORBIS_OK;
 }
