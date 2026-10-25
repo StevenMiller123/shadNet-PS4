@@ -220,13 +220,18 @@ set(PLUGIN_LIBS
 set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
 file(MAKE_DIRECTORY "${SHADNET_PROTO_OUT}")
 
-set(COMMON_SOURCES src/common/error.cpp
+set(COMMON_SOURCES src/common/libjbc/jailbreak.c
+                   src/common/libjbc/kernelrw.c
+                   src/common/libjbc/utils.c
+                   src/common/error.cpp
                    src/common/plugin_common.cpp
                    src/common/thread.cpp
                    ${CMAKE_CURRENT_BINARY_DIR}/src/common/scm_rev.cpp
 )
 
-set(CORE_SOURCES src/core/libraries/kernel/kernel.cpp
+set(CORE_SOURCES src/core/file_format/npbind.cpp
+                 src/core/file_format/psf.cpp
+                 src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/net/net.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
                  src/core/libraries/np/np_manager/np_callbacks.cpp

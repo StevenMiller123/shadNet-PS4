@@ -4,10 +4,14 @@
 #include <orbis/Sysmodule.h>
 #include <orbis/UserService.h>
 #include <orbis/libkernel.h>
+
 #include "client_main.h"
 #include "common/elf_info.h"
+#include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
 #include "common/types.h"
+#include "core/file_format/npbind.h"
+#include "core/file_format/psf.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/net/net.h"
 #include "core/libraries/np/np_auth/np_auth.h"
@@ -50,10 +54,77 @@ extern "C" s32 client_start() {
         return 1;
     }
 
-    LOG_INFO(shadNet, "Currently running {}", app_info.TitleId);
     sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
     game_info.initialized = true;
     game_info.game_serial = std::string{app_info.TitleId};
+
+    if (std::filesystem::exists("/app0/sce_sys/param.sfo")) {
+        // If the param.sfo is in the sandbox, then this has to be an emulator.
+        LOG_WARNING(shadNet, "param.sfo present in sandbox");
+    } else {
+        // We want to retrieve the param.sfo and npbind.dat
+        // These aren't mounted in the sandbox, so use libjbc to jailbreak the process
+        jbc_cred cred;
+        jbc_get_cred(&cred);
+        jbc_cred root_cred = cred;
+        jbc_jailbreak_cred(&root_cred);
+        // We want to change our working dir to the fs root for this
+        root_cred.cdir = cred.rdir;
+        jbc_set_cred(&root_cred);
+
+        // Check files in appmeta
+        std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
+        if (std::filesystem::exists(meta_path + "/param.sfo")) {
+            // Extract param.sfo
+            PSF* param_sfo = Common::Singleton<PSF>::Instance();
+            if (!param_sfo->Open(meta_path + "/param.sfo")) {
+                LOG_WARNING(shadNet, "Failed to load param.sfo");
+            } else {
+                // Load game name, version, required firmware, and other param.sfo attributes
+                game_info.title = param_sfo->GetString("TITLE").value_or("Unknown Game");
+                game_info.firmware_ver =
+                    param_sfo->GetInteger("SYSTEM_VER").value_or(game_info.sdk_ver);
+                game_info.app_ver = param_sfo->GetString("APP_VER").value_or("1.00");
+                if (const auto raw_attributes = param_sfo->GetInteger("ATTRIBUTE")) {
+                    game_info.psf_attributes.raw = *raw_attributes;
+                }
+            }
+        } else {
+            LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
+        }
+
+        if (std::filesystem::exists(meta_path + "/npbind.dat")) {
+            // Extract npbind.dat
+            NPBindFile npbind;
+            if (!npbind.Load(meta_path + "/npbind.dat")) {
+                LOG_WARNING(shadNet, "Failed to load npbind.dat file");
+            } else {
+                game_info.npCommIds = npbind.GetNpCommIds();
+            }
+        } else {
+            LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
+        }
+
+        // Un-jailbreak the process by restoring the original cred.
+        jbc_set_cred(&cred);
+    }
+
+    // Log the important info we retrieve
+    if (game_info.title.size() > 0) {
+        LOG_INFO(shadNet, "Currently running {} ({}) v{}", game_info.title, game_info.game_serial,
+                 game_info.app_ver);
+    } else {
+        LOG_INFO(shadNet, "Currently running {} v{}", game_info.game_serial, game_info.app_ver);
+    }
+
+    if (game_info.npCommIds.size() > 0) {
+        LOG_INFO(shadNet, "NP Communication IDs:");
+        for (s32 i = 0; i < game_info.npCommIds.size(); i++) {
+            LOG_INFO(shadNet, "{}: {}", i, game_info.npCommIds[i]);
+        }
+    } else {
+        LOG_WARNING(shadNet, "No NP Communication IDs loaded");
+    }
 
     // Initialize NpHandler
     Libraries::Np::NpHandler::Instance().Initialize();

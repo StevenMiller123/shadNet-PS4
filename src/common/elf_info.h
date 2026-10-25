@@ -143,10 +143,6 @@ public:
     [[nodiscard]] const std::vector<std::string>& GetNpCommIds() const {
         return npCommIds;
     }
-
-    void SetNpCommIds(std::vector<std::string> ids) {
-        npCommIds = std::move(ids);
-    }
 };
 
 } // namespace Common
