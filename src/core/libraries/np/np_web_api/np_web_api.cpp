@@ -411,8 +411,9 @@ s32 sceNpWebApiGetHttpResponseHeaderValue(s64 requestId, const char* pFieldName,
                                           u64 valueSize) {
     LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pFieldName = '{}', valueSize = {}",
              requestId, (pFieldName ? pFieldName : "null"), valueSize);
-    if (pFieldName == nullptr || pValue == nullptr || valueSize == 0)
+    if (pFieldName == nullptr || pValue == nullptr || valueSize == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
+    }
     return getHttpResponseHeaderValueInternal(requestId, pFieldName, pValue, valueSize, nullptr);
 }
 
@@ -420,16 +421,18 @@ s32 sceNpWebApiGetHttpResponseHeaderValueLength(s64 requestId, const char* pFiel
                                                 u64* pValueLength) {
     LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pFieldName = '{}'", requestId,
              (pFieldName ? pFieldName : "null"));
-    if (pFieldName == nullptr || pValueLength == nullptr)
+    if (pFieldName == nullptr || pValueLength == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
+    }
     return getHttpResponseHeaderValueInternal(requestId, pFieldName, nullptr, 0, pValueLength);
 }
 
 s32 sceNpWebApiGetHttpStatusCode(s64 requestId, s32* out_status_code) {
     LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}", requestId);
     // On newer SDKs, NULL output pointer is invalid
-    if (getCompiledSdkVersion() > Common::ElfInfo::FW_100 && out_status_code == nullptr)
+    if (getCompiledSdkVersion() > Common::ElfInfo::FW_100 && out_status_code == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
+    }
     s32 returncode = getHttpStatusCodeInternal(requestId, out_status_code);
     return returncode;
 }
@@ -574,9 +577,9 @@ s32 sceNpWebApiIntRegisterServicePushEventCallbackA(
 s32 sceNpWebApiReadData(s64 requestId, void* pData, u64 size) {
     LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pData = {}, size = {:#x}", requestId,
              fmt::ptr(pData), size);
-    if (pData == nullptr || size == 0)
+    if (pData == nullptr || size == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
-
+    }
     return readDataInternal(requestId, pData, size);
 }
 

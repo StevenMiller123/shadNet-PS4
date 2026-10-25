@@ -756,7 +756,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
 
     // Stubbing sceNpManagerIntGetSigninState call with a config check.
     auto& np_handler = Libraries::Np::NpHandler::Instance();
-    if (!np_handler.IsSignedIn(user_context->userId)) {
+    if (!np_handler.IsActive() || !np_handler.IsSignedIn(user_context->userId)) {
         releaseRequest(request);
         releaseUserContext(user_context);
         releaseContext(context);
@@ -831,7 +831,6 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
             sceHttpAddRequestHeader(req_id, "Content-Type", request->userContentType.c_str(), 0);
         }
 
-        auto& np_handler = NpHandler::Instance();
         const std::string bearer = np_handler.GetBearerToken(user_context->userId);
         if (!bearer.empty()) {
             const std::string auth_value = "Bearer " + bearer;

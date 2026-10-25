@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <fmt/format.h>
+#include <orbis/SysUtil.h>
+#include <orbis/libkernel.h>
 #include <pthread.h>
 #include <pthread_np.h>
-#include "fmt/format.h"
-#include "orbis/SysUtil.h"
-#include "orbis/libkernel.h"
 
 template <typename... Args>
 std::string FormatLog(char const* format, Args const&... args) {
