@@ -7,6 +7,22 @@
 #include "common/shadnet_hook.h"
 #include "core/libraries/np/np_score/np_score.h"
 
+extern "C" {
+void sceNpScoreGetFriendsRankingForCrossSave();
+void sceNpScoreGetFriendsRankingForCrossSaveAsync();
+void sceNpScoreGetGameDataByAccountId();
+void sceNpScoreGetGameDataByAccountIdAsync();
+void sceNpScoreGetRankingByAccountIdForCrossSave();
+void sceNpScoreGetRankingByAccountIdForCrossSaveAsync();
+void sceNpScoreGetRankingByAccountIdPcId();
+void sceNpScoreGetRankingByAccountIdPcIdAsync();
+void sceNpScoreGetRankingByAccountIdPcIdForCrossSave();
+void sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync();
+void sceNpScoreGetRankingByRangeForCrossSave();
+void sceNpScoreGetRankingByRangeForCrossSaveAsync();
+void sceNpScoreSetThreadParam();
+}
+
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreCreateNpTitleCtx);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRanking);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingAsync);
@@ -31,23 +47,22 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetBoardInfo);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetBoardInfoAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingA);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingAAsync);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSave);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSaveAsync);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountId);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountIdAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSave);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSaveAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountId);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountIdAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountId);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdAsync);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSave);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSaveAsync);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcId);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdAsync);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSave);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore,
-// sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSave);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSaveAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcId);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSave);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeA);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeAAsync);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSave);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSaveAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSave);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSaveAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScorePollAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreRecordGameData);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreRecordGameDataAsync);
@@ -56,7 +71,7 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreRecordScoreAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreSanitizeComment);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreSanitizeCommentAsync);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreSetPlayerCharacterId);
-// SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreSetThreadParam);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreSetThreadParam);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreSetTimeout);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpScore, sceNpScoreWaitAsync);
 
@@ -85,22 +100,22 @@ static void RegisterNpScoreHooks() {
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetBoardInfoAsync);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingA);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingAAsync);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSave);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSaveAsync);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountId);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountIdAsync);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSave);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetFriendsRankingForCrossSaveAsync);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountId);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetGameDataByAccountIdAsync);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountId);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdAsync);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSave);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSaveAsync);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcId);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdAsync);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSave);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSave);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdForCrossSaveAsync);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcId);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdAsync);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSave);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeA);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeAAsync);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSave);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSaveAsync);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSave);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreGetRankingByRangeForCrossSaveAsync);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScorePollAsync);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreRecordGameData);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreRecordGameDataAsync);
@@ -109,7 +124,7 @@ static void RegisterNpScoreHooks() {
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreSanitizeComment);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreSanitizeCommentAsync);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreSetPlayerCharacterId);
-    // SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreSetThreadParam);
+    SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreSetThreadParam);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreSetTimeout);
     SHADNET_HOOK(Libraries::Np::NpScore, sceNpScoreWaitAsync);
 }
