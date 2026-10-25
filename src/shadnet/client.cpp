@@ -30,13 +30,15 @@ static std::vector<u8> MakeProtoPayload(const T& msg) {
     return out;
 }
 
-std::string ShadNetClient::ExtractBlob(const std::vector<u8>& p, int pos) {
-    if (pos + 4 > static_cast<int>(p.size()))
+std::string ShadNetClient::ExtractBlob(const std::vector<u8>& p, s32 pos) {
+    if (pos + 4 > static_cast<s32>(p.size())) {
         return {};
+    }
     const u32 len = GetLE32(p.data() + pos);
     pos += 4;
-    if (pos + static_cast<int>(len) > static_cast<int>(p.size()))
+    if (pos + static_cast<s32>(len) > static_cast<s32>(p.size())) {
         return {};
+    }
     return std::string(reinterpret_cast<const char*>(p.data() + pos), len);
 }
 
@@ -143,8 +145,9 @@ u32 ShadNetClient::GetNumFriends() const {
 
 std::optional<std::string> ShadNetClient::GetFriendNpid(u32 index) const {
     std::lock_guard lock(m_mutex_friends);
-    if (index >= m_friends.size())
+    if (index >= m_friends.size()) {
         return std::nullopt;
+    }
     return m_friends[index].npid;
 }
 
@@ -322,7 +325,7 @@ bool ShadNetClient::DoConnect() {
     }
 
     m_sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (m_sock == SHAD_INVALID_SOCK) {
+    if (m_sock == -1) {
         m_state = ShadNetState::FailureConnect;
         return false;
     }
@@ -341,7 +344,7 @@ bool ShadNetClient::DoConnect() {
     addr.sin_family = AF_INET;
     addr.sin_addr = (in_addr)shadnet_addr.s_addr;
     addr.sin_port = htons(m_port);
-    const int cr =
+    const s32 cr =
         ::connect(m_sock, reinterpret_cast<sockaddr*>(&addr), static_cast<socklen_t>(addr.sin_len));
 
     bool connected = false;
@@ -352,8 +355,8 @@ bool ShadNetClient::DoConnect() {
         FD_SET(m_sock, &wfds);
         struct timeval tv{static_cast<long>(SHAD_CONNECT_TIMEOUT_MS / 1000),
                           static_cast<long>((SHAD_CONNECT_TIMEOUT_MS % 1000) * 1000)};
-        if (::select(static_cast<int>(m_sock) + 1, nullptr, &wfds, nullptr, &tv) > 0) {
-            int err = 0;
+        if (::select(static_cast<s32>(m_sock) + 1, nullptr, &wfds, nullptr, &tv) > 0) {
+            s32 err = 0;
             socklen_t len = sizeof(err);
             ::getsockopt(m_sock, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&err), &len);
             connected = (err == 0);
@@ -361,8 +364,8 @@ bool ShadNetClient::DoConnect() {
     }
     if (!connected) {
         LOG_ERROR(shadNet, "connect() timed out or failed for {}:{}", m_host, m_port);
-        SHAD_CLOSE(m_sock);
-        m_sock = SHAD_INVALID_SOCK;
+        close(m_sock);
+        m_sock = -1;
         m_state = ShadNetState::FailureConnect;
         return false;
     }
@@ -437,10 +440,10 @@ bool ShadNetClient::DoConnect() {
 }
 
 void ShadNetClient::DoDisconnect() {
-    if (m_sock != SHAD_INVALID_SOCK) {
-        ::shutdown(m_sock, SHUT_RDWR);
-        SHAD_CLOSE(m_sock);
-        m_sock = SHAD_INVALID_SOCK;
+    if (m_sock != -1) {
+        shutdown(m_sock, SHUT_RDWR);
+        close(m_sock);
+        m_sock = -1;
     }
 }
 
@@ -450,8 +453,8 @@ bool ShadNetClient::RecvN(u8* buf, u32 n) {
         if (m_terminate) {
             return false;
         }
-        const int r = static_cast<int>(::recv(m_sock, reinterpret_cast<char*>(buf + received),
-                                              static_cast<int>(n - received), 0));
+        const s32 r = static_cast<s32>(::recv(m_sock, reinterpret_cast<char*>(buf + received),
+                                              static_cast<s32>(n - received), 0));
         if (r <= 0) {
             return false;
         }
@@ -462,10 +465,10 @@ bool ShadNetClient::RecvN(u8* buf, u32 n) {
 
 bool ShadNetClient::SendAll(const std::vector<u8>& data) {
     std::lock_guard lock(m_mutex_send_direct);
-    int sent = 0;
-    const int total = static_cast<int>(data.size());
+    s32 sent = 0;
+    const s32 total = static_cast<s32>(data.size());
     while (sent < total) {
-        const int r = static_cast<int>(
+        const s32 r = static_cast<s32>(
             ::send(m_sock, reinterpret_cast<const char*>(data.data() + sent), total - sent, 0));
         if (r < 0) {
             LOG_ERROR(shadNet, "send() failed");
@@ -897,41 +900,41 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     }
     case NotificationType::WebApiPushEvent: {
         NotifyWebApiPushEvent n;
-        int off = 0;
+        s32 off = 0;
         n.npServiceName = ExtractBlob(payload, off);
-        off += 4 + static_cast<int>(n.npServiceName.size());
-        if (off + 4 <= static_cast<int>(payload.size())) {
+        off += 4 + static_cast<s32>(n.npServiceName.size());
+        if (off + 4 <= static_cast<s32>(payload.size())) {
             n.npServiceLabel = GetLE32(payload.data() + off);
             off += 4;
         }
         n.dataType = ExtractBlob(payload, off);
-        off += 4 + static_cast<int>(n.dataType.size());
+        off += 4 + static_cast<s32>(n.dataType.size());
         n.data = ExtractBlob(payload, off);
-        off += 4 + static_cast<int>(n.data.size());
+        off += 4 + static_cast<s32>(n.data.size());
         n.fromNpid = ExtractBlob(payload, off);
-        off += 4 + static_cast<int>(n.fromNpid.size());
+        off += 4 + static_cast<s32>(n.fromNpid.size());
         n.toNpid = ExtractBlob(payload, off);
-        off += 4 + static_cast<int>(n.toNpid.size());
-        if (off + 4 <= static_cast<int>(payload.size())) {
+        off += 4 + static_cast<s32>(n.toNpid.size());
+        if (off + 4 <= static_cast<s32>(payload.size())) {
             const u32 count = GetLE32(payload.data() + off);
             off += 4;
             bool extd_complete = count <= 256;
             for (u32 i = 0; i < count && i < 256; ++i) {
-                if (off + 4 > static_cast<int>(payload.size())) {
+                if (off + 4 > static_cast<s32>(payload.size())) {
                     extd_complete = false;
                     break;
                 }
                 std::string key = ExtractBlob(payload, off);
-                off += 4 + static_cast<int>(key.size());
-                if (off + 4 > static_cast<int>(payload.size())) {
+                off += 4 + static_cast<s32>(key.size());
+                if (off + 4 > static_cast<s32>(payload.size())) {
                     extd_complete = false;
                     break;
                 }
                 std::string val = ExtractBlob(payload, off);
-                off += 4 + static_cast<int>(val.size());
+                off += 4 + static_cast<s32>(val.size());
                 n.extdData.emplace_back(std::move(key), std::move(val));
             }
-            if (extd_complete && off + 16 <= static_cast<int>(payload.size())) {
+            if (extd_complete && off + 16 <= static_cast<s32>(payload.size())) {
                 n.fromAccountId = GetLE64(payload.data() + off);
                 n.toAccountId = GetLE64(payload.data() + off + 8);
             }
@@ -988,27 +991,32 @@ void ShadNetClient::PutLE16(std::vector<u8>& b, size_t off, u16 v) {
     b[off] = static_cast<u8>(v);
     b[off + 1] = static_cast<u8>(v >> 8);
 }
+
 void ShadNetClient::PutLE32(std::vector<u8>& b, size_t off, u32 v) {
     b[off] = static_cast<u8>(v);
     b[off + 1] = static_cast<u8>(v >> 8);
     b[off + 2] = static_cast<u8>(v >> 16);
     b[off + 3] = static_cast<u8>(v >> 24);
 }
+
 void ShadNetClient::PutLE64(std::vector<u8>& b, size_t off, u64 v) {
-    for (int i = 0; i < 8; ++i) {
+    for (s32 i = 0; i < 8; ++i) {
         b[off + i] = static_cast<u8>(v >> (8 * i));
     }
 }
+
 u16 ShadNetClient::GetLE16(const u8* p) {
     return static_cast<u16>(p[0]) | (static_cast<u16>(p[1]) << 8);
 }
+
 u32 ShadNetClient::GetLE32(const u8* p) {
     return static_cast<u32>(p[0]) | (static_cast<u32>(p[1]) << 8) | (static_cast<u32>(p[2]) << 16) |
            (static_cast<u32>(p[3]) << 24);
 }
+
 u64 ShadNetClient::GetLE64(const u8* p) {
     u64 v = 0;
-    for (int i = 0; i < 8; ++i) {
+    for (s32 i = 0; i < 8; ++i) {
         v |= static_cast<u64>(p[i]) << (8 * i);
     }
     return v;

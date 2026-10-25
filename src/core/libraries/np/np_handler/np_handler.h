@@ -37,7 +37,7 @@ public:
         if (!m_clients.contains(user_id)) {
             return false;
         }
-        return m_clients[user_id]->IsAuthenticated();
+        return m_initialized && m_clients[user_id]->IsAuthenticated();
     };
 
     OrbisNpId& GetNpId(s32 user_id) {

@@ -18,11 +18,10 @@ static u32 ProbeGetLE32(const u8* p) {
 }
 
 // recv() exactly n bytes (blocking, bounded by the socket's SO_RCVTIMEO).
-static bool ProbeRecvN(ShadSocketHandle sock, u8* buf, u32 n) {
+static bool ProbeRecvN(s32 sock, u8* buf, u32 n) {
     u32 got = 0;
     while (got < n) {
-        const int r =
-            ::recv(sock, reinterpret_cast<char*>(buf) + got, static_cast<int>(n - got), 0);
+        const s32 r = recv(sock, reinterpret_cast<char*>(buf) + got, static_cast<s32>(n - got), 0);
         if (r <= 0)
             return false;
         got += static_cast<u32>(r);
@@ -50,13 +49,15 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
 
     s32 netpool_id = sceNetPoolCreate("shadNet Pool", 0x1000, 0);
     if (netpool_id < 0) {
-        LOG_WARNING(shadNet, "Failed to create net pool, error = {:#x}", static_cast<u32>(netpool_id));
+        LOG_WARNING(shadNet, "Failed to create net pool, error = {:#x}",
+                    static_cast<u32>(netpool_id));
         return info;
     }
 
     s32 resolver = sceNetResolverCreate("shadNet Resolver", netpool_id, 0);
     if (resolver < 0) {
-        LOG_WARNING(shadNet, "Failed to create resolver, error = {:#x}", static_cast<u32>(resolver));
+        LOG_WARNING(shadNet, "Failed to create resolver, error = {:#x}",
+                    static_cast<u32>(resolver));
         return info;
     }
 
@@ -78,15 +79,15 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
         LOG_WARNING(shadNet, "Failed to destroy net pool, error = {:#x}", static_cast<u32>(result));
     }
 
-    ShadSocketHandle sock = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sock == SHAD_INVALID_SOCK) {
+    s32 sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sock == -1) {
         LOG_WARNING(shadNet, "Failed to create socket");
-        return info; // Unreachable
+        return info;
     }
 
     s32 optval = 1;
-    result = ::setsockopt(sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
-                          static_cast<socklen_t>(sizeof(optval)));
+    result = setsockopt(sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
+                        static_cast<socklen_t>(sizeof(optval)));
     if (result != 0) {
         LOG_WARNING(shadNet, "Failed to mark socket as non-blocking");
         return info;
@@ -97,8 +98,8 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     addr.sin_family = AF_INET;
     addr.sin_addr = shadnet_addr.s_addr;
     addr.sin_port = htons(port);
-    const int cr =
-        ::connect(sock, reinterpret_cast<sockaddr*>(&addr), static_cast<socklen_t>(addr.sin_len));
+    const s32 cr =
+        connect(sock, reinterpret_cast<sockaddr*>(&addr), static_cast<socklen_t>(addr.sin_len));
 
     bool connected = false;
     const bool in_progress = (cr < 0 && errno == EINPROGRESS);
@@ -109,10 +110,10 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
         struct timeval tv{};
         tv.tv_sec = static_cast<decltype(tv.tv_sec)>(timeout_ms / 1000);
         tv.tv_usec = static_cast<decltype(tv.tv_usec)>((timeout_ms % 1000) * 1000);
-        if (::select(static_cast<int>(sock) + 1, nullptr, &wfds, nullptr, &tv) > 0) {
-            int err = 0;
+        if (select(static_cast<s32>(sock) + 1, nullptr, &wfds, nullptr, &tv) > 0) {
+            s32 err = 0;
             socklen_t len = sizeof(err);
-            ::getsockopt(sock, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&err), &len);
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&err), &len);
             connected = (err == 0);
         }
     } else {
@@ -120,14 +121,14 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     }
 
     if (!connected) {
-        SHAD_CLOSE(sock);
+        close(sock);
         LOG_WARNING(shadNet, "server {}:{} is unreachable (timeout {} ms)", host, port, timeout_ms);
         return info; // Unreachable
     }
 
     optval = 0;
-    result = ::setsockopt(sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
-                          static_cast<socklen_t>(sizeof(optval)));
+    result = setsockopt(sock, SOL_SOCKET, SO_NBIO, reinterpret_cast<void*>(&optval),
+                        static_cast<socklen_t>(sizeof(optval)));
     if (result != 0) {
         LOG_WARNING(shadNet, "Failed to mark socket as blocking");
         return info;
@@ -137,8 +138,8 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     so_rcv.tv_sec = static_cast<decltype(so_rcv.tv_sec)>(timeout_ms / 1000);
     so_rcv.tv_usec = static_cast<decltype(so_rcv.tv_usec)>((timeout_ms % 1000) * 1000);
 
-    result = ::setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&so_rcv),
-                          sizeof(so_rcv));
+    result = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&so_rcv),
+                        sizeof(so_rcv));
     if (result != 0) {
         LOG_WARNING(shadNet, "Failed to set recv timeout");
         return info;
@@ -148,30 +149,31 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
 
     u8 hdr[SHAD_HEADER_SIZE];
     if (!ProbeRecvN(sock, hdr, SHAD_HEADER_SIZE)) {
-        SHAD_CLOSE(sock);
+        close(sock);
         LOG_WARNING(shadNet, "{}:{} reachable but no ServerInfo header received", host, port);
         return info;
     }
     if (static_cast<PacketType>(hdr[0]) != PacketType::ServerInfo) {
-        SHAD_CLOSE(sock);
-        LOG_WARNING(shadNet, "{}:{} sent packet type {:02x} instead of ServerInfo", host, port, hdr[0]);
+        close(sock);
+        LOG_WARNING(shadNet, "{}:{} sent packet type {:02x} instead of ServerInfo", host, port,
+                    hdr[0]);
         return info;
     }
 
     const u32 total_sz = ProbeGetLE32(hdr + 3);
     if (total_sz < SHAD_HEADER_SIZE || total_sz > SHAD_MAX_PACKET_SIZE) {
-        SHAD_CLOSE(sock);
+        close(sock);
         LOG_WARNING(shadNet, "{}:{} sent corrupt ServerInfo (total_sz={})", host, port, total_sz);
         return info;
     }
     const u32 payload_sz = total_sz - SHAD_HEADER_SIZE;
     std::vector<u8> payload(payload_sz);
     if (payload_sz > 0 && !ProbeRecvN(sock, payload.data(), payload_sz)) {
-        SHAD_CLOSE(sock);
+        close(sock);
         LOG_WARNING(shadNet, "{}:{} ServerInfo payload read failed", host, port);
         return info;
     }
-    SHAD_CLOSE(sock);
+    close(sock);
 
     if (payload_sz < 4) {
         info.result = ProbeResult::Ok;
@@ -182,8 +184,8 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     info.server_version = ProbeGetLE32(payload.data());
     if (info.server_version != SHAD_PROTOCOL_VERSION) {
         info.result = ProbeResult::VersionMismatch;
-        LOG_WARNING(shadNet, "server {}:{} protocol version mismatch (server v{}, ours v{})", host, port,
-                    info.server_version, SHAD_PROTOCOL_VERSION);
+        LOG_WARNING(shadNet, "server {}:{} protocol version mismatch (server v{}, ours v{})", host,
+                    port, info.server_version, SHAD_PROTOCOL_VERSION);
         return info;
     }
 

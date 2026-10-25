@@ -78,7 +78,7 @@ s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id) {
         LOG_ERROR(Lib_NpManager, "null np_id");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
-    if (!NpHandler::Instance().IsActive() || !NpHandler::Instance().IsSignedIn(user_id)) {
+    if (!NpHandler::Instance().IsSignedIn(user_id)) {
         // Not currently connected to shadNet, treat this as signed out.
         LOG_INFO(Lib_NpManager, "called, returning signed out");
         return ORBIS_NP_ERROR_SIGNED_OUT;
@@ -97,7 +97,7 @@ s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
         LOG_ERROR(Lib_NpManager, "null online_id");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
-    if (!NpHandler::Instance().IsActive() || !NpHandler::Instance().IsSignedIn(user_id)) {
+    if (!NpHandler::Instance().IsSignedIn(user_id)) {
         // Not currently connected to shadNet, treat this as signed out.
         LOG_INFO(Lib_NpManager, "called, returning signed out");
         return ORBIS_NP_ERROR_SIGNED_OUT;

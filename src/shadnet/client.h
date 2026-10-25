@@ -23,10 +23,6 @@
 #include <unistd.h>
 #include "common/types.h"
 
-using ShadSocketHandle = s32;
-static constexpr ShadSocketHandle SHAD_INVALID_SOCK = -1;
-#define SHAD_CLOSE(s) ::close(s)
-
 namespace ShadNet {
 
 // Protocol constants
@@ -361,7 +357,7 @@ private:
     void HandleNotification(u16 cmd_raw, const std::vector<u8>& payload);
     bool RequestServerFeatures();
 
-    static std::string ExtractBlob(const std::vector<u8>& p, int pos);
+    static std::string ExtractBlob(const std::vector<u8>& p, s32 pos);
 
     static void PutLE16(std::vector<u8>& b, size_t off, u16 v);
     static void PutLE32(std::vector<u8>& b, size_t off, u32 v);
@@ -370,7 +366,7 @@ private:
     static u32 GetLE32(const u8* p);
     static u64 GetLE64(const u8* p);
 
-    ShadSocketHandle m_sock = SHAD_INVALID_SOCK;
+    s32 m_sock = -1;
     std::string m_host;
     u16 m_port = 31313;
     std::string m_npid;

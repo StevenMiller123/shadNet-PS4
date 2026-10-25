@@ -715,7 +715,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
             static const char kHex[] = "0123456789abcdef";
             boundary = "----shadPS4Boundary";
             const u64 v = static_cast<u64>(requestId);
-            for (int shift = 60; shift >= 0; shift -= 4) {
+            for (s32 shift = 60; shift >= 0; shift -= 4) {
                 boundary += kHex[(v >> shift) & 0xf];
             }
         }
@@ -757,7 +757,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
 
     // Stubbing sceNpManagerIntGetSigninState call with a config check.
     auto& np_handler = Libraries::Np::NpHandler::Instance();
-    if (!np_handler.IsActive() || !np_handler.IsSignedIn(user_context->userId)) {
+    if (!np_handler.IsSignedIn(user_context->userId)) {
         releaseRequest(request);
         releaseUserContext(user_context);
         releaseContext(context);
@@ -776,7 +776,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
             return tmpl_id;
         }
         request->http_template_id = tmpl_id;
-        const int conn_id = sceHttpCreateConnectionWithURL(tmpl_id, base_url.c_str(), true);
+        const s32 conn_id = sceHttpCreateConnectionWithURL(tmpl_id, base_url.c_str(), true);
         if (conn_id < 0) {
             LOG_ERROR(Lib_NpWebApi, "sceHttpCreateConnectionWithURL failed: {:#x}", conn_id);
             sceHttpDeleteTemplate(tmpl_id);
@@ -806,14 +806,14 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
             break;
         default:
             LOG_ERROR(Lib_NpWebApi, "unknown method enum value {}",
-                      static_cast<int>(request->userMethod));
+                      static_cast<s32>(request->userMethod));
             releaseRequest(request);
             releaseUserContext(user_context);
             releaseContext(context);
             return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
         }
         const std::string full_url = base_url + request->userPath;
-        const int req_id = sceHttpCreateRequestWithURL(conn_id, sceMethod, full_url.c_str(),
+        const s32 req_id = sceHttpCreateRequestWithURL(conn_id, sceMethod, full_url.c_str(),
                                                        request->userContentLength);
         if (req_id < 0) {
             LOG_ERROR(Lib_NpWebApi, "sceHttpCreateRequestWithURL failed: {:#x}", req_id);
