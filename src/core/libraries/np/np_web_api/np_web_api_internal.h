@@ -4,11 +4,11 @@
 #pragma once
 
 #include <map>
-#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
-#include "common/logging/log.h"
+
+#include "common/recursive_mutex.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 
 namespace Libraries::Np::NpWebApi {
@@ -31,7 +31,7 @@ struct OrbisNpWebApiContext {
     s32 userCount;
     s32 libCtxId;
     s32 libHttpCtxId;
-    std::recursive_mutex contextLock;
+    Common::RecursiveMutex contextLock;
     std::map<s32, OrbisNpWebApiUserContext*> userContexts;
     std::map<s32, OrbisNpWebApiHandle*> handles;
     std::map<s32, OrbisNpWebApiTimerHandle*> timerHandles;
