@@ -58,51 +58,77 @@ extern "C" s32 client_start() {
     game_info.initialized = true;
     game_info.game_serial = std::string{app_info.TitleId};
 
+    bool sandbox_psf = false;
+    bool sandbox_npbind = false;
+
+    // Define helpers for loading these files, since we're checking multiple paths.
+    auto load_psf = [&](std::string path) {
+        PSF* param_sfo = Common::Singleton<PSF>::Instance();
+        if (!param_sfo->Open(path)) {
+            return false;
+        }
+
+        // Load game name, version, required firmware, and other param.sfo attributes
+        game_info.title = param_sfo->GetString("TITLE").value_or("Unknown Game");
+        game_info.firmware_ver = param_sfo->GetInteger("SYSTEM_VER").value_or(game_info.sdk_ver);
+        game_info.app_ver = param_sfo->GetString("APP_VER").value_or("1.00");
+        if (const auto raw_attributes = param_sfo->GetInteger("ATTRIBUTE")) {
+            game_info.psf_attributes.raw = *raw_attributes;
+        }
+        return true;
+    };
+    auto load_npbind = [&](std::string path) {
+        NPBindFile npbind;
+        if (!npbind.Load(path)) {
+            return false;
+        }
+        game_info.npCommIds = npbind.GetNpCommIds();
+        return true;
+    };
+
+    // Start by checking within the sandbox.
+    // Mounted PKGs won't mount these files here, but unpacked dumps usually contain them.
     if (std::filesystem::exists("/app0/sce_sys/param.sfo")) {
-        // If the param.sfo is in the sandbox, then this has to be an emulator.
-        LOG_WARNING(shadNet, "param.sfo present in sandbox");
-    } else {
-        // We want to retrieve the param.sfo and npbind.dat
-        // These aren't mounted in the sandbox, so use libjbc to jailbreak the process
+        sandbox_psf = load_psf("/app0/sce_sys/param.sfo");
+        if (!sandbox_psf) {
+            LOG_WARNING(shadNet, "Failed to load param.sfo from sandbox");
+        }
+    }
+    if (std::filesystem::exists("/app0/sce_sys/npbind.dat")) {
+        sandbox_npbind = load_npbind("/app0/sce_sys/npbind.dat");
+        if (!sandbox_npbind) {
+            LOG_WARNING(shadNet, "Failed to load npbind.dat from sandbox");
+        }
+    }
+
+    // Sandbox doesn't contain our files, jailbreak this process and look in the correct places.
+    if (!sandbox_psf || !sandbox_npbind) {
         jbc_cred cred;
         jbc_get_cred(&cred);
         jbc_cred root_cred = cred;
         jbc_jailbreak_cred(&root_cred);
-        // We want to change our working dir to the fs root for this
         root_cred.cdir = cred.rdir;
         jbc_set_cred(&root_cred);
 
         // Check files in appmeta
         std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
-        if (std::filesystem::exists(meta_path + "/param.sfo")) {
-            // Extract param.sfo
-            PSF* param_sfo = Common::Singleton<PSF>::Instance();
-            if (!param_sfo->Open(meta_path + "/param.sfo")) {
-                LOG_WARNING(shadNet, "Failed to load param.sfo");
-            } else {
-                // Load game name, version, required firmware, and other param.sfo attributes
-                game_info.title = param_sfo->GetString("TITLE").value_or("Unknown Game");
-                game_info.firmware_ver =
-                    param_sfo->GetInteger("SYSTEM_VER").value_or(game_info.sdk_ver);
-                game_info.app_ver = param_sfo->GetString("APP_VER").value_or("1.00");
-                if (const auto raw_attributes = param_sfo->GetInteger("ATTRIBUTE")) {
-                    game_info.psf_attributes.raw = *raw_attributes;
+        if (!sandbox_psf) {
+            if (std::filesystem::exists(meta_path + "/param.sfo")) {
+                if (!load_psf(meta_path + "/param.sfo")) {
+                    LOG_WARNING(shadNet, "Failed to load param.sfo from system_data");
                 }
-            }
-        } else {
-            LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
-        }
-
-        if (std::filesystem::exists(meta_path + "/npbind.dat")) {
-            // Extract npbind.dat
-            NPBindFile npbind;
-            if (!npbind.Load(meta_path + "/npbind.dat")) {
-                LOG_WARNING(shadNet, "Failed to load npbind.dat file");
             } else {
-                game_info.npCommIds = npbind.GetNpCommIds();
+                LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
             }
-        } else {
-            LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
+        }
+        if (!sandbox_npbind) {
+            if (std::filesystem::exists(meta_path + "/npbind.dat")) {
+                if (!load_npbind(meta_path + "/npbind.dat")) {
+                    LOG_WARNING(shadNet, "Failed to load npbind.dat from system_data");
+                }
+            } else {
+                LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
+            }
         }
 
         // Un-jailbreak the process by restoring the original cred.
