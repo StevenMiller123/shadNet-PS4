@@ -149,6 +149,7 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     // Set whether the user should appear as offline or online during this session.
     client->SetAppearOffline(config.IsAppearOfflineEnabled(user_id));
     client->Start(host, port, npid, password, "");
+    const ShadNet::ShadNetState conn_state = client->GetState();
 
     // Handle incompatible protocol erros
     const auto handle_protocol_mismatch = [&client](ShadNet::ShadNetState st) {
@@ -168,7 +169,6 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
         }
     };
 
-    const ShadNet::ShadNetState conn_state = client->WaitForConnection();
     if (conn_state != ShadNet::ShadNetState::Ok) {
         LOG_ERROR(NpHandler, "connection failed (state={})", magic_enum::enum_name(conn_state));
         handle_protocol_mismatch(conn_state);

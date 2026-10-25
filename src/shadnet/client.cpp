@@ -55,6 +55,9 @@ void ShadNetClient::Start(const std::string& host, u16 port, const std::string& 
     m_token = token;
     m_terminate = false;
     m_thread_connect = std::thread(&ShadNetClient::ConnectThread, this);
+    if (m_thread_connect.joinable()) {
+        m_thread_connect.join();
+    }
 }
 
 void ShadNetClient::Stop() {
@@ -72,12 +75,15 @@ void ShadNetClient::Stop() {
         m_cv_send_queue.notify_all();
     }
     DoDisconnect();
-    if (m_thread_connect.joinable())
+    if (m_thread_connect.joinable()) {
         m_thread_connect.join();
-    if (m_thread_reader.joinable())
+    }
+    if (m_thread_reader.joinable()) {
         m_thread_reader.join();
-    if (m_thread_writer.joinable())
+    }
+    if (m_thread_writer.joinable()) {
         m_thread_writer.join();
+    }
 }
 
 ShadNetState ShadNetClient::WaitForConnection() {
@@ -211,8 +217,9 @@ void ShadNetClient::ReaderThread() {
     while (!m_terminate) {
         u8 hdr[SHAD_HEADER_SIZE];
         if (!RecvN(hdr, SHAD_HEADER_SIZE)) {
-            if (!m_terminate)
+            if (!m_terminate) {
                 LOG_WARNING(shadNet, "header recv failed, disconnecting");
+            }
             break;
         }
         const auto ptype = static_cast<PacketType>(hdr[0]);
@@ -230,8 +237,9 @@ void ShadNetClient::ReaderThread() {
         if (payload_sz > 0) {
             payload.resize(payload_sz);
             if (!RecvN(payload.data(), payload_sz)) {
-                if (!m_terminate)
+                if (!m_terminate) {
                     LOG_WARNING(shadNet, "payload recv failed");
+                }
                 break;
             }
         }
@@ -271,13 +279,14 @@ void ShadNetClient::WriterThread() {
             }
         }
     }
+    LOG_INFO(shadNet, "exiting");
 }
 
 // Connect / Disconnect
 bool ShadNetClient::DoConnect() {
     m_state = ShadNetState::Ok;
 
-    s32 netpool_id = sceNetPoolCreate("shadNet Pool", 0x1000, 0);
+    s32 netpool_id = sceNetPoolCreate("shadNet Pool", 0x4000, 0);
     if (netpool_id < 0) {
         LOG_WARNING(shadNet, "Failed to create net pool, error = {:#x}",
                     static_cast<u32>(netpool_id));
@@ -327,10 +336,10 @@ bool ShadNetClient::DoConnect() {
         return false;
     }
 
-    OrbisNetSockaddrIn addr{};
-    addr.sin_len = sizeof(OrbisNetSockaddrIn);
+    sockaddr_in addr{};
+    addr.sin_len = sizeof(sockaddr_in);
     addr.sin_family = AF_INET;
-    addr.sin_addr = shadnet_addr.s_addr;
+    addr.sin_addr = (in_addr)shadnet_addr.s_addr;
     addr.sin_port = htons(m_port);
     const int cr =
         ::connect(m_sock, reinterpret_cast<sockaddr*>(&addr), static_cast<socklen_t>(addr.sin_len));
