@@ -200,7 +200,7 @@ void QueueNpStateEvent(s32 user_id, OrbisNpState state) {
     event.state = state;
     event.has_np_id = state == OrbisNpState::SignedIn;
     if (event.has_np_id) {
-        event.np_id = Libraries::Np::NpHandler::Instance().GetNpId(user_id);
+        event.np_id = NpHandler::Instance().GetNpId(user_id);
     }
 
     std::scoped_lock lk{g_np_state_events_mutex};

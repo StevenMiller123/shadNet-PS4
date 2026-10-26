@@ -341,7 +341,7 @@ s32 NpHandler::GetUserIdByAccountId(u64 account_id) const {
 s32 NpHandler::GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const {
     std::lock_guard lock(m_mutex_clients);
     for (auto& [uid, np_id] : m_np_ids) {
-        if (strncmp(np_id.handle.data, online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH) == 0) {
+        if (std::strncmp(np_id.handle.data, online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH) == 0) {
             return uid;
         }
     }

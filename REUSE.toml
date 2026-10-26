@@ -1,0 +1,15 @@
+version = 1
+
+[[annotations]]
+path = [
+    ".gitmodules",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Copyright 2026 shadPS4 Emulator Project"
+SPDX-License-Identifier = "GPL-2.0-or-later"
+
+[[annotations]]
+path = "externals/cmake-modules/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2009-2010 Iowa State University"
+SPDX-License-Identifier = "BSL-1.0"

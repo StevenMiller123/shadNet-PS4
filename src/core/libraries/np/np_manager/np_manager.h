@@ -68,7 +68,7 @@ struct OrbisNpParentalControlInfo {
 
 struct OrbisNpCheckPlusParameter {
     u64 size;
-    Libraries::UserService::OrbisUserServiceUserId user_id;
+    UserService::OrbisUserServiceUserId user_id;
     u8 padding[4];
     u64 features;
     u8 reserved[32];

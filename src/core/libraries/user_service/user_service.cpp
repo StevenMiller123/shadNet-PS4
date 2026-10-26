@@ -79,11 +79,10 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
     if (Np::NpHandler::Instance().IsSignedIn(user_id)) {
         // If we're signed into shadNet, supply the npid instead.
         // Still need to reverse this and figure out remaining error cases.
-        const Libraries::Np::OrbisNpId& np_id =
-            Libraries::Np::NpHandler::Instance().GetNpId(user_id);
-        u64 copy_len = std::min<u64>(name_len, strnlen(np_id.handle.data, 16));
+        const Np::OrbisNpId& np_id = Np::NpHandler::Instance().GetNpId(user_id);
+        u64 copy_len = std::min<u64>(name_len, sizeof(np_id.handle.data));
         std::memset(user_name, 0x0, name_len);
-        strncpy(user_name, np_id.handle.data, copy_len);
+        std::strncpy(user_name, np_id.handle.data, copy_len);
         LOG_INFO(Lib_UserService, "called, returning user_name {}", user_name);
         return ORBIS_OK;
     }

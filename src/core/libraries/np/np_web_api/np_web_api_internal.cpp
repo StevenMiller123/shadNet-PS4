@@ -756,7 +756,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
     unlockContext(context);
 
     // Stubbing sceNpManagerIntGetSigninState call with a config check.
-    auto& np_handler = Libraries::Np::NpHandler::Instance();
+    auto& np_handler = NpHandler::Instance();
     if (!np_handler.IsSignedIn(user_context->userId)) {
         releaseRequest(request);
         releaseUserContext(user_context);
@@ -1221,7 +1221,8 @@ s32 createPushEventFilterInternal(OrbisNpWebApiContext* context,
     if (pFilterParam != nullptr && filterParamNum != 0) {
         for (u64 param_idx = 0; param_idx < filterParamNum; param_idx++) {
             OrbisNpWebApiPushEventFilterParameter copy = OrbisNpWebApiPushEventFilterParameter{};
-            memcpy(&copy, &pFilterParam[param_idx], sizeof(OrbisNpWebApiPushEventFilterParameter));
+            std::memcpy(&copy, &pFilterParam[param_idx],
+                        sizeof(OrbisNpWebApiPushEventFilterParameter));
             LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}'", param_idx, copy.dataType.val);
             filter->filterParams.emplace_back(copy);
         }
@@ -1342,7 +1343,7 @@ s32 createServicePushEventFilterInternal(
     auto& handle = context->handles[handleId];
     handle->userCount++;
 
-    auto& np_handler = Libraries::Np::NpHandler::Instance();
+    auto& np_handler = NpHandler::Instance();
     if (pNpServiceName != nullptr && !np_handler.IsActive()) {
         // Seems sceNpManagerIntGetUserList fails?
         LOG_DEBUG(Lib_NpWebApi, "Cannot create service push event while shadNet is disabled");
@@ -1373,8 +1374,8 @@ s32 createServicePushEventFilterInternal(
         for (u64 param_idx = 0; param_idx < filterParamNum; param_idx++) {
             OrbisNpWebApiServicePushEventFilterParameter copy =
                 OrbisNpWebApiServicePushEventFilterParameter{};
-            memcpy(&copy, &pFilterParam[param_idx],
-                   sizeof(OrbisNpWebApiServicePushEventFilterParameter));
+            std::memcpy(&copy, &pFilterParam[param_idx],
+                        sizeof(OrbisNpWebApiServicePushEventFilterParameter));
             LOG_INFO(Lib_NpWebApi, "  filterParam[{}] data_type='{}'", param_idx,
                      copy.dataType.val);
             filter->filterParams.emplace_back(copy);
@@ -1518,7 +1519,7 @@ s32 createExtendedPushEventFilterInternal(
     auto& handle = context->handles[handleId];
     handle->userCount++;
 
-    auto& np_handler = Libraries::Np::NpHandler::Instance();
+    auto& np_handler = NpHandler::Instance();
     if (pNpServiceName != nullptr && !np_handler.IsActive()) {
         // Seems sceNpManagerIntGetUserList fails?
         LOG_DEBUG(Lib_NpWebApi, "Cannot create extended push event while shadNet is disabled");
@@ -1552,8 +1553,8 @@ s32 createExtendedPushEventFilterInternal(
         for (u64 param_idx = 0; param_idx < filterParamNum; param_idx++) {
             OrbisNpWebApiExtdPushEventFilterParameter copy =
                 OrbisNpWebApiExtdPushEventFilterParameter{};
-            memcpy(&copy, &pFilterParam[param_idx],
-                   sizeof(OrbisNpWebApiExtdPushEventFilterParameter));
+            std::memcpy(&copy, &pFilterParam[param_idx],
+                        sizeof(OrbisNpWebApiExtdPushEventFilterParameter));
             LOG_INFO(Lib_NpWebApi, "  filterParam[{}] dataType='{}' extdKeys={}", param_idx,
                      copy.dataType.val, copy.extdDataKeyNum);
             std::vector<std::string> keys;
@@ -1915,7 +1916,7 @@ u64 PS4_SYSV_ABI copyRequestData(OrbisNpWebApiRequest* request, void* data, u64 
             if (remainingSize < size) {
                 size = remainingSize;
             }
-            memcpy(data, request->data + request->readOffset, size);
+            std::memcpy(data, request->data + request->readOffset, size);
             request->readOffset += static_cast<u32>(size);
             readSize = size;
         }

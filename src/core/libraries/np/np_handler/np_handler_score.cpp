@@ -796,7 +796,7 @@ static u32 FillPlainRankArrayAFromProto(const shadnet::GetScoreResponse& resp, u
         out.hasGameData = r.hasgamedata() ? 1 : 0;
         out.scoreValue = r.score();
         out.recordDate.tick = r.recorddate();
-        out.accountId = static_cast<Libraries::Np::OrbisNpAccountId>(r.accountid());
+        out.accountId = static_cast<OrbisNpAccountId>(r.accountid());
 
         if (commentArray != nullptr && i < resp.commentarray_size()) {
             const std::string& cmt = resp.commentarray(i);
@@ -846,7 +846,7 @@ static u32 FillPlayerRankArrayAFromProto(const shadnet::GetScoreResponse& resp, 
         out.rankData.hasGameData = r.hasgamedata() ? 1 : 0;
         out.rankData.scoreValue = r.score();
         out.rankData.recordDate.tick = r.recorddate();
-        out.rankData.accountId = static_cast<Libraries::Np::OrbisNpAccountId>(r.accountid());
+        out.rankData.accountId = static_cast<OrbisNpAccountId>(r.accountid());
 
         if (commentArray != nullptr && i < resp.commentarray_size()) {
             const std::string& cmt = resp.commentarray(i);

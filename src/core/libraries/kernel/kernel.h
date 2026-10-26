@@ -11,4 +11,4 @@ s32 socket(s32 family, s32 type, s32 protocol);
 s32 __sys_socketex(const char* name, s32 family, s32 type, s32 protocol);
 
 void RegisterHooks();
-}
+} // namespace Libraries::Kernel

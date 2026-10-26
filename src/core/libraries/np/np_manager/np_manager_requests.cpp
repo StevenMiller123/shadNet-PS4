@@ -221,7 +221,7 @@ s32 sceNpGetAccountLanguageA(s32 req_id, UserService::OrbisUserServiceUserId use
     }
     LOG_DEBUG(Lib_NpManager, "req_id = {:#x}, user_id = {}", req_id, user_id);
     // TODO: Retrieve from console?
-    memcpy(language->code, "en", 2);
+    std::memcpy(language->code, "en", 2);
     return CompleteRequest(*req, ORBIS_OK);
 }
 
@@ -239,8 +239,7 @@ s32 sceNpGetParentalControlInfo(s32 req_id, OrbisNpOnlineId* online_id, s8* age,
 
 s32 sceNpGetParentalControlInfoA(s32 req_id, UserService::OrbisUserServiceUserId user_id, s8* age,
                                  OrbisNpParentalControlInfo* info) {
-    if (age == nullptr || info == nullptr ||
-        user_id == -1) {
+    if (age == nullptr || info == nullptr || user_id == -1) {
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
     std::scoped_lock lk{g_request_mutex};
