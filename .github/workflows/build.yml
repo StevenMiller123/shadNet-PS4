@@ -128,20 +128,9 @@ jobs:
       with:
         path: ./artifacts
 
-    - name: Make SDL artifacts executable
+    - name: Make artifacts executable
       run: |
         chmod -R a+x ./artifacts/shadNet-PS4.prx
-
-    - name: Compress individual directories (without parent directory)
-      run: |
-        cd ./artifacts
-        for dir in */; do
-          if [ -d "$dir" ]; then
-            dir_name=${dir%/}
-            echo "Creating zip for $dir_name"
-            (cd "$dir_name" && zip -r "../${dir_name}.zip" .)
-          fi
-        done
 
     - name: Get latest release information
       id: get_latest_release
@@ -162,7 +151,7 @@ jobs:
         draft: false
         prerelease: true
         body: "Full Changelog: [${{ env.last_release_tag }}...${{ needs.get-info.outputs.shorthash }}](https://github.com/StevenMiller123/shadNet-PS4/compare/${{ env.last_release_tag }}...${{ needs.get-info.outputs.fullhash }})"
-        artifacts: ./artifacts/*.zip
+        artifacts: ./artifacts/shadNet-PS4.prx
 
     - name: Get current pre-release information
       env:
