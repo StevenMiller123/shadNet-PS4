@@ -13,3 +13,6 @@
 [submodule "externals/json"]
 	path = externals/json
 	url = https://github.com/nlohmann/json.git
+[submodule "externals/goldhen-plugins-sdk"]
+	path = externals/goldhen_plugins_sdk
+	url = https://github.com/StevenMiller123/GoldHEN_Plugins_SDK.git

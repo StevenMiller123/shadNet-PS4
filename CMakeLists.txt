@@ -165,27 +165,6 @@ else()
 endif()
 set(PLUGIN_LOG_TYPE "-D__USE_PRINTF__")
 
-if(NOT DEFINED OO_PS4_TOOLCHAIN)
-    set(OO_PS4_TOOLCHAIN "$ENV{OO_PS4_TOOLCHAIN}")
-endif()
-if(NOT DEFINED GOLDHEN_SDK)
-    set(GOLDHEN_SDK "$ENV{GOLDHEN_SDK}")
-endif()
-if(OO_PS4_TOOLCHAIN STREQUAL "")
-    message(FATAL_ERROR "OO_PS4_TOOLCHAIN is not set")
-endif()
-if(GOLDHEN_SDK STREQUAL "")
-    message(FATAL_ERROR "GOLDHEN_SDK is not set")
-endif()
-
-file(TO_CMAKE_PATH "${OO_PS4_TOOLCHAIN}" OO_PS4_TOOLCHAIN)
-file(TO_CMAKE_PATH "${GOLDHEN_SDK}" GOLDHEN_SDK)
-string(REGEX REPLACE "/+$" "" OO_PS4_TOOLCHAIN "${OO_PS4_TOOLCHAIN}")
-string(REGEX REPLACE "/+$" "" GOLDHEN_SDK "${GOLDHEN_SDK}")
-
-set(PLUGIN_CREATE_FSELF "${OO_PS4_TOOLCHAIN}/bin/${PLUGIN_CDIR}/create-fself${PLUGIN_HOST_EXE_SUFFIX}"
-    CACHE FILEPATH "Path to OpenOrbis create-fself for this host")
-
 set(PROJ_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(EXTERNALS_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/externals")
 set(BUILD_FOLDER   "${CMAKE_CURRENT_SOURCE_DIR}/bin/plugins")
@@ -195,12 +174,35 @@ set(TARGET_ELF_DIR "${BUILD_FOLDER}/elf${PLUGIN_BUILD_TYPE}")
 set(TARGET_ELF     "${TARGET_ELF_DIR}/${PLUGIN_NAME}")
 set(TARGET_PRX     "${TARGET_PRX_DIR}/${PLUGIN_NAME}.prx")
 
+if(NOT DEFINED OO_PS4_TOOLCHAIN)
+    set(OO_PS4_TOOLCHAIN "$ENV{OO_PS4_TOOLCHAIN}")
+endif()
+if(OO_PS4_TOOLCHAIN STREQUAL "")
+    message(FATAL_ERROR "OO_PS4_TOOLCHAIN is not set")
+endif()
+
+if(NOT DEFINED GOLDHEN_SDK)
+    set(GOLDHEN_SDK "${EXTERNALS_DIR}/goldhen_plugins_sdk")
+endif()
+
+file(TO_CMAKE_PATH "${OO_PS4_TOOLCHAIN}" OO_PS4_TOOLCHAIN)
+file(TO_CMAKE_PATH "${GOLDHEN_SDK}" GOLDHEN_SDK)
+string(REGEX REPLACE "/+$" "" OO_PS4_TOOLCHAIN "${OO_PS4_TOOLCHAIN}")
+string(REGEX REPLACE "/+$" "" GOLDHEN_SDK "${GOLDHEN_SDK}")
+
+message("OpenOrbis Toolchain at ${OO_PS4_TOOLCHAIN}")
+message("GoldHEN Plugins SDK at ${GOLDHEN_SDK}")
+
+set(PLUGIN_CREATE_FSELF "${OO_PS4_TOOLCHAIN}/bin/${PLUGIN_CDIR}/create-fself${PLUGIN_HOST_EXE_SUFFIX}"
+    CACHE FILEPATH "Path to OpenOrbis create-fself for this host")
+
 file(MAKE_DIRECTORY "${TARGET_PRX_DIR}")
 file(MAKE_DIRECTORY "${TARGET_ELF_DIR}")
 
 set(PLUGIN_LIBS
     -lSceLibcInternal
-    -lGoldHEN_Hook
+    -lGoldHEN_SDK
+    -lgh_crtprx
     -lkernel
     -lc
     -lc++
@@ -409,6 +411,11 @@ if(IS_DIRECTORY "${EXTERNALS_DIR}/protobuf")
     list(APPEND SHADNET_HANDLED_EXTERNALS protobuf)
 endif()
 
+if(IS_DIRECTORY "${EXTERNALS_DIR}/goldhen_plugins_sdk")
+    shadnet_add_cmake_external(goldhen_plugins_sdk)
+    list(APPEND SHADNET_HANDLED_EXTERNALS goldhen_plugins_sdk)
+endif()
+
 if(IS_DIRECTORY "${EXTERNALS_DIR}")
     file(GLOB EXTERNAL_CANDIDATES RELATIVE "${EXTERNALS_DIR}" "${EXTERNALS_DIR}/*")
     foreach(CANDIDATE ${EXTERNAL_CANDIDATES})
@@ -491,8 +498,7 @@ add_custom_command(
             --script "${OO_PS4_TOOLCHAIN}/link.x"
             -e _init --eh-frame-hdr
             "-L${OO_PS4_TOOLCHAIN}/lib"
-            "-L${GOLDHEN_SDK}"
-            "${GOLDHEN_SDK}/build/crtprx.o"
+            "-L${CMAKE_CURRENT_BINARY_DIR}"
             "@${PLUGIN_LINK_RSP}"
             -o "${TARGET_ELF}.elf"
     COMMAND "${PLUGIN_CREATE_FSELF}"

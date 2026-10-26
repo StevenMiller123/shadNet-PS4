@@ -4,3 +4,5 @@ build/
 *.o
 .vscode/
 src/common/git_ver.h
+config.json
+plugins.ini
