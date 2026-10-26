@@ -146,7 +146,7 @@ jobs:
     - name: Get latest release information
       id: get_latest_release
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.SHADNET_PS4_TOKEN_REPO }}
       run: |
         api_url="https://api.github.com/repos/${{ github.repository }}"
         latest_release_info=$(curl -H "Authorization: token $GITHUB_TOKEN" "$api_url/releases/latest")
@@ -156,7 +156,7 @@ jobs:
       id: create_release
       uses: ncipollo/release-action@v1
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.SHADNET_PS4_TOKEN_REPO }}
         name: "shadNet-PS4-${{ needs.get-info.outputs.date }}-${{ needs.get-info.outputs.shorthash }}"
         tag: "shadNet-PS4-${{ needs.get-info.outputs.date }}-${{ needs.get-info.outputs.fullhash }}"
         draft: false
@@ -166,7 +166,7 @@ jobs:
 
     - name: Get current pre-release information
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.SHADNET_PS4_TOKEN_REPO }}
       run: |
         api_url="https://api.github.com/repos/${{ github.repository }}/releases"
 
@@ -184,7 +184,7 @@ jobs:
 
     - name: Delete old pre-releases and tags
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.SHADNET_PS4_TOKEN_REPO }}
       run: |
         api_url="https://api.github.com/repos/${{ github.repository }}/releases"
 
