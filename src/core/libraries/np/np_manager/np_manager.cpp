@@ -10,7 +10,6 @@
 #include "common/shadnet_hook.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
-#include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_types.h"
 
@@ -30,6 +29,21 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackForTool
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCreateRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCreateAsyncRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckNpAvailability);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckNpAvailabilityA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckNpReachability);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckPlus);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetAccountLanguage);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetAccountLanguageA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetParentalControlInfo);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetParentalControlInfoA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpAbortRequest);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpSetTimeout);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpWaitAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpPollAsync);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpDeleteRequest);
 
 static void RegisterNpManagerHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
@@ -43,11 +57,30 @@ static void RegisterNpManagerHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCreateRequest);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCreateAsyncRequest);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckNpAvailability);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckNpAvailabilityA);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckNpReachability);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckPlus);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetAccountLanguage);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetAccountLanguageA);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetParentalControlInfo);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetParentalControlInfoA);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpAbortRequest);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpSetTimeout);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpWaitAsync);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpPollAsync);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpDeleteRequest);
 }
 
 namespace Libraries::Np::NpManager {
 
 static s32 g_firmware_version = 0;
+
+s32 GetFirmwareVersion() {
+    return g_firmware_version;
+}
 
 s32 sceNpGetState(s32 user_id, OrbisNpState* state) {
     if (user_id == -1 && g_firmware_version >= Common::ElfInfo::FW_900) {

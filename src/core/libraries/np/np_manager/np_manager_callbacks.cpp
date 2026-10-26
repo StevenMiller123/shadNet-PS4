@@ -7,7 +7,6 @@
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
-#include "core/libraries/np/np_manager/np_callbacks.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_types.h"
 #include "core/libraries/user_service/user_service.h"
