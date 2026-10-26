@@ -13,6 +13,7 @@
 #include "core/file_format/npbind.h"
 #include "core/file_format/psf.h"
 #include "core/libraries/kernel/kernel.h"
+#include "core/libraries/network/http/http.h"
 #include "core/libraries/network/net/net.h"
 #include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
@@ -39,6 +40,7 @@ extern "C" s32 client_start() {
     Libraries::Kernel::RegisterHooks();
     Libraries::UserService::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
+    Libraries::Network::Http::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
