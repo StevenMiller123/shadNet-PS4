@@ -55,6 +55,7 @@ enum class CommandType : u16 {
     RemoveBlock = 11,
     GetServerFeatures = 12,
     SetClientVersion = 13,
+    // Score
     GetBoardInfos = 30,
     RecordScore = 31,
     RecordScoreData = 32,
@@ -86,7 +87,7 @@ enum class CommandType : u16 {
     GetRoomMemberDataExternalList = 114,
     SendRoomMessage = 115,
     SetRoomMemberDataInternal = 116,
-    // Title User Storage (TUS)
+    // Title User Storage
     TusSetData = 201,
     TusGetData = 202,
     TusSetMultiSlotVariable = 203,

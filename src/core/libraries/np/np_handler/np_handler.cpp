@@ -3,6 +3,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/UserService.h>
+
+#include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
@@ -368,13 +370,41 @@ void NpHandler::FireStateCallback(s32 user_id, OrbisNpState state) {
     }
 }
 
+bool NpHandler::IsValidNpCommId(const std::string& id) {
+    return !id.empty() && std::any_of(id.begin(), id.end(), [](char c) { return c != '\0'; });
+}
+
+std::string NpHandler::GetNpCommId(s32 service_label) const {
+    // TODO complete guess of how commid is mapping to service_label.
+    constexpr u64 COM_ID_LEN = 12;
+    const auto& ids = Common::ElfInfo::Instance().GetNpCommIds();
+    std::string com_id;
+    if (!ids.empty()) {
+        const u64 idx = (service_label >= 0 && static_cast<u64>(service_label) < ids.size())
+                            ? static_cast<u64>(service_label)
+                            : 0;
+        com_id = ids[idx];
+        if (static_cast<u64>(service_label) >= ids.size()) {
+            LOG_WARNING(NpHandler, "unexpected service_label {}", service_label);
+        }
+    }
+    if (com_id.size() < COM_ID_LEN) {
+        com_id.resize(COM_ID_LEN, '\0');
+    } else if (com_id.size() > COM_ID_LEN) {
+        com_id.resize(COM_ID_LEN);
+    }
+    return com_id;
+}
+
 void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
                              ShadNet::ErrorType error, const std::vector<u8>& body) {
-    if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
+    u16 cmd_val = static_cast<u16>(cmd);
+    if (cmd_val >= 30 && cmd_val < 100) {
+        OnScoreReply(user_id, cmd, pkt_id, error, body);
+    } else if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
         OnAuthReply(user_id, cmd, pkt_id, error, body);
     } else {
-        LOG_INFO(NpHandler, "Unsupported async command {} received",
-                 magic_enum::enum_name(cmd));
+        LOG_INFO(NpHandler, "Unsupported async command {} received", magic_enum::enum_name(cmd));
     }
 
     /*
@@ -386,8 +416,6 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
         OnTrophyReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd == ShadNet::CommandType::LookupOnlineId) {
         OnLookupReply(user_id, cmd, pkt_id, error, body);
-    } else {
-        OnScoreReply(user_id, cmd, pkt_id, error, body);
     }
     */
 }

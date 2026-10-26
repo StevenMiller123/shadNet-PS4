@@ -34,7 +34,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP);
-    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal(0x8000008c)); // ORBIS_SYSMODULE_INTERNAL_HTTP2
+    sceSysmoduleLoadModuleInternal(
+        OrbisSysModuleInternal(0x8000008c)); // ORBIS_SYSMODULE_INTERNAL_HTTP2
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_AUTH);
