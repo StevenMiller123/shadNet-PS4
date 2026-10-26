@@ -88,13 +88,15 @@ extern "C" s32 client_start() {
 
     // Start by checking within the sandbox.
     // Mounted PKGs won't mount these files here, but unpacked dumps usually contain them.
-    if (std::filesystem::exists("/app0/sce_sys/param.sfo")) {
+    // std::filesystem::exists causes crashes when reading from PKGs, so use sceKernelStat instead.
+    OrbisKernelStat statbuf{};
+    if (sceKernelStat("/app0/sce_sys/param.sfo", &statbuf) == 0) {
         sandbox_psf = load_psf("/app0/sce_sys/param.sfo");
         if (!sandbox_psf) {
             LOG_WARNING(shadNet, "Failed to load param.sfo from sandbox");
         }
     }
-    if (std::filesystem::exists("/app0/sce_sys/npbind.dat")) {
+    if (sceKernelStat("/app0/sce_sys/npbind.dat", &statbuf) == 0) {
         sandbox_npbind = load_npbind("/app0/sce_sys/npbind.dat");
         if (!sandbox_npbind) {
             LOG_WARNING(shadNet, "Failed to load npbind.dat from sandbox");
