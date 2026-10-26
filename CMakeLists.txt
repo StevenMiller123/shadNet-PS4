@@ -215,6 +215,7 @@ set(PLUGIN_LIBS
     -lSceSysUtil
     -lSceUserService
     -lSceHttp
+    -lSceHttp2
 )
 
 set(SHADNET_PROTO_OUT "${CMAKE_CURRENT_BINARY_DIR}/shadnet_proto_gen")
@@ -233,6 +234,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/file_format/psf.cpp
                  src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/http/http.cpp
+                 src/core/libraries/network/http2/http2.cpp
                  src/core/libraries/network/net/net.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
                  src/core/libraries/np/np_manager/np_callbacks.cpp

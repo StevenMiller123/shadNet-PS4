@@ -14,6 +14,7 @@
 #include "core/file_format/psf.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/http/http.h"
+#include "core/libraries/network/http2/http2.h"
 #include "core/libraries/network/net/net.h"
 #include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
@@ -32,6 +33,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP);
+    sceSysmoduleLoadModuleInternal(OrbisSysModuleInternal(0x8000008c)); // ORBIS_SYSMODULE_INTERNAL_HTTP2
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_AUTH);
@@ -41,6 +44,7 @@ extern "C" s32 client_start() {
     Libraries::UserService::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
+    Libraries::Network::Http2::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
