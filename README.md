@@ -9,22 +9,13 @@ This is a GoldHEN plugin designed to bring shadNet to jailbroken PS4s. This is s
 
 ## Compiling this project
 
-This project relies on the [OpenOrbis PS4 Toolchain](https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain) and [GoldHEN Plugins SDK](https://github.com/StevenMiller123/GoldHEN_Plugins_SDK).
+This project relies on the [OpenOrbis PS4 Toolchain](https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain).
 
 ### Setting up the OpenOrbis PS4 Toolchain
 Download the toolchain from https://github.com/StevenMiller123/OpenOrbis-PS4-Toolchain/releases/latest/download/openorbis_toolchain.tar.gz, \
 then extract the toolchain and set the OO_PS4_TOOLCHAIN environment variable to the "PS4Toolchain" folder in the extracted contents.
 
 ### Windows instructions
-
-#### Compiling the GoldHEN Plugins SDK
-
-```pwsh
-git clone https://github.com/StevenMiller123/GoldHEN_Plugins_SDK
-cd ./GoldHEN_Plugins_SDK
-./build_static.bat
-setx GOLDHEN_SDK ${PWD}
-```
 
 #### Building the plugin
 
@@ -36,15 +27,6 @@ cmake --build build --parallel $env:NUMBER_OF_PROCESSORS
 ```
 
 ### Linux instructions
-
-#### Compiling the GoldHEN Plugins SDK
-
-```bash
-git clone https://github.com/StevenMiller123/GoldHEN_Plugins_SDK
-cd ./GoldHEN_Plugins_SDK
-make
-export GOLDHEN_SDK=$(PWD)
-```
 
 #### Building the plugin
 
