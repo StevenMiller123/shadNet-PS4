@@ -319,7 +319,7 @@ void DispatchRequestComplete(const PendingRequest& pr, ShadNet::ErrorType error,
 void AppendEventMemberBinAttrs(CallbackPayload& p, const MemberCache& mc) {
     p.member_bin_attrs.resize(mc.bins.size());
     p.bin_buffers.reserve(mc.bins.size());
-    size_t i = 0;
+    u64 i = 0;
     for (const auto& [attr_id, bin] : mc.bins) {
         p.bin_buffers.emplace_back(bin.data.begin(), bin.data.end());
         auto& buf = p.bin_buffers.back();
