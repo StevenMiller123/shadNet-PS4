@@ -12,7 +12,14 @@
 
 namespace NetUtil {
 
-constexpr u16 SignalingVport = 0x7fff;
+constexpr u8 WireMarker = 0xff;
+constexpr u8 WireFlagValid = 0x80;
+constexpr u8 WireFlagBroadcast = 0x40;
+constexpr u8 WireFlagDigest = 0x20;
+constexpr u8 WireKindDatagram = 3;
+constexpr u64 WireHeaderSize = 6;
+constexpr u64 WireDigestSize = 4;
+constexpr u16 SignalingVport = 0xffff;
 constexpr u16 P2PPortFallbacks = 16;
 constexpr u64 ChannelQueueBytes = 40 * 1024;
 constexpr u64 RecvBufferSize = 2048;
@@ -23,8 +30,30 @@ OrbisNetSockaddrIn MakeSockaddr(u32 addr, u16 port) {
     sa.sin_family = ORBIS_NET_AF_INET;
     sa.sin_port = port;
     sa.sin_addr = addr;
-    sa.sin_vport = sceNetHtons(SignalingVport);
     return sa;
+}
+
+std::span<const u8> DecodeSignaling(std::span<const u8> packet) {
+    if (packet.size() < WireHeaderSize || packet[0] != WireMarker) {
+        return {};
+    }
+    const u8 flags = packet[1];
+    if ((flags & WireFlagValid) == 0 || (flags & WireFlagBroadcast) != 0 ||
+        (flags & 0x0f) != WireKindDatagram) {
+        return {};
+    }
+    const u16 dst_vport = static_cast<u16>((packet[4] << 8) | packet[5]);
+    if (dst_vport != SignalingVport) {
+        return {};
+    }
+    u64 offset = WireHeaderSize;
+    if ((flags & WireFlagDigest) != 0) {
+        offset += WireDigestSize;
+        if (packet.size() < offset) {
+            return {};
+        }
+    }
+    return packet.subspan(offset);
 }
 
 P2PTransport& P2PTransport::Instance() {
@@ -62,7 +91,7 @@ u16 P2PTransport::PortToBind() const {
 
 s32 P2PTransport::BindSocket(u16 udp_port) {
     const s32 sock =
-        sceNetSocket("shadNetP2PSignaling", ORBIS_NET_AF_INET, ORBIS_NET_SOCK_DGRAM_P2P, 0);
+        sceNetSocket("shadNetP2PSignaling", ORBIS_NET_AF_INET, ORBIS_NET_SOCK_DGRAM, 0);
     if (sock < 0) {
         LOG_ERROR(Lib_Net, "sceNetSocket failed with error {:#x}", static_cast<u32>(sock));
         return sock;
@@ -71,8 +100,8 @@ s32 P2PTransport::BindSocket(u16 udp_port) {
     OrbisNetSockaddrIn sa = MakeSockaddr(0, sceNetHtons(udp_port));
     const s32 rc = sceNetBind(sock, reinterpret_cast<const OrbisNetSockaddr*>(&sa), sizeof(sa));
     if (rc < 0) {
-        LOG_ERROR(Lib_Net, "sceNetBind on UDP port {} vport {:#x} failed with error {:#x}",
-                  udp_port, SignalingVport, static_cast<u32>(rc));
+        LOG_ERROR(Lib_Net, "sceNetBind on UDP port {} failed with error {:#x}", udp_port,
+                  static_cast<u32>(rc));
         sceNetSocketClose(sock);
         return rc;
     }
@@ -149,7 +178,11 @@ void P2PTransport::DrainLocked() {
             return;
         }
 
-        const std::span<const u8> packet{buf, static_cast<size_t>(rc)};
+        const std::span<const u8> packet =
+            DecodeSignaling(std::span<const u8>{buf, static_cast<size_t>(rc)});
+        if (packet.empty()) {
+            continue;
+        }
         const Channel channel = Classify(packet);
         if (m_queue_bytes[channel] + packet.size() > ChannelQueueBytes) {
             continue;
@@ -232,8 +265,18 @@ s32 P2PTransport::SendTo(const void* data, u32 len, u32 dest_addr, u16 dest_port
     if (!RunningLocked() || (data == nullptr && len != 0)) {
         return -1;
     }
+    std::vector<u8> packet{WireMarker,
+                           static_cast<u8>(WireFlagValid | WireKindDatagram),
+                           static_cast<u8>(SignalingVport >> 8),
+                           static_cast<u8>(SignalingVport),
+                           static_cast<u8>(SignalingVport >> 8),
+                           static_cast<u8>(SignalingVport)};
+    if (len != 0) {
+        const u8* bytes = static_cast<const u8*>(data);
+        packet.insert(packet.end(), bytes, bytes + len);
+    }
     const OrbisNetSockaddrIn to = MakeSockaddr(dest_addr, dest_port);
-    const s32 rc = sceNetSendto(m_socket, data, len, 0,
+    const s32 rc = sceNetSendto(m_socket, packet.data(), static_cast<u32>(packet.size()), 0,
                                 reinterpret_cast<const OrbisNetSockaddr*>(&to), sizeof(to));
     return rc >= 0 ? static_cast<s32>(len) : -1;
 }
