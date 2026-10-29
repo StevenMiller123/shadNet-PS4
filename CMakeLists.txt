@@ -208,6 +208,11 @@ set(PLUGIN_LIBS
     -lc++
     -lSceSysmodule
     -lSceNet
+    -lSceNetBwe
+    -lSceNetCtlAp
+    -lSceNetCtlApIpcInt
+    -lSceNetCtlForNpToolkit
+    -lSceNetCtlV6
     -lSceNetCtl
     -lSceNpAuth
     -lSceNpCommon
@@ -241,6 +246,8 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/network/http/http.cpp
                  src/core/libraries/network/http2/http2.cpp
                  src/core/libraries/network/net/net.cpp
+                 src/core/libraries/network/net_ctl/net_ctl_callbacks.cpp
+                 src/core/libraries/network/net_ctl/net_ctl.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp

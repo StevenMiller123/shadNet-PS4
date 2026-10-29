@@ -16,6 +16,7 @@
 #include "core/libraries/network/http/http.h"
 #include "core/libraries/network/http2/http2.h"
 #include "core/libraries/network/net/net.h"
+#include "core/libraries/network/net_ctl/net_ctl.h"
 #include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
@@ -47,6 +48,7 @@ extern "C" s32 client_start() {
     Libraries::Kernel::RegisterHooks();
     Libraries::UserService::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
+    Libraries::Network::NetCtl::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
     Libraries::Network::Http2::RegisterHooks();
 
