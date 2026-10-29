@@ -37,4 +37,4 @@ s32 sceNetCtlUnregisterCallbackV6(s32 cb_id);
 s32 sceNetCtlUnregisterCallbackV6IpcInt(s32 cb_id);
 
 void RegisterHooks();
-}
+} // namespace Libraries::Network::NetCtl
