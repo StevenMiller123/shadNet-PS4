@@ -6,10 +6,9 @@
 #include <orbis/Net.h>
 #include <orbis/NetCtl.h>
 #include "common/logging/log.h"
-#include "shadnet/client.h" // socket platform typedefs + protocol constants
+#include "shadnet/client.h"
 #include "shadnet/server_probe.h"
 
-static void ProbePlatformInit() {}
 namespace ShadNet {
 
 static u32 ProbeGetLE32(const u8* p) {
@@ -17,7 +16,6 @@ static u32 ProbeGetLE32(const u8* p) {
            (static_cast<u32>(p[3]) << 24);
 }
 
-// recv() exactly n bytes (blocking, bounded by the socket's SO_RCVTIMEO).
 static bool ProbeRecvN(s32 sock, u8* buf, u32 n) {
     u32 got = 0;
     while (got < n) {
@@ -34,10 +32,8 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
 
     if (host.empty()) {
         LOG_WARNING(shadNet, "empty shadNet host");
-        return info; // Unreachable
+        return info;
     }
-
-    ProbePlatformInit();
 
     // Check for internet
     OrbisNetCtlInfo net_info{};
@@ -123,7 +119,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
     if (!connected) {
         close(sock);
         LOG_WARNING(shadNet, "server {}:{} is unreachable (timeout {} ms)", host, port, timeout_ms);
-        return info; // Unreachable
+        return info;
     }
 
     optval = 0;
@@ -177,7 +173,7 @@ ProbeInfo ProbeServer(const std::string& host, u16 port, u32 timeout_ms) {
 
     if (payload_sz < 4) {
         info.result = ProbeResult::Ok;
-        LOG_INFO(shadNet, "server {}:{} is reachable (no version field in ServerInfo)", host, port);
+        LOG_INFO(shadNet, "server {}:{} is reachable", host, port);
         return info;
     }
 

@@ -126,6 +126,7 @@ private:
     void MarkForReconnect(s32 user_id);
     void TryReconnect();
     void DisconnectUser(s32 user_id);
+    void FailPendingRequests(s32 user_id, s32 error_code);
 
     // NP Communication ID validation
     bool IsValidNpCommId(const std::string& id);

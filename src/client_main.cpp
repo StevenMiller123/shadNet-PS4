@@ -19,7 +19,9 @@
 #include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_matching2/np_matching2.h"
 #include "core/libraries/np/np_score/np_score.h"
+#include "core/libraries/np/np_signaling/np_signaling.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
@@ -34,11 +36,12 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP);
-    sceSysmoduleLoadModuleInternal(
-        OrbisSysModuleInternal(0x8000008c)); // ORBIS_SYSMODULE_INTERNAL_HTTP2
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP2);
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_AUTH);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SIGNALING);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_MATCHING2);
 
     // Init kernel and UserService hooks
     Libraries::Kernel::RegisterHooks();
@@ -169,5 +172,7 @@ extern "C" s32 client_start() {
     Libraries::Np::NpScore::RegisterHooks();
     Libraries::Np::NpWebApi::RegisterHooks();
     Libraries::Np::NpAuth::RegisterHooks();
+    Libraries::Np::NpSignaling::RegisterHooks();
+    Libraries::Np::NpMatching2::RegisterHooks();
     return 0;
 }

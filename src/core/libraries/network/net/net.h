@@ -67,6 +67,17 @@ using OrbisNetInPort_t = u16;
 using OrbisNetSaFamily_t = u8;
 using OrbisNetSocklen_t = u32;
 
+constexpr u16 ORBIS_NET_ADHOC_PORT = 3658;
+
+enum OrbisNetFlags : u32 {
+    ORBIS_NET_MSG_PEEK = 0x00000002,
+    ORBIS_NET_MSG_WAITALL = 0x00000040,
+    ORBIS_NET_MSG_DONTWAIT = 0x00000080,
+    ORBIS_NET_MSG_USECRYPTO = 0x00100000,
+    ORBIS_NET_MSG_USESIGNATURE = 0x00200000,
+    ORBIS_NET_MSG_PEEKLEN = (0x00400000 | ORBIS_NET_MSG_PEEK),
+};
+
 // Socket functions
 s32 sceNetSocket(const char* name, s32 family, s32 type, s32 protocol);
 

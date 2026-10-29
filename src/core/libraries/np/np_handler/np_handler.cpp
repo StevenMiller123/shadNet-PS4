@@ -6,7 +6,9 @@
 
 #include "common/elf_info.h"
 #include "common/logging/log.h"
+#include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
+#include "core/libraries/np/np_matching2/np_matching2_mm.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "shadnet/client.h"
 #include "shadnet/config.h"
@@ -189,6 +191,8 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     LOG_NOTIFICATION(NpHandler, "{} successfully signed in to shadNet, accountId={}", npid,
                      client->GetUserId());
 
+    NpMatching2::SetMmShadNetClient(client, host, port);
+
     // Build OrbisNpId
     {
         OrbisNpId np_id{};
@@ -220,10 +224,78 @@ void NpHandler::DisconnectUser(s32 user_id) {
         m_friend_states.erase(user_id);
     }
     client->Stop();
-    // Nothing that needs to be marked as failing yet. Update this later.
-    // FailPendingRequests(user_id, ORBIS_NP_ERROR_SIGNED_OUT);
+
+    FailPendingRequests(user_id, ORBIS_NP_ERROR_SIGNED_OUT);
     FireStateCallback(user_id, OrbisNpState::SignedOut);
     LOG_NOTIFICATION(NpHandler, "user {} disconnected", user_id);
+}
+
+void NpHandler::FailPendingRequests(s32 user_id, s32 error_code) {
+    u64 failed = 0;
+    /* - libSceNpTus is not implemented yet
+    {
+        std::lock_guard lock(m_mutex_pending_tus);
+        for (auto it = m_pending_tus.begin(); it != m_pending_tus.end();) {
+            if (it->second.user_id == user_id) {
+                if (it->second.req) {
+                    it->second.req->SetResult(error_code);
+                }
+                it = m_pending_tus.erase(it);
+                ++failed;
+            } else {
+                ++it;
+            }
+        }
+    }
+    */
+    {
+        std::lock_guard lock(m_mutex_pending_score);
+        for (auto it = m_pending_score.begin(); it != m_pending_score.end();) {
+            if (it->second.user_id == user_id) {
+                if (it->second.req) {
+                    it->second.req->SetResult(error_code);
+                }
+                it = m_pending_score.erase(it);
+                ++failed;
+            } else {
+                ++it;
+            }
+        }
+    }
+    {
+        std::lock_guard lock(m_mutex_pending_auth);
+        for (auto it = m_pending_auth.begin(); it != m_pending_auth.end();) {
+            if (it->second.user_id == user_id) {
+                if (it->second.req) {
+                    it->second.req->SetResult(error_code);
+                }
+                it = m_pending_auth.erase(it);
+                ++failed;
+            } else {
+                ++it;
+            }
+        }
+    }
+    /* - libSceNpLookup is not implemented yet
+    {
+        std::lock_guard lock(m_mutex_pending_lookup);
+        for (auto it = m_pending_lookup.begin(); it != m_pending_lookup.end();) {
+            if (it->second.user_id == user_id) {
+                if (it->second.on_result) {
+                    it->second.on_result(error_code, 0, {});
+                }
+                it = m_pending_lookup.erase(it);
+                ++failed;
+            } else {
+                ++it;
+            }
+        }
+    }
+    */
+    if (failed > 0) {
+        LOG_WARNING(NpHandler, "user_id={} failed {} pending request(s) with {:#x}", user_id,
+                    failed, static_cast<u32>(error_code));
+    }
 }
 
 void NpHandler::StartWorker() {
@@ -401,15 +473,15 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
     u16 cmd_val = static_cast<u16>(cmd);
     if (cmd_val >= 30 && cmd_val < 100) {
         OnScoreReply(user_id, cmd, pkt_id, error, body);
+    } else if (cmd_val >= 100 && cmd_val < 201) {
+        NpMatching2::OnMatching2Reply(cmd, pkt_id, error, body);
     } else if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
         OnAuthReply(user_id, cmd, pkt_id, error, body);
-    } else {
+    } else if (cmd != ShadNet::CommandType::SetClientVersion) {
         LOG_INFO(NpHandler, "Unsupported async command {} received", magic_enum::enum_name(cmd));
     }
 
     /*
-    if (cmd_val >= 100 && cmd_val <= 200) {
-        NpMatching2::OnMatchingReply(cmd, pkt_id, error, body);
     } else if (cmd_val >= 201 && cmd_val <= 300) {
         OnTusReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 301 && cmd_val <= 400) {

@@ -273,7 +273,6 @@ s32 sceNpWebApiAddMultipartPart(s64 requestId, const OrbisNpWebApiMultipartPartP
 }
 
 void sceNpWebApiCheckTimeout() {
-    LOG_TRACE(Lib_NpWebApi, "called");
     if (!g_is_initialized) {
         return;
     }

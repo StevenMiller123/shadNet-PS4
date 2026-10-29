@@ -210,9 +210,12 @@ set(PLUGIN_LIBS
     -lSceNet
     -lSceNetCtl
     -lSceNpAuth
+    -lSceNpCommon
     -lSceNpManager
     -lSceNpManagerForToolkit
+    -lSceNpMatching2
     -lSceNpScore
+    -lSceNpSignaling
     -lSceNpWebApi
     -lSceSysUtil
     -lSceUserService
@@ -247,10 +250,23 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_manager/np_manager_callbacks.cpp
                  src/core/libraries/np/np_manager/np_manager_requests.cpp
                  src/core/libraries/np/np_manager/np_manager.cpp
+                 src/core/libraries/np/np_matching2/np_matching2_internal.cpp
+                 src/core/libraries/np/np_matching2/np_matching2_mm.cpp
+                 src/core/libraries/np/np_matching2/np_matching2_signaling.cpp
+                 src/core/libraries/np/np_matching2/np_matching2.cpp
                  src/core/libraries/np/np_score/np_score.cpp
+                 src/core/libraries/np/np_signaling/np_signaling_handler.cpp
+                 src/core/libraries/np/np_signaling/np_signaling_helpers.cpp
+                 src/core/libraries/np/np_signaling/np_signaling_state.cpp
+                 src/core/libraries/np/np_signaling/np_signaling_transport.cpp
+                 src/core/libraries/np/np_signaling/np_signaling.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp
                  src/core/libraries/user_service/user_service.cpp
+)
+
+set(NETWORKING_SOURCES src/core/net_util/net_p2p.cpp
+                       src/core/net_util/net_util.cpp
 )
 
 set(SHADNET_SOURCES src/shadnet/client.cpp
@@ -263,10 +279,11 @@ set(MAIN_SOURCES src/client_main.cpp
                  src/main.c
 )
 
-set(ALL_SOURCES ${CORE_SOURCES}
+set(ALL_SOURCES ${COMMON_SOURCES}
+                ${CORE_SOURCES}
+                ${NETWORKING_SOURCES}
                 ${SHADNET_SOURCES}
                 ${MAIN_SOURCES}
-                ${COMMON_SOURCES}
 )
 
 if(NOT ALL_SOURCES)

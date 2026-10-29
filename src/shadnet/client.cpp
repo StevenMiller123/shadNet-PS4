@@ -717,7 +717,7 @@ void ShadNetClient::HandleGetTokenReply(const std::vector<u8>& payload) {
     }
     const ErrorType err = static_cast<ErrorType>(payload[0]);
     if (err != ErrorType::NoError) {
-        LOG_WARNING(shadNet, "returned error {} - WebAPI calls will be unauthenticated",
+        LOG_WARNING(shadNet, "returned error {}, WebAPI calls will be unauthenticated",
                     magic_enum::enum_name(err));
         RequestServerFeatures();
         return;
@@ -752,7 +752,7 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
                 parsed = true;
             }
         } else {
-            LOG_WARNING(shadNet, "returned error {} - assuming Matching2 disabled",
+            LOG_WARNING(shadNet, "returned error {}, assuming Matching2 disabled",
                         magic_enum::enum_name(err));
         }
     }
@@ -760,7 +760,7 @@ void ShadNetClient::HandleServerFeaturesReply(const std::vector<u8>& payload) {
     m_matching2_enabled.store(matching2_enabled);
     m_server_features_received.store(parsed);
     ReportClientVersion();
-    LOG_INFO(shadNet, "Server features: matching2_enabled {}", matching2_enabled);
+    LOG_INFO(shadNet, "matching2_enabled {}", matching2_enabled);
     m_sem_authenticated.release();
 }
 
