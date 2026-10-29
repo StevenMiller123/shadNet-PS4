@@ -774,7 +774,7 @@ void HandleRoomMessage(const ShadNet::NotifyRoomMessage& n) {
 }
 
 void OnMatching2Reply(ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
-                     const std::vector<u8>& body) {
+                      const std::vector<u8>& body) {
     if (cmd == ShadNet::CommandType::RequestSignalingInfos) {
         std::lock_guard lock(g_mm.sig_mutex);
         g_mm.sig_replies[pkt_id] = {error, body};
