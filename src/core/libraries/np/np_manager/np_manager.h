@@ -130,6 +130,8 @@ s32 sceNpDeleteRequest(s32 req_id);
 // Getters
 s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id);
 s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id);
+s32 sceNpGetAccountId(OrbisNpOnlineId* online_id, OrbisNpAccountId* account_id);
+s32 sceNpGetAccountIdA(s32 user_id, OrbisNpAccountId* account_id);
 
 s32 GetFirmwareVersion();
 void RegisterHooks();
