@@ -41,6 +41,7 @@ enum class PacketType : u8 {
 };
 
 enum class CommandType : u16 {
+    // Handler
     Login = 0,
     Terminate = 1,
     Create = 2,
@@ -65,9 +66,12 @@ enum class CommandType : u16 {
     GetScoreNpId = 36,
     GetScoreAccountId = 37,
     GetScoreGameDataByAccId = 38,
+    // Handler
     GetToken = 39,
     SetAppearOffline = 40,
+    // Lookup
     LookupOnlineId = 41,
+    // Auth
     GetAuthorizationCode = 42,
     // Matchmaking
     ContextStart = 100,

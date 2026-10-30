@@ -470,7 +470,7 @@ std::string NpHandler::GetNpCommId(s32 service_label) const {
 void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
                              ShadNet::ErrorType error, const std::vector<u8>& body) {
     u16 cmd_val = static_cast<u16>(cmd);
-    if (cmd_val >= 30 && cmd_val < 100) {
+    if (cmd_val >= 30 && cmd_val < 39) {
         OnScoreReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 100 && cmd_val < 201) {
         NpMatching2::OnMatching2Reply(cmd, pkt_id, error, body);
