@@ -206,6 +206,7 @@ set(PLUGIN_LIBS
     -lkernel
     -lc
     -lc++
+    -lSceAppContent
     -lSceSysmodule
     -lSceNet
     -lSceNetBwe
@@ -245,6 +246,7 @@ set(COMMON_SOURCES src/common/libjbc/jailbreak.c
 
 set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/file_format/psf.cpp
+                 src/core/libraries/app_content/app_content.cpp
                  src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/http/http.cpp
                  src/core/libraries/network/http2/http2.cpp

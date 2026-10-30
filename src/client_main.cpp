@@ -12,6 +12,7 @@
 #include "common/types.h"
 #include "core/file_format/npbind.h"
 #include "core/file_format/psf.h"
+#include "core/libraries/app_content/app_content.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/http/http.h"
 #include "core/libraries/network/http2/http2.h"
@@ -47,10 +48,12 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_MATCHING2);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_UTILITY);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TUS);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_APP_CONTENT);
 
     // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
     Libraries::UserService::RegisterHooks();
+    Libraries::AppContent::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
     Libraries::Network::NetCtl::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
