@@ -72,9 +72,9 @@ using OrbisNpWebApi2PushEventCallback =
     void (*)(s32 user_ctx_id, s32 callback_id, const char* np_service_name,
              OrbisNpServiceLabel np_service_label, const OrbisNpPeerAddressA* to,
              const OrbisNpOnlineId* to_online_id, const OrbisNpPeerAddressA* from,
-             const OrbisNpOnlineId* from_online_id, const OrbisNpWebApi2PushEventDataType* data_type,
-             const char* data, u64 data_len, const OrbisNpWebApi2PushEventExtdData* extd_data,
-             u64 extd_data_num, void* user_arg);
+             const OrbisNpOnlineId* from_online_id,
+             const OrbisNpWebApi2PushEventDataType* data_type, const char* data, u64 data_len,
+             const OrbisNpWebApi2PushEventExtdData* extd_data, u64 extd_data_num, void* user_arg);
 
 enum OrbisNpWebApi2PushEventPushContextCallbackType {
     Unknown = -1,
@@ -86,15 +86,14 @@ struct OrbisNpWebApi2PushEventPushContextId {
     char uuid[37];
 };
 
-using OrbisNpWebApi2PushEventPushContextCallback =
-    void (*)(s32 user_ctx_id, s32 callback_id,
-             const OrbisNpWebApi2PushEventPushContextId* push_ctx_id,
-             OrbisNpWebApi2PushEventPushContextCallbackType cb_type, const char* np_service_name,
-             OrbisNpServiceLabel np_service_label, const OrbisNpPeerAddressA* to,
-             const OrbisNpOnlineId* to_online_id, const OrbisNpPeerAddressA* from,
-             const OrbisNpOnlineId* from_online_id, const OrbisNpWebApi2PushEventDataType* data_type,
-             const char* data, u64 data_len, const OrbisNpWebApi2PushEventExtdData* extd_data,
-             u64 extd_data_num, void* user_arg);
+using OrbisNpWebApi2PushEventPushContextCallback = void (*)(
+    s32 user_ctx_id, s32 callback_id, const OrbisNpWebApi2PushEventPushContextId* push_ctx_id,
+    OrbisNpWebApi2PushEventPushContextCallbackType cb_type, const char* np_service_name,
+    OrbisNpServiceLabel np_service_label, const OrbisNpPeerAddressA* to,
+    const OrbisNpOnlineId* to_online_id, const OrbisNpPeerAddressA* from,
+    const OrbisNpOnlineId* from_online_id, const OrbisNpWebApi2PushEventDataType* data_type,
+    const char* data, u64 data_len, const OrbisNpWebApi2PushEventExtdData* extd_data,
+    u64 extd_data_num, void* user_arg);
 
 s32 sceNpWebApi2AbortRequest(s64 request_id);
 s32 sceNpWebApi2AddHttpRequestHeader(s64 request_id, const char* field_name,
