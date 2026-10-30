@@ -225,6 +225,7 @@ set(PLUGIN_LIBS
     -lSceNpTus
     -lSceNpUtility
     -lSceNpWebApi
+    -lSceNpWebApi2
     -lSceSysUtil
     -lSceUserService
     -lSceHttp
@@ -277,6 +278,10 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_utility/np_utility.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp
+                 src/core/libraries/np/np_web_api2/np_web_api2.cpp
+                 src/core/libraries/np/np_web_api2/np_web_api2_context.cpp
+                 src/core/libraries/np/np_web_api2/np_web_api2_internal.cpp
+                 src/core/libraries/np/np_web_api2/np_web_api2_push_event.cpp
                  src/core/libraries/user_service/user_service.cpp
 )
 
@@ -314,7 +319,7 @@ target_include_directories(plugin_objects PRIVATE
 )
 
 target_compile_options(plugin_objects PRIVATE
-    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall -mstackrealign -Wno-deprecated-literal-operator
+    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall -mstackrealign -Wno-deprecated-literal-operator -Wunused-private-field
 )
 
 set(PROTOBUF_HOST_SOURCE_DIR "${EXTERNALS_DIR}/protobuf")

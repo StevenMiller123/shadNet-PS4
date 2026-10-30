@@ -27,6 +27,7 @@
 #include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_utility/np_utility.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
+#include "core/libraries/np/np_web_api2/np_web_api2.h"
 #include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
 
@@ -39,6 +40,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API2);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP2);
 
@@ -177,6 +179,7 @@ extern "C" s32 client_start() {
     Libraries::Np::NpManager::RegisterHooks();
     Libraries::Np::NpScore::RegisterHooks();
     Libraries::Np::NpWebApi::RegisterHooks();
+    Libraries::Np::NpWebApi2::RegisterHooks();
     Libraries::Np::NpAuth::RegisterHooks();
     Libraries::Np::NpSignaling::RegisterHooks();
     Libraries::Np::NpMatching2::RegisterHooks();
