@@ -221,6 +221,7 @@ set(PLUGIN_LIBS
     -lSceNpMatching2
     -lSceNpScore
     -lSceNpSignaling
+    -lSceNpTus
     -lSceNpUtility
     -lSceNpWebApi
     -lSceSysUtil
@@ -237,6 +238,7 @@ set(COMMON_SOURCES src/common/libjbc/jailbreak.c
                    src/common/libjbc/utils.c
                    src/common/error.cpp
                    src/common/plugin_common.cpp
+                   src/common/string_util.cpp
                    src/common/thread.cpp
                    ${CMAKE_CURRENT_BINARY_DIR}/src/common/scm_rev.cpp
 )
@@ -253,6 +255,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
                  src/core/libraries/np/np_handler/np_handler_score.cpp
+                 src/core/libraries/np/np_handler/np_handler_tus.cpp
                  src/core/libraries/np/np_handler/np_handler_web_api.cpp
                  src/core/libraries/np/np_handler/np_handler.cpp
                  src/core/libraries/np/np_manager/np_manager_callbacks.cpp
@@ -268,6 +271,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_signaling/np_signaling_state.cpp
                  src/core/libraries/np/np_signaling/np_signaling_transport.cpp
                  src/core/libraries/np/np_signaling/np_signaling.cpp
+                 src/core/libraries/np/np_tus/np_tus.cpp
                  src/core/libraries/np/np_utility/np_utility.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp

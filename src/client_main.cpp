@@ -23,6 +23,7 @@
 #include "core/libraries/np/np_matching2/np_matching2.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_signaling/np_signaling.h"
+#include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_utility/np_utility.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/user_service/user_service.h"
@@ -45,6 +46,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SIGNALING);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_MATCHING2);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_UTILITY);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TUS);
 
     // Init kernel and UserService hooks
     Libraries::Kernel::RegisterHooks();
@@ -176,5 +178,6 @@ extern "C" s32 client_start() {
     Libraries::Np::NpSignaling::RegisterHooks();
     Libraries::Np::NpMatching2::RegisterHooks();
     Libraries::Np::NpUtility::RegisterHooks();
+    Libraries::Np::NpTus::RegisterHooks();
     return 0;
 }
