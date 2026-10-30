@@ -360,9 +360,9 @@ private:
 
     static std::string ExtractBlob(const std::vector<u8>& p, s32 pos);
 
-    static void PutLE16(std::vector<u8>& b, size_t off, u16 v);
-    static void PutLE32(std::vector<u8>& b, size_t off, u32 v);
-    static void PutLE64(std::vector<u8>& b, size_t off, u64 v);
+    static void PutLE16(std::vector<u8>& b, u64 off, u16 v);
+    static void PutLE32(std::vector<u8>& b, u64 off, u32 v);
+    static void PutLE64(std::vector<u8>& b, u64 off, u64 v);
     static u16 GetLE16(const u8* p);
     static u32 GetLE32(const u8* p);
     static u64 GetLE64(const u8* p);

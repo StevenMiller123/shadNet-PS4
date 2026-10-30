@@ -92,7 +92,7 @@ u32 IpStringToAddr(std::string_view ip) {
 }
 
 std::string OnlineIdToString(const OrbisNpOnlineId& online_id) {
-    return std::string(online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH);
+    return std::string(online_id.data, strnlen(online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH));
 }
 
 template <typename Reply>

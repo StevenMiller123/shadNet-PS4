@@ -185,7 +185,7 @@ void AppendCreateJoinRoomCommon(shadnet::CreateRoomRequest& req, const void* roo
     }
 }
 
-std::string ExtractProtoBytes(const std::vector<u8>& payload, size_t offset = 0) {
+std::string ExtractProtoBytes(const std::vector<u8>& payload, u64 offset = 0) {
     if (payload.size() < offset + 4) {
         return {};
     }
@@ -580,7 +580,7 @@ void HandleRoomEvent(const ShadNet::NotifyRoomEvent& n) {
             p.room_bin_attrs.resize(changed_attrs.size());
             p.bin_buffers.clear();
             p.bin_buffers.reserve(changed_attrs.size());
-            for (size_t i = 0; i < changed_attrs.size(); ++i) {
+            for (u64 i = 0; i < changed_attrs.size(); ++i) {
                 const auto& src = changed_attrs[i];
                 const auto* data = static_cast<const u8*>(src.binAttr.data);
                 if (data && src.binAttr.dataSize > 0) {

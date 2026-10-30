@@ -38,7 +38,7 @@ struct OrbisNpId {
 
 inline void SetNpOnlineId(OrbisNpOnlineId& dst, std::string_view src) {
     dst = {};
-    const size_t len = std::min(src.size(), static_cast<size_t>(ORBIS_NP_ONLINEID_MAX_LENGTH));
+    const u64 len = std::min(src.size(), static_cast<u64>(ORBIS_NP_ONLINEID_MAX_LENGTH));
     if (len > 0) {
         std::memcpy(dst.data, src.data(), len);
     }

@@ -530,7 +530,7 @@ s32 sceNpWebApiIntCreateServicePushEventFilter(
 
 s32 sceNpWebApiIntInitialize(const OrbisNpWebApiInitializeParameter* args) {
     LOG_INFO(Lib_NpWebApi, "called");
-    if (args == nullptr || args->poolSize != sizeof(OrbisNpWebApiInitializeParameter)) {
+    if (args == nullptr || args->structSize != sizeof(OrbisNpWebApiInitializeParameter)) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 

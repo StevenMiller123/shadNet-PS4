@@ -987,19 +987,19 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
     }
 }
 
-void ShadNetClient::PutLE16(std::vector<u8>& b, size_t off, u16 v) {
+void ShadNetClient::PutLE16(std::vector<u8>& b, u64 off, u16 v) {
     b[off] = static_cast<u8>(v);
     b[off + 1] = static_cast<u8>(v >> 8);
 }
 
-void ShadNetClient::PutLE32(std::vector<u8>& b, size_t off, u32 v) {
+void ShadNetClient::PutLE32(std::vector<u8>& b, u64 off, u32 v) {
     b[off] = static_cast<u8>(v);
     b[off + 1] = static_cast<u8>(v >> 8);
     b[off + 2] = static_cast<u8>(v >> 16);
     b[off + 3] = static_cast<u8>(v >> 24);
 }
 
-void ShadNetClient::PutLE64(std::vector<u8>& b, size_t off, u64 v) {
+void ShadNetClient::PutLE64(std::vector<u8>& b, u64 off, u64 v) {
     for (s32 i = 0; i < 8; ++i) {
         b[off + i] = static_cast<u8>(v >> (8 * i));
     }

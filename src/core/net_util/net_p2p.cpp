@@ -147,7 +147,7 @@ void P2PTransport::StopLocked() {
     m_socket = -1;
     m_bound_port = 0;
     m_retry_after = {};
-    for (size_t i = 0; i < ChannelCount; ++i) {
+    for (u64 i = 0; i < ChannelCount; ++i) {
         m_queues[i].clear();
         m_queue_bytes[i] = 0;
     }
@@ -179,7 +179,7 @@ void P2PTransport::DrainLocked() {
         }
 
         const std::span<const u8> packet =
-            DecodeSignaling(std::span<const u8>{buf, static_cast<size_t>(rc)});
+            DecodeSignaling(std::span<const u8>{buf, static_cast<u64>(rc)});
         if (packet.empty()) {
             continue;
         }

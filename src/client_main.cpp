@@ -166,9 +166,6 @@ extern "C" s32 client_start() {
         LOG_WARNING(shadNet, "No NP Communication IDs loaded");
     }
 
-    // Initialize NpHandler
-    Libraries::Np::NpHandler::Instance().Initialize();
-
     // Init other library hooks
     Libraries::Np::NpManager::RegisterHooks();
     Libraries::Np::NpScore::RegisterHooks();

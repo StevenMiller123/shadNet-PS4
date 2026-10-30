@@ -46,6 +46,7 @@ void NpHandler::Initialize() {
         LOG_INFO(NpHandler, "Failed to connect to shadNet server, error {}",
                  magic_enum::enum_name(probe.result));
         m_initialized.exchange(false);
+        return;
     } else {
         LOG_INFO(NpHandler, "shadNet server is accessible");
     }
@@ -67,7 +68,6 @@ void NpHandler::Initialize() {
 
         if (!config.IsShadNetEnabled(user_id)) {
             LOG_NOTIFICATION(NpHandler, "user {} has shadNet disabled", user_id);
-            m_initialized.exchange(false);
             continue;
         }
 
@@ -76,6 +76,7 @@ void NpHandler::Initialize() {
 
     if (m_clients.size() == 0) {
         LOG_NOTIFICATION(NpHandler, "No users connected to shadNet");
+        m_initialized.exchange(false);
         return;
     }
 
@@ -530,7 +531,7 @@ void NpHandler::OnServiceUnavailable(s32 user_id, const ShadNet::NotifyServiceUn
         text = "The shadNet server refused online matchmaking.";
         break;
     }
-    LOG_NOTIFICATION(NpHandler, "matchmaking unavailable: {}", user_id, text);
+    LOG_NOTIFICATION(NpHandler, "matchmaking unavailable for {}: {}", user_id, text);
 }
 
 }; // namespace Libraries::Np

@@ -19,12 +19,12 @@ NpSignalingState* GetState() {
     return &m_signaling_state;
 }
 
-std::string HexBytes(const void* data, size_t size) {
+std::string HexBytes(const void* data, u64 size) {
     static constexpr char kHex[] = "0123456789abcdef";
     const auto* bytes = static_cast<const u8*>(data);
     std::string result;
     result.reserve(size * 2);
-    for (size_t i = 0; i < size; ++i) {
+    for (u64 i = 0; i < size; ++i) {
         result.push_back(kHex[bytes[i] >> 4]);
         result.push_back(kHex[bytes[i] & 0xf]);
     }
@@ -46,7 +46,7 @@ const char* OnlineIdValidationFailure(const OrbisNpOnlineId& online_id) {
         return "term_nonzero";
     }
 
-    const size_t len = strnlen(online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH + 1);
+    const u64 len = strnlen(online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH + 1);
     if (len < 3) {
         return "length_below_minimum";
     }
@@ -56,7 +56,7 @@ const char* OnlineIdValidationFailure(const OrbisNpOnlineId& online_id) {
     if (!std::isalnum(static_cast<u8>(online_id.data[0]))) {
         return "first_character_invalid";
     }
-    for (size_t i = 1; i < len; ++i) {
+    for (u64 i = 1; i < len; ++i) {
         const auto value = static_cast<u8>(online_id.data[i]);
         if (!std::isalnum(value) && value != '_' && value != '-') {
             return "character_invalid";
@@ -508,6 +508,7 @@ OrbisNpSignalingRequestId StagePeerNetInfoResultLocked(OrbisNpSignalingContextId
     result.conn_id = static_cast<OrbisNpSignalingConnectionId>(req_id);
 
     OrbisNetCtlNatInfo info{};
+    info.size = sizeof(info);
     sceNetCtlGetNatInfo(&info);
     result.external_ipv4 = info.mapped_addr;
     result.nat_route_kind = info.nat_type;

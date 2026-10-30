@@ -36,6 +36,7 @@ public:
     };
 
     bool IsSignedIn(s32 user_id) {
+        std::scoped_lock lk{m_mutex_clients};
         if (!m_clients.contains(user_id)) {
             return false;
         }
@@ -48,6 +49,7 @@ public:
     }
 
     OrbisNpId& GetNpId(s32 user_id) {
+        std::scoped_lock lk{m_mutex_clients};
         return m_np_ids[user_id];
     };
 

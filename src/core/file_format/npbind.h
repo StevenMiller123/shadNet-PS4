@@ -68,7 +68,7 @@ public:
     std::vector<std::string> GetNpCommIds() const;
 
     // Get specific body
-    const NPBindBody& GetBody(size_t index) const {
+    const NPBindBody& GetBody(u64 index) const {
         return m_bodies.at(index);
     }
 

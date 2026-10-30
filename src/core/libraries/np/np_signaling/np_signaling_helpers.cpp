@@ -91,6 +91,10 @@ s32 StartEchoRuntime(s32 thread_priority, s32 cpu_affinity_mask) {
               cpu_affinity_mask);
 
     s32 sock = sceNetSocket("SceNpSignalingIoctl", ORBIS_NET_AF_INET, ORBIS_NET_SOCK_DGRAM_P2P, 0);
+    if (sock < 0) {
+        LOG_WARNING(Lib_NpSignaling, "Failed to create signaling ioctl socket {:#x}", sock);
+        return sock;
+    }
 
     std::array<u8, 36> ioctl_data{};
     const s32 ioctl_rc = sceNetIoctl(sock, 0xc02450ca, ioctl_data.data());

@@ -294,7 +294,7 @@ s32 AllocateTransportIdLocked() {
     if (GetState()->transport_id_seed == 0) {
         GetState()->transport_id_seed = 1;
     }
-    for (int tried = 0; tried <= 0xffff; ++tried) {
+    for (s32 tried = 0; tried <= 0xffff; ++tried) {
         const u32 candidate = GetState()->transport_id_seed++;
         if (GetState()->transport_id_seed == 0 || GetState()->transport_id_seed > 0x7fff) {
             GetState()->transport_id_seed = 1;

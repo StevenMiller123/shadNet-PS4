@@ -414,11 +414,11 @@ s32 sceNpScoreRecordScoreAsync(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpSc
     req->tmpRankOut = tmpRank;
 
     const char* commentBytes = (scoreComment != nullptr) ? scoreComment->utf8Comment : nullptr;
-    const size_t commentLen = (scoreComment != nullptr) ? strnlen(scoreComment->utf8Comment,
-                                                                  ORBIS_NP_SCORE_COMMENT_MAXLEN)
-                                                        : 0;
+    const u64 commentLen = (scoreComment != nullptr)
+                               ? strnlen(scoreComment->utf8Comment, ORBIS_NP_SCORE_COMMENT_MAXLEN)
+                               : 0;
     const u8* gameInfoBytes = (gameInfo != nullptr) ? gameInfo->data : nullptr;
-    const size_t gameInfoLen = (gameInfo != nullptr) ? gameInfo->infoSize : 0;
+    const u64 gameInfoLen = (gameInfo != nullptr) ? gameInfo->infoSize : 0;
 
     const s32 dispatch_err = NpHandler::GetInstance().RecordScore(
         req->userId, ServiceLabelForRequest(req), boardId, req->pcId, score, commentBytes,
@@ -658,7 +658,7 @@ static s32 GetRankingByNpIdImpl(s32 reqId, OrbisNpScoreBoardId boardId, const Or
     npIds.reserve(arrayNum);
     for (u64 i = 0; i < arrayNum; ++i) {
         const char* data = npIdArray[i].handle.data;
-        const size_t len = strnlen(data, sizeof(npIdArray[i].handle.data));
+        const u64 len = strnlen(data, sizeof(npIdArray[i].handle.data));
         npIds.emplace_back(data, len);
     }
 
@@ -1086,7 +1086,7 @@ static s32 GetRankingByNpIdPcIdImpl(s32 reqId, OrbisNpScoreBoardId boardId,
     pcIds.reserve(arrayNum);
     for (u64 i = 0; i < arrayNum; ++i) {
         const char* data = idArray[i].npId.handle.data;
-        const size_t len = strnlen(data, sizeof(idArray[i].npId.handle.data));
+        const u64 len = strnlen(data, sizeof(idArray[i].npId.handle.data));
         npIds.emplace_back(data, len);
         pcIds.push_back(idArray[i].pcId);
     }
@@ -1478,7 +1478,7 @@ static s32 RecordGameDataImpl(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpSco
 
     const s32 dispatch_err = NpHandler::GetInstance().RecordGameData(
         req->userId, ServiceLabelForRequest(req), boardId, pcId, score,
-        static_cast<const u8*>(data), static_cast<size_t>(sendSize), req);
+        static_cast<const u8*>(data), static_cast<u64>(sendSize), req);
     if (dispatch_err != ORBIS_OK) {
         req->SetResult(dispatch_err);
         return dispatch_err;
@@ -1530,8 +1530,8 @@ static s32 CensorCommentImpl(s32 reqId, const char* comment, void* option, bool 
         }
     }
 
-    constexpr size_t probe = ORBIS_NP_SCORE_CENSOR_COMMENT_MAXLEN + 1;
-    const size_t len = strnlen(comment, probe);
+    constexpr u64 probe = ORBIS_NP_SCORE_CENSOR_COMMENT_MAXLEN + 1;
+    const u64 len = strnlen(comment, probe);
     if (len > ORBIS_NP_SCORE_CENSOR_COMMENT_MAXLEN) {
         LOG_ERROR(Lib_NpScore, "comment too long (max {} chars + null)",
                   ORBIS_NP_SCORE_CENSOR_COMMENT_MAXLEN);
@@ -1587,8 +1587,8 @@ static s32 SanitizeCommentImpl(s32 reqId, const char* comment, char* sanitizedCo
         }
     }
 
-    constexpr size_t probe = ORBIS_NP_SCORE_SANITIZE_COMMENT_MAXLEN + 1;
-    const size_t len = strnlen(comment, probe);
+    constexpr u64 probe = ORBIS_NP_SCORE_SANITIZE_COMMENT_MAXLEN + 1;
+    const u64 len = strnlen(comment, probe);
     if (len > ORBIS_NP_SCORE_SANITIZE_COMMENT_MAXLEN) {
         LOG_ERROR(Lib_NpScore, "comment too long (max {} chars + null)",
                   ORBIS_NP_SCORE_SANITIZE_COMMENT_MAXLEN);
@@ -1807,6 +1807,7 @@ s32 sceNpScoreSetTimeout(s32 id, s32 resolveRetry, s32 resolveTimeout, s32 connT
 }
 
 void RegisterHooks() {
+    sceKernelGetCompiledSdkVersion(&g_firmware_version);
     return RegisterNpScoreHooks();
 }
 

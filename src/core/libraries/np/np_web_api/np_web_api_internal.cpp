@@ -848,7 +848,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
             if (name.size() != target.size()) {
                 return false;
             }
-            for (size_t i = 0; i < name.size(); ++i) {
+            for (u64 i = 0; i < name.size(); ++i) {
                 char c = name[i];
                 if (c >= 'A' && c <= 'Z') {
                     c = static_cast<char>(c - 'A' + 'a');
@@ -897,7 +897,7 @@ s32 sendRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize, s
                     const s32 n = sceHttpReadData(request->http_request_id, buf, sizeof(buf));
                     if (n <= 0)
                         break;
-                    errBody.append(buf, static_cast<size_t>(n));
+                    errBody.append(buf, static_cast<u64>(n));
                     if (errBody.size() > 64u * 1024u)
                         break; // sanity cap on a runaway error body
                 }
@@ -1743,7 +1743,7 @@ bool findHeaderValue(const char* block, u64 blockLen, const char* field, std::st
 
 bool parseErrorCode(const char* body, u64 len, s32& out) {
     std::string_view sv(body, len);
-    size_t k = sv.find("\"code\"");
+    u64 k = sv.find("\"code\"");
     if (k == std::string_view::npos)
         return false;
     k += 6;
@@ -2093,7 +2093,7 @@ void DrainPushEvents() {
                         continue;
                     }
                     const std::vector<std::string>* wanted_keys = nullptr;
-                    for (size_t i = 0; i < flt->filterParams.size(); ++i) {
+                    for (u64 i = 0; i < flt->filterParams.size(); ++i) {
                         if (ev.dataType == flt->filterParams[i].dataType.val) {
                             if (i < flt->extdDataKeys.size()) {
                                 wanted_keys = &flt->extdDataKeys[i];

@@ -22,7 +22,7 @@ bool NPBindFile::Load(const std::string& path) {
     }
 
     f.seekg(0, std::ios::beg);
-    std::vector<u8> buf(static_cast<size_t>(sz));
+    std::vector<u8> buf(static_cast<u64>(sz));
     if (!f.read(reinterpret_cast<char*>(buf.data()), sz)) {
         return false;
     }
@@ -45,9 +45,9 @@ bool NPBindFile::Load(std::span<const u8> data) {
     }
 
     // offset start of bodies
-    size_t offset = sizeof(NpBindHeader);
+    u64 offset = sizeof(NpBindHeader);
 
-    m_bodies.reserve(static_cast<size_t>(m_header.num_entries));
+    m_bodies.reserve(static_cast<u64>(m_header.num_entries));
 
     // For each body: read 4 TLV entries then skip padding (0x98 = 152 bytes)
     const u64 body_padding = 0x98;

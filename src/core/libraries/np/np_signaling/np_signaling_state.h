@@ -206,11 +206,11 @@ struct CtxNpIdKey {
 };
 
 struct CtxNpIdKeyHash {
-    size_t operator()(const CtxNpIdKey& key) const noexcept {
-        size_t hash = static_cast<size_t>(key.ctx_id);
+    u64 operator()(const CtxNpIdKey& key) const noexcept {
+        u64 hash = static_cast<u64>(key.ctx_id);
         const auto* bytes = reinterpret_cast<const u8*>(&key.npid);
-        for (size_t i = 0; i < sizeof(key.npid); ++i) {
-            hash ^= static_cast<size_t>(bytes[i]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        for (u64 i = 0; i < sizeof(key.npid); ++i) {
+            hash ^= static_cast<u64>(bytes[i]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
         }
         return hash;
     }

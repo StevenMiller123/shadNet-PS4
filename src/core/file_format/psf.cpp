@@ -21,7 +21,7 @@ bool PSF::Open(const std::filesystem::path& filepath) {
     }
 
     f.seekg(0, std::ios::beg);
-    std::vector<u8> buf(static_cast<size_t>(sz));
+    std::vector<u8> buf(static_cast<u64>(sz));
     if (!f.read(reinterpret_cast<char*>(buf.data()), sz)) {
         return false;
     }
@@ -106,14 +106,13 @@ std::optional<s32> PSF::GetInteger(std::string_view key) const {
     return map_integers.at(index);
 }
 
-std::pair<std::vector<PSF::Entry>::iterator, size_t> PSF::FindEntry(std::string_view key) {
+std::pair<std::vector<PSF::Entry>::iterator, u64> PSF::FindEntry(std::string_view key) {
     auto entry =
         std::ranges::find_if(entry_list, [&](const auto& entry) { return entry.key == key; });
     return {entry, std::distance(entry_list.begin(), entry)};
 }
 
-std::pair<std::vector<PSF::Entry>::const_iterator, size_t> PSF::FindEntry(
-    std::string_view key) const {
+std::pair<std::vector<PSF::Entry>::const_iterator, u64> PSF::FindEntry(std::string_view key) const {
     auto entry =
         std::ranges::find_if(entry_list, [&](const auto& entry) { return entry.key == key; });
     return {entry, std::distance(entry_list.begin(), entry)};

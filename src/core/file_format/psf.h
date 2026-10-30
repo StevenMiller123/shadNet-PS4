@@ -77,11 +77,11 @@ private:
 
     std::vector<Entry> entry_list;
 
-    std::unordered_map<size_t, std::vector<u8>> map_binaries;
-    std::unordered_map<size_t, std::string> map_strings;
-    std::unordered_map<size_t, s32> map_integers;
+    std::unordered_map<u64, std::vector<u8>> map_binaries;
+    std::unordered_map<u64, std::string> map_strings;
+    std::unordered_map<u64, s32> map_integers;
 
-    [[nodiscard]] std::pair<std::vector<Entry>::iterator, size_t> FindEntry(std::string_view key);
-    [[nodiscard]] std::pair<std::vector<Entry>::const_iterator, size_t> FindEntry(
+    [[nodiscard]] std::pair<std::vector<Entry>::iterator, u64> FindEntry(std::string_view key);
+    [[nodiscard]] std::pair<std::vector<Entry>::const_iterator, u64> FindEntry(
         std::string_view key) const;
 };

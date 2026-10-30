@@ -26,9 +26,11 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpRegisterNpReachabilityStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpUnregisterNpReachabilityStateCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCreateRequest);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCreateAsyncRequest);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpCheckNpAvailability);
@@ -52,13 +54,15 @@ static void RegisterNpManagerHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetNpId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetOnlineId);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckCallback);
-    SHADNET_HOOK16(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckCallbackForLib);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackA);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterStateCallbackForToolkit);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpRegisterNpReachabilityStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackA);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterStateCallbackForToolkit);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpUnregisterNpReachabilityStateCallback);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpCreateRequest);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpCreateAsyncRequest);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpCheckNpAvailability);
@@ -181,6 +185,8 @@ void RegisterHooks() {
     NpHandler::Instance().RegisterStateCallback(
         [](s32 user_id, OrbisNpState state) { QueueNpStateEvent(user_id, state); }, nullptr);
 
+    // Initialize NpHandler with NpManager
+    NpHandler::Instance().Initialize();
     return RegisterNpManagerHooks();
 }
 } // namespace Libraries::Np::NpManager
