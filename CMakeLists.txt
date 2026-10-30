@@ -221,6 +221,7 @@ set(PLUGIN_LIBS
     -lSceNpMatching2
     -lSceNpScore
     -lSceNpSignaling
+    -lSceNpUtility
     -lSceNpWebApi
     -lSceSysUtil
     -lSceUserService
@@ -267,6 +268,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_signaling/np_signaling_state.cpp
                  src/core/libraries/np/np_signaling/np_signaling_transport.cpp
                  src/core/libraries/np/np_signaling/np_signaling.cpp
+                 src/core/libraries/np/np_utility/np_utility.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp
                  src/core/libraries/user_service/user_service.cpp

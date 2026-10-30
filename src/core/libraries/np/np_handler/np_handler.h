@@ -48,9 +48,12 @@ public:
         return IsSignedIn(user_id);
     }
 
-    OrbisNpId& GetNpId(s32 user_id) {
+    OrbisNpId GetNpId(s32 user_id) {
         std::scoped_lock lk{m_mutex_clients};
-        return m_np_ids[user_id];
+        if (m_np_ids.contains(user_id)) {
+            return m_np_ids[user_id];
+        }
+        return OrbisNpId{};
     };
 
     std::string GetBearerToken(s32 user_id) const;
