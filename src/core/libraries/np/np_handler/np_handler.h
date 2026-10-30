@@ -11,8 +11,6 @@
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_score/np_score_ctx.h"
-#include "core/libraries/np/np_tus/np_tus.h"
-#include "core/libraries/np/np_tus/np_tus_ctx.h"
 #include "core/libraries/np/np_types.h"
 #include "shadnet/client.h"
 
