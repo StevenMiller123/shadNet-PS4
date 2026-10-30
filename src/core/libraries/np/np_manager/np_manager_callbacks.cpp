@@ -185,6 +185,106 @@ s32 sceNpUnregisterStateCallbackA(s32 callback_id) {
     return ORBIS_OK;
 }
 
+struct GamePresenceCallback {
+    OrbisNpGamePresenceCallback func;
+    void* userdata;
+};
+GamePresenceCallback g_game_presence_cb;
+
+struct GamePresenceCallbackA {
+    s32 handle;
+    OrbisNpGamePresenceCallback func;
+    void* userdata;
+    bool in_use;
+};
+static std::array<GamePresenceCallbackA, 8> g_game_presence_a_cbs{};
+static s32 g_game_presence_next_handle = 0;
+
+void sceNpRegisterGamePresenceCallback(OrbisNpGamePresenceCallback callback, void* userdata) {
+    std::scoped_lock lk{g_np_callbacks_mutex};
+    LOG_INFO(Lib_NpManager, "registering callback");
+    g_game_presence_cb.func = callback;
+    g_game_presence_cb.userdata = userdata;
+}
+
+s32 sceNpRegisterGamePresenceCallbackA(OrbisNpGamePresenceCallback callback, void* userdata) {
+    if (!callback) {
+        LOG_ERROR(Lib_NpManager, "null callback");
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+
+    std::scoped_lock lk{g_np_callbacks_mutex};
+    for (auto& cb_entry : g_game_presence_a_cbs) {
+        if (cb_entry.in_use) {
+            continue;
+        }
+        cb_entry.handle = ++g_game_presence_next_handle;
+        cb_entry.func = callback;
+        cb_entry.userdata = userdata;
+        cb_entry.in_use = true;
+        LOG_INFO(Lib_NpManager, "registered callback {:#x} to id {}",
+                 reinterpret_cast<u64>(callback), cb_entry.handle);
+        return cb_entry.handle;
+    }
+    LOG_ERROR(Lib_NpManager, "too many registered callbacks");
+    return ORBIS_NP_ERROR_CALLBACK_MAX;
+}
+
+s32 sceNpUnregisterGamePresenceCallbackA(s32 callback_id) {
+    std::scoped_lock lk{g_np_callbacks_mutex};
+    for (auto& cb_entry : g_game_presence_a_cbs) {
+        if (cb_entry.in_use && cb_entry.handle == callback_id) {
+            cb_entry = {};
+            LOG_INFO(Lib_NpManager, "unregistered callback with id {}", callback_id);
+            return ORBIS_OK;
+        }
+    }
+    LOG_ERROR(Lib_NpManager, "callback {} not registered", callback_id);
+    return ORBIS_NP_ERROR_CALLBACK_NOT_REGISTERED;
+}
+
+struct PlusEventCallback {
+    OrbisNpPlusEventCallback func;
+    void* userdata;
+};
+PlusEventCallback g_plus_event_cb;
+
+s32 sceNpRegisterPlusEventCallback(OrbisNpPlusEventCallback callback, void* userdata) {
+    if (!callback) {
+        LOG_ERROR(Lib_NpManager, "null callback");
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+
+    std::scoped_lock lk{g_np_callbacks_mutex};
+    if (g_plus_event_cb.func) {
+        LOG_ERROR(Lib_NpManager, "callback already registered");
+        return ORBIS_NP_ERROR_CALLBACK_ALREADY_REGISTERED;
+    }
+
+    LOG_INFO(Lib_NpManager, "registering callback");
+    g_plus_event_cb.func = callback;
+    g_plus_event_cb.userdata = userdata;
+    return ORBIS_OK;
+}
+
+s32 sceNpUnregisterPlusEventCallback() {
+    std::scoped_lock lk{g_np_callbacks_mutex};
+    if (!g_plus_event_cb.func) {
+        LOG_ERROR(Lib_NpManager, "no callback registered");
+        return ORBIS_NP_ERROR_CALLBACK_NOT_REGISTERED;
+    }
+
+    LOG_INFO(Lib_NpManager, "clearing callback");
+    g_plus_event_cb.func = nullptr;
+    g_plus_event_cb.userdata = nullptr;
+    return ORBIS_OK;
+}
+
+s32 sceNpNotifyPlusFeature(void* param) {
+    LOG_ERROR(Lib_NpManager, "(STUBBED) called");
+    return ORBIS_OK;
+}
+
 struct PendingNpStateEvent {
     s32 user_id;
     OrbisNpState state;

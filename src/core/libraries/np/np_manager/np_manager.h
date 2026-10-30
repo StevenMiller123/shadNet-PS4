@@ -23,6 +23,8 @@ using OrbisNpStateCallback = void (*)(s32 user_id, OrbisNpState state, OrbisNpId
                                       void* userdata);
 using OrbisNpStateCallbackA = void (*)(s32 user_id, OrbisNpState state, void* userdata);
 using OrbisNpStateCallbackForToolkit = void (*)(s32 user_id, OrbisNpState state, void* userdata);
+using OrbisNpGamePresenceCallback = void (*)(const OrbisNpOnlineId* online_id, void* userdata);
+using OrbisNpPlusEventCallback = void (*)(s32 user_id, s32 event, void* userdata);
 
 enum class OrbisNpGamePresenseStatus {
     Offline = 0,
@@ -98,6 +100,12 @@ s32 sceNpRegisterStateCallbackForToolkit(OrbisNpStateCallbackForToolkit callback
 s32 sceNpUnregisterStateCallbackForToolkit();
 s32 sceNpCheckCallback();
 s32 sceNpCheckCallbackForLib();
+void sceNpRegisterGamePresenceCallback(OrbisNpGamePresenceCallback callback, void* userdata);
+s32 sceNpRegisterGamePresenceCallbackA(OrbisNpGamePresenceCallback callback, void* userdata);
+s32 sceNpUnregisterGamePresenceCallbackA(s32 callback_id);
+s32 sceNpRegisterPlusEventCallback(OrbisNpPlusEventCallback callback, void* userdata);
+s32 sceNpUnregisterPlusEventCallback();
+s32 sceNpNotifyPlusFeature(void* param);
 void RegisterNpCallback(std::string key, std::function<void()> cb);
 
 // State
@@ -126,12 +134,30 @@ s32 sceNpSetTimeout(s32 req_id, s32 resolve_retry, u32 resolve_timeout, u32 conn
 s32 sceNpWaitAsync(s32 req_id, s32* result);
 s32 sceNpPollAsync(s32 req_id, s32* result);
 s32 sceNpDeleteRequest(s32 req_id);
+s32 sceNpSetGamePresenceOnline(s32 req_id, const OrbisNpOnlineId* online_id, u32 presence);
+s32 sceNpSetGamePresenceOnlineA(s32 req_id, UserService::OrbisUserServiceUserId user_id,
+                                u32 presence);
 
 // Getters
 s32 sceNpGetNpId(s32 user_id, OrbisNpId* np_id);
 s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id);
 s32 sceNpGetAccountId(OrbisNpOnlineId* online_id, OrbisNpAccountId* account_id);
 s32 sceNpGetAccountIdA(s32 user_id, OrbisNpAccountId* account_id);
+s32 sceNpGetAccountCountry(OrbisNpOnlineId* online_id, OrbisNpCountryCode* country_code);
+s32 sceNpGetAccountCountryA(s32 user_id, OrbisNpCountryCode* country_code);
+s32 sceNpGetAccountDateOfBirth(OrbisNpOnlineId* online_id, OrbisNpDate* date_of_birth);
+s32 sceNpGetAccountDateOfBirthA(s32 user_id, OrbisNpDate* date_of_birth);
+s32 sceNpGetGamePresenceStatus(OrbisNpOnlineId* online_id, OrbisNpGamePresenseStatus* status);
+s32 sceNpGetGamePresenceStatusA(s32 user_id, OrbisNpGamePresenseStatus* status);
+s32 sceNpGetNpReachabilityState(s32 user_id, OrbisNpReachabilityState* state);
+s32 sceNpGetUserIdByAccountId(OrbisNpAccountId account_id, s32* user_id);
+s32 sceNpGetUserIdByOnlineId(const OrbisNpOnlineId* online_id, s32* user_id);
+s32 sceNpHasSignedUp(s32 user_id, bool* has_signed_up);
+s32 sceNpIsPlusMember(s32 user_id, bool* result);
+
+// Setters
+s32 sceNpSetContentRestriction(const OrbisNpContentRestriction* restriction);
+s32 sceNpSetNpTitleId(const OrbisNpTitleId* title_id, const OrbisNpTitleSecret* title_secret);
 
 s32 GetFirmwareVersion();
 void RegisterHooks();

@@ -380,4 +380,31 @@ s32 sceNpDeleteRequest(s32 req_id) {
     return ORBIS_OK;
 }
 
+s32 sceNpSetGamePresenceOnline(s32 req_id, const OrbisNpOnlineId* online_id, u32 presence) {
+    if (req_id == 0 || online_id == nullptr) {
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+
+    std::scoped_lock lk{g_request_mutex};
+
+    s32 req_index = req_id - ORBIS_NP_MANAGER_REQUEST_ID_OFFSET - 1;
+    if (g_active_requests == 0 || req_index < 0 ||
+        req_index >= static_cast<s32>(g_requests.size()) ||
+        g_requests[req_index].state == NpRequestState::None) {
+        return ORBIS_NP_ERROR_REQUEST_NOT_FOUND;
+    }
+
+    LOG_DEBUG(Lib_NpManager, "(STUBBED) called req_id = {:#x}, presence = {}", req_id, presence);
+    return ORBIS_OK;
+}
+
+s32 sceNpSetGamePresenceOnlineA(s32 req_id, UserService::OrbisUserServiceUserId user_id,
+                                u32 presence) {
+    if (user_id == -1) {
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+    const OrbisNpOnlineId online_id = NpHandler::GetInstance().GetNpId(user_id).handle;
+    return sceNpSetGamePresenceOnline(req_id, &online_id, presence);
+}
+
 } // namespace Libraries::Np::NpManager
