@@ -25,20 +25,22 @@ static void RegisterAppContentHooks() {
 
 namespace Libraries::AppContent {
 
+static bool has_logged = false;
+
 s32 sceAppContentAppParamGetInt(OrbisAppContentAppParamId param_id, s32* out_value) {
     s32 ret = SHADNET_HOOK_CONTINUE(sceAppContentAppParamGetInt, param_id, out_value);
-    LOG_INFO(Lib_AppContent, "returned {:#x}", static_cast<u32>(ret));
-    if (ret == 0 && param_id == 0) {
+    if (ret == 0 && param_id == 0 && !has_logged) {
         LOG_INFO(Lib_AppContent, "sku_flag = {}", *out_value);
+        has_logged = true;
     }
     return ret;
 }
 
 s32 sceAppContentGetGameTrialsFlag(OrbisAppContentGameTrialsFlag* game_trials_flag) {
     s32 ret = SHADNET_HOOK_CONTINUE(sceAppContentGetGameTrialsFlag, game_trials_flag);
-    LOG_INFO(Lib_AppContent, "returned {:#x}", static_cast<u32>(ret));
     if (ret == 0) {
         LOG_INFO(Lib_AppContent, "game_trials_flag = {}", *game_trials_flag);
+        has_logged = true;
     }
     return ret;
 }
