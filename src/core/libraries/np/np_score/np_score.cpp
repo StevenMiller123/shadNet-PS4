@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <map>
-#include <mutex>
 #include <orbis/NpScore.h>
 
 #include "common/elf_info.h"
@@ -160,11 +159,6 @@ static ScoreTitleCtx* LookupTitleCtxUnlocked(OrbisNpScoreTitleCtxId id) {
 static std::shared_ptr<ScoreRequestCtx> LookupRequestUnlocked(OrbisNpScoreRequestId id) {
     auto it = g_requests.find(id);
     return it == g_requests.end() ? nullptr : it->second;
-}
-
-static bool IsRequestAborted(const std::shared_ptr<ScoreRequestCtx>& req) {
-    std::lock_guard lock(req->mutex);
-    return req->result.has_value() && *req->result == ORBIS_NP_COMMUNITY_ERROR_ABORTED;
 }
 
 static s32 ServiceLabelForRequest(const std::shared_ptr<ScoreRequestCtx>& req) {
@@ -354,7 +348,7 @@ s32 sceNpScoreRecordScore(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScore
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -370,7 +364,8 @@ s32 sceNpScoreRecordScore(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScore
 
     const s32 dispatch_err = NpHandler::GetInstance().RecordScore(
         req->user_id, ServiceLabelForRequest(req), board_id, req->pc_id, score, comment_bytes,
-        comment_len, game_info_bytes, game_info_len, req);
+        comment_len, game_info_bytes, game_info_len,
+        compare_date != nullptr ? compare_date->tick : 0, req);
     if (dispatch_err != ORBIS_OK) {
         req->SetResult(dispatch_err);
         return dispatch_err;
@@ -404,7 +399,7 @@ s32 sceNpScoreRecordScoreAsync(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNp
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -420,7 +415,8 @@ s32 sceNpScoreRecordScoreAsync(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNp
 
     const s32 dispatch_err = NpHandler::GetInstance().RecordScore(
         req->user_id, ServiceLabelForRequest(req), board_id, req->pc_id, score, comment_bytes,
-        comment_len, game_info_bytes, game_info_len, req);
+        comment_len, game_info_bytes, game_info_len,
+        compare_date != nullptr ? compare_date->tick : 0, req);
     if (dispatch_err != ORBIS_OK) {
         req->SetResult(dispatch_err);
         return dispatch_err;
@@ -493,7 +489,7 @@ static s32 GetRankingByRangeImpl(
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -645,7 +641,7 @@ static s32 GetRankingByNpIdImpl(s32 req_id, OrbisNpScoreBoardId board_id,
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -722,7 +718,7 @@ static s32 GetRankingByAccountIdImpl(
     }
     if (array_num > ORBIS_NP_SCORE_MAX_ID_NUM_PER_REQUEST) {
         LOG_ERROR(Lib_NpScore, "too many accountIds {}", array_num);
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+        return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_NPID;
     }
     if (array_num == 0 || rank_array == nullptr || account_id_array == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
@@ -758,7 +754,7 @@ static s32 GetRankingByAccountIdImpl(
         req = LookupRequestUnlocked(req_id);
         if (!req)
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
-        if (IsRequestAborted(req))
+        if (!req->BeginOp())
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
     }
 
@@ -839,7 +835,7 @@ static s32 GetFriendsRankingImpl(s32 req_id, OrbisNpScoreBoardId board_id, s32 i
     const bool is_a_variant = (a_rank_array_in != nullptr);
     if (is_a_variant == (rank_array != nullptr)) {
         LOG_ERROR(Lib_NpScore, "invalid rank array");
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+        return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
     const u64 expected_size =
         array_num * (is_a_variant ? sizeof(OrbisNpScoreRankDataA) : sizeof(OrbisNpScoreRankData));
@@ -904,7 +900,7 @@ static s32 GetFriendsRankingImpl(s32 req_id, OrbisNpScoreBoardId board_id, s32 i
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -913,15 +909,13 @@ static s32 GetFriendsRankingImpl(s32 req_id, OrbisNpScoreBoardId board_id, s32 i
     if (is_a_variant) {
         dispatch_err = NpHandler::GetInstance().GetFriendsRankingA(
             req->user_id, ServiceLabelForRequest(req), board_id, include_self != 0,
-            static_cast<u32>(array_num), a_rank_array_in, comment_array, info_array, last_sort_date,
-            total_record, req);
+            start_serial_rank, static_cast<u32>(array_num), a_rank_array_in, comment_array,
+            info_array, last_sort_date, total_record, req);
     } else {
-        // todo support startSerialRank and opt->hits, currently we return the full friend set
-        // capped at max in score order without rank-slice semantics
         dispatch_err = NpHandler::GetInstance().GetFriendsRanking(
             req->user_id, ServiceLabelForRequest(req), board_id, include_self != 0,
-            static_cast<u32>(array_num), rank_array, comment_array, info_array, last_sort_date,
-            total_record, req);
+            start_serial_rank, static_cast<u32>(array_num), rank_array, comment_array, info_array,
+            last_sort_date, total_record, req);
     }
     if (dispatch_err != ORBIS_OK) {
         req->SetResult(dispatch_err);
@@ -1066,7 +1060,7 @@ static s32 GetRankingByNpIdPcIdImpl(s32 req_id, OrbisNpScoreBoardId board_id,
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -1140,7 +1134,7 @@ static s32 GetRankingByAccountIdPcIdImpl(
     }
     if (array_num > ORBIS_NP_SCORE_MAX_ID_NUM_PER_REQUEST) {
         LOG_ERROR(Lib_NpScore, "too many accountIds {}", array_num);
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+        return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_NPID;
     }
     if (array_num == 0 || rank_array == nullptr || id_array == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
@@ -1176,7 +1170,7 @@ static s32 GetRankingByAccountIdPcIdImpl(
         req = LookupRequestUnlocked(req_id);
         if (!req)
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
-        if (IsRequestAborted(req))
+        if (!req->BeginOp())
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
     }
 
@@ -1265,13 +1259,14 @@ static s32 GetBoardInfoImpl(s32 req_id, OrbisNpScoreBoardId board_id,
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
 
     if (board_info == nullptr) {
         LOG_INFO(Lib_NpScore, "legacy SDK with null boardInfo - no-op success");
+        req->SetResult(ORBIS_OK);
         return ORBIS_OK;
     }
 
@@ -1303,6 +1298,37 @@ s32 sceNpScoreGetBoardInfoAsync(s32 req_id, OrbisNpScoreBoardId board_id,
     return GetBoardInfoImpl(req_id, board_id, board_info, option, true);
 }
 
+static bool ServeGameDataFromCache(const std::shared_ptr<ScoreRequestCtx>& req,
+                                   const std::string& key, u64* total_size, u64 recv_size,
+                                   void* data, bool is_async, s32* ret) {
+    if (req->game_data_recv_offset == 0 || req->game_data_recv_key != key) {
+        req->game_data_recv_offset = 0;
+        req->game_data_recv_cache.clear();
+        req->game_data_recv_key = key;
+        return false;
+    }
+    const auto& cache = req->game_data_recv_cache;
+    const u64 start = std::min<u64>(req->game_data_recv_offset, cache.size());
+    const u64 n = (data != nullptr) ? std::min<u64>(cache.size() - start, recv_size) : 0;
+    if (n > 0) {
+        std::memcpy(data, cache.data() + start, n);
+    }
+    if (total_size != nullptr) {
+        *total_size = cache.size();
+    }
+    if (n < recv_size) {
+        req->game_data_recv_offset = 0;
+        req->game_data_recv_cache.clear();
+    } else {
+        req->game_data_recv_offset = start + n;
+    }
+    LOG_INFO(Lib_NpScore, "served {} cached bytes from offset {} (total {})", n, start,
+             cache.size());
+    req->SetResult(static_cast<s32>(n));
+    *ret = is_async ? ORBIS_OK : static_cast<s32>(n);
+    return true;
+}
+
 static s32 GetGameDataImpl(s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpId* np_id,
                            u64* total_size, u64 recv_size, void* data, void* option,
                            bool is_async) {
@@ -1323,7 +1349,7 @@ static s32 GetGameDataImpl(s32 req_id, OrbisNpScoreBoardId board_id, const Orbis
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -1332,10 +1358,17 @@ static s32 GetGameDataImpl(s32 req_id, OrbisNpScoreBoardId board_id, const Orbis
                                 strnlen(np_id->handle.data, sizeof(np_id->handle.data)));
     if (np_id_str.empty()) {
         LOG_ERROR(Lib_NpScore, "invalid npId");
+        req->SetResult(ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT);
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
 
     const s32 pc_id = req->pc_id;
+
+    s32 cached_ret;
+    if (ServeGameDataFromCache(req, std::to_string(board_id) + ":npid:" + np_id_str, total_size,
+                               recv_size, data, is_async, &cached_ret)) {
+        return cached_ret;
+    }
 
     const s32 dispatch_err =
         NpHandler::GetInstance().GetGameData(req->user_id, ServiceLabelForRequest(req), board_id,
@@ -1370,12 +1403,18 @@ static s32 GetGameDataByAccountIdImpl(s32 req_id, OrbisNpScoreBoardId board_id,
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
 
     const s32 pc_id = req->pc_id;
+
+    s32 cached_ret;
+    if (ServeGameDataFromCache(req, std::to_string(board_id) + ":acc:" + std::to_string(account_id),
+                               total_size, recv_size, data, is_async, &cached_ret)) {
+        return cached_ret;
+    }
 
     const s32 dispatch_err = NpHandler::GetInstance().GetGameDataByAccountId(
         req->user_id, ServiceLabelForRequest(req), board_id, account_id, pc_id, data, recv_size,
@@ -1437,6 +1476,10 @@ static s32 RecordGameDataImpl(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpS
         LOG_ERROR(Lib_NpScore, "invalid option");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
+    if (total_size == 0) {
+        LOG_ERROR(Lib_NpScore, "invalid totalSize");
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
     if (data == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
@@ -1444,12 +1487,6 @@ static s32 RecordGameDataImpl(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpS
     if (send_size == 0) {
         LOG_ERROR(Lib_NpScore, "invalid sendSize");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
-    }
-    if (total_size > send_size) {
-        LOG_WARNING(Lib_NpScore,
-                    "chunked send not supported (total_size={} send_size={}); "
-                    "storing first chunk only",
-                    total_size, send_size);
     }
 
     std::shared_ptr<ScoreRequestCtx> req;
@@ -1460,16 +1497,32 @@ static s32 RecordGameDataImpl(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpS
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
 
     const s32 pc_id = req->pc_id;
+    auto& buf = req->game_data_send_buf;
+    if (buf.empty()) {
+        req->game_data_send_total = total_size;
+    }
+    const u64 remaining = req->game_data_send_total - buf.size();
+    const u64 take = std::min<u64>(send_size, remaining);
+    const auto* bytes = static_cast<const u8*>(data);
+    buf.insert(buf.end(), bytes, bytes + take);
+    if (buf.size() < req->game_data_send_total) {
+        LOG_INFO(Lib_NpScore, "buffered {}/{} bytes", buf.size(), req->game_data_send_total);
+        req->SetResult(ORBIS_OK);
+        return ORBIS_OK;
+    }
+    std::vector<u8> blob = std::move(buf);
+    buf.clear();
+    req->game_data_send_total = 0;
 
-    const s32 dispatch_err = NpHandler::GetInstance().RecordGameData(
-        req->user_id, ServiceLabelForRequest(req), board_id, pc_id, score,
-        static_cast<const u8*>(data), static_cast<u64>(send_size), req);
+    const s32 dispatch_err =
+        NpHandler::GetInstance().RecordGameData(req->user_id, ServiceLabelForRequest(req), board_id,
+                                                pc_id, score, blob.data(), blob.size(), req);
     if (dispatch_err != ORBIS_OK) {
         req->SetResult(dispatch_err);
         return dispatch_err;
@@ -1516,7 +1569,7 @@ static s32 CensorCommentImpl(s32 req_id, const char* comment, void* option, bool
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }
@@ -1572,7 +1625,7 @@ static s32 SanitizeCommentImpl(s32 req_id, const char* comment, char* sanitized_
             LOG_ERROR(Lib_NpScore, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
-        if (IsRequestAborted(req)) {
+        if (!req->BeginOp()) {
             return ORBIS_NP_COMMUNITY_ERROR_ABORTED;
         }
     }

@@ -69,7 +69,8 @@ public:
     // NpScore Requests
     s32 RecordScore(s32 user_id, s32 service_label, u32 board_id, s32 pc_id, s64 score,
                     const char* comment, u64 comment_len, const u8* game_info_data,
-                    u64 game_info_size, std::shared_ptr<NpScore::ScoreRequestCtx> req);
+                    u64 game_info_size, u64 compare_date,
+                    std::shared_ptr<NpScore::ScoreRequestCtx> req);
     s32 RecordGameData(s32 user_id, s32 service_label, u32 board_id, s32 pc_id, s64 score,
                        const u8* data, u64 size, std::shared_ptr<NpScore::ScoreRequestCtx> req);
     s32 GetGameData(s32 user_id, s32 service_label, u32 board_id, const std::string& np_id,
@@ -108,13 +109,15 @@ public:
                               Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                               std::shared_ptr<NpScore::ScoreRequestCtx> req);
     s32 GetFriendsRanking(s32 user_id, s32 service_label, u32 board_id, bool include_self,
-                          u32 array_num, NpScore::OrbisNpScoreRankData* rank_array,
+                          u32 start_serial_rank, u32 array_num,
+                          NpScore::OrbisNpScoreRankData* rank_array,
                           NpScore::OrbisNpScoreComment* comment_array,
                           NpScore::OrbisNpScoreGameInfo* info_array,
                           Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                           std::shared_ptr<NpScore::ScoreRequestCtx> req);
     s32 GetFriendsRankingA(s32 user_id, s32 service_label, u32 board_id, bool include_self,
-                           u32 array_num, NpScore::OrbisNpScoreRankDataA* rank_array,
+                           u32 start_serial_rank, u32 array_num,
+                           NpScore::OrbisNpScoreRankDataA* rank_array,
                            NpScore::OrbisNpScoreComment* comment_array,
                            NpScore::OrbisNpScoreGameInfo* info_array,
                            Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
