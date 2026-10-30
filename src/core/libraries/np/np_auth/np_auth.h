@@ -7,10 +7,6 @@
 #include "core/libraries/np/np_types.h"
 #include "core/libraries/user_service/user_service.h"
 
-namespace Core::Loader {
-class SymbolsResolver;
-}
-
 namespace Libraries::Np::NpAuth {
 
 constexpr s32 ORBIS_NP_AUTH_REQUEST_LIMIT = 0x10;

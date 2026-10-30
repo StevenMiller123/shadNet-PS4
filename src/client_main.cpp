@@ -48,7 +48,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_UTILITY);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TUS);
 
-    // Init kernel and UserService hooks
+    // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
     Libraries::UserService::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
@@ -170,7 +170,7 @@ extern "C" s32 client_start() {
         LOG_WARNING(shadNet, "No NP Communication IDs loaded");
     }
 
-    // Init other library hooks
+    // Init NP library hooks
     Libraries::Np::NpManager::RegisterHooks();
     Libraries::Np::NpScore::RegisterHooks();
     Libraries::Np::NpWebApi::RegisterHooks();

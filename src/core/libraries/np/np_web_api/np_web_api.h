@@ -9,10 +9,6 @@
 
 #include "common/types.h"
 
-namespace Core::Loader {
-class SymbolsResolver;
-}
-
 namespace Libraries::Np::NpWebApi {
 
 #define ORBIS_NP_WEBAPI_DEFAULT_CONNECTION_NUM 1
