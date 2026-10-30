@@ -18,8 +18,8 @@ struct AuthRequestCtx {
     std::condition_variable cv;
     std::optional<s32> result;
 
-    OrbisNpAuthorizationCode* authCode = nullptr;
-    s32* issuerId = nullptr;
+    OrbisNpAuthorizationCode* auth_code = nullptr;
+    s32* issuer_id = nullptr;
 
     void SetResult(s32 r) {
         {
@@ -37,10 +37,10 @@ struct AuthRequestCtx {
             if (result.has_value()) {
                 return;
             }
-            std::memset(authCode, 0, sizeof(OrbisNpAuthorizationCode));
-            std::memcpy(authCode->code, code.data(), code.size());
-            if (issuerId) {
-                *issuerId = issuer;
+            std::memset(auth_code, 0, sizeof(OrbisNpAuthorizationCode));
+            std::memcpy(auth_code->code, code.data(), code.size());
+            if (issuer_id) {
+                *issuer_id = issuer;
             }
             result = ORBIS_OK;
         }

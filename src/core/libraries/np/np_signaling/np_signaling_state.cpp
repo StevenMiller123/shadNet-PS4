@@ -451,9 +451,9 @@ s32 GetConnectionInfoInternal(OrbisNpSignalingContextId ctx_id,
             if (ctx_it != GetState()->contexts.end() &&
                 (ctx_it->second.account_id != 0 || ctx_it->second.platform_type != 0)) {
                 auto* pair = reinterpret_cast<OrbisNpSignalingAccountPlatformPair*>(out_b);
-                pair->accountId = ctx_it->second.account_id;
-                pair->platformType = ctx_it->second.platform_type;
-                pair->_pad_0c = 0;
+                pair->account_id = ctx_it->second.account_id;
+                pair->platform_type = ctx_it->second.platform_type;
+                pair->pad_0c = 0;
                 result = ORBIS_OK;
             } else {
                 result = ORBIS_NP_SIGNALING_ERROR_CONN_IN_PROGRESS;

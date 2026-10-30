@@ -98,13 +98,13 @@ enum class OrbisNpGamePresenseStatus {
 };
 
 struct OrbisNpPeerAddress {
-    OrbisNpOnlineId onlineId;
+    OrbisNpOnlineId online_id;
     OrbisNpPlatformType platform;
     char padding[4];
 };
 
 struct OrbisNpPeerAddressA {
-    OrbisNpAccountId accountId;
+    OrbisNpAccountId account_id;
     OrbisNpPlatformType platform;
     char padding[4];
 };

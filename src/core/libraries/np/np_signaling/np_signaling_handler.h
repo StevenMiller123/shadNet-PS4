@@ -19,12 +19,11 @@ void Stop();
 void AddContextRef();
 void ReleaseContextRef();
 
-s32 ActivateSig1(NpSignaling::OrbisNpSignalingContextId ctx_id, const OrbisNpId& peer_npid,
-                 const OrbisNpOnlineId& peer_online_id,
-                 NpSignaling::OrbisNpSignalingConnectionId* out_conn_id);
+s32 ActivateSig1(OrbisNpSignalingContextId ctx_id, const OrbisNpId& peer_npid,
+                 const OrbisNpOnlineId& peer_online_id, OrbisNpSignalingConnectionId* out_conn_id);
 bool FindMatching2MemberNpId(OrbisNpAccountId account_id, OrbisNpId* out_npid);
-void DeactivateSig1(NpSignaling::OrbisNpSignalingConnectionId conn_id);
-void TerminateSig1(NpSignaling::OrbisNpSignalingConnectionId conn_id);
+void DeactivateSig1(OrbisNpSignalingConnectionId conn_id);
+void TerminateSig1(OrbisNpSignalingConnectionId conn_id);
 
 void StartMatching2(NpMatching2::ContextObject& ctx);
 void StopMatching2(NpMatching2::ContextObject& ctx, s32 error_code);

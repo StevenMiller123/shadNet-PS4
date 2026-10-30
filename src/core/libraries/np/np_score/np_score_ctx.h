@@ -16,10 +16,10 @@ struct ScoreRequestCtx {
     std::condition_variable cv;
     std::optional<s32> result;
 
-    s32 titleCtxId = 0;
-    s32 userId = -1;
-    s32 pcId = 0;
-    u32* tmpRankOut = nullptr;
+    s32 title_ctx_id = 0;
+    s32 user_id = -1;
+    s32 pc_id = 0;
+    u32* tmp_rank_out = nullptr;
 
     void SetResult(s32 r) {
         {

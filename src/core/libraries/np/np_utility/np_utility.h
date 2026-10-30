@@ -22,28 +22,28 @@ using OrbisNpWordFilterRequestId = s32;
 
 struct OrbisNpWordFilterCreateAsyncRequestParameter {
     u64 size;
-    u64 cpuAffinityMask;
-    s32 threadPriority;
+    u64 cpu_affinity_mask;
+    s32 thread_priority;
     u8 padding[4];
 };
 static_assert(sizeof(OrbisNpWordFilterCreateAsyncRequestParameter) == 0x18);
 
-s32 sceNpWordFilterAbortRequest(OrbisNpWordFilterRequestId reqId);
-s32 sceNpWordFilterCensorComment(OrbisNpWordFilterRequestId reqId, const char* comment,
+s32 sceNpWordFilterAbortRequest(OrbisNpWordFilterRequestId req_id);
+s32 sceNpWordFilterCensorComment(OrbisNpWordFilterRequestId req_id, const char* comment,
                                  void* option);
-s32 sceNpWordFilterCreateAsyncRequest(OrbisNpWordFilterTitleCtxId titleCtxId,
+s32 sceNpWordFilterCreateAsyncRequest(OrbisNpWordFilterTitleCtxId title_ctx_id,
                                       const OrbisNpWordFilterCreateAsyncRequestParameter* param);
-s32 sceNpWordFilterCreateRequest(OrbisNpWordFilterTitleCtxId titleCtxId);
-s32 sceNpWordFilterCreateTitleCtx(const OrbisNpId* selfNpId);
-s32 sceNpWordFilterCreateTitleCtxA(UserService::OrbisUserServiceUserId userId);
-s32 sceNpWordFilterDeleteRequest(OrbisNpWordFilterRequestId reqId);
-s32 sceNpWordFilterDeleteTitleCtx(OrbisNpWordFilterTitleCtxId titleCtxId);
-s32 sceNpWordFilterPollAsync(OrbisNpWordFilterRequestId reqId, s32* result);
-s32 sceNpWordFilterSanitizeComment(OrbisNpWordFilterRequestId reqId, const char* comment,
-                                   char* sanitizedComment, void* option);
-s32 sceNpWordFilterSetTimeout(s32 id, s32 resolveRetry, u32 resolveTimeout, u32 connTimeout,
-                              u32 sendTimeout, u32 recvTimeout);
-s32 sceNpWordFilterWaitAsync(OrbisNpWordFilterRequestId reqId, s32* result);
+s32 sceNpWordFilterCreateRequest(OrbisNpWordFilterTitleCtxId title_ctx_id);
+s32 sceNpWordFilterCreateTitleCtx(const OrbisNpId* self_np_id);
+s32 sceNpWordFilterCreateTitleCtxA(UserService::OrbisUserServiceUserId user_id);
+s32 sceNpWordFilterDeleteRequest(OrbisNpWordFilterRequestId req_id);
+s32 sceNpWordFilterDeleteTitleCtx(OrbisNpWordFilterTitleCtxId title_ctx_id);
+s32 sceNpWordFilterPollAsync(OrbisNpWordFilterRequestId req_id, s32* result);
+s32 sceNpWordFilterSanitizeComment(OrbisNpWordFilterRequestId req_id, const char* comment,
+                                   char* sanitized_comment, void* option);
+s32 sceNpWordFilterSetTimeout(s32 id, s32 resolve_retry, u32 resolve_timeout, u32 conn_timeout,
+                              u32 send_timeout, u32 recv_timeout);
+s32 sceNpWordFilterWaitAsync(OrbisNpWordFilterRequestId req_id, s32* result);
 
 void RegisterHooks();
 } // namespace Libraries::Np::NpUtility

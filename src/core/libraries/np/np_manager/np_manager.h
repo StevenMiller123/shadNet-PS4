@@ -17,12 +17,12 @@ enum class OrbisNpReachabilityState {
     Available = 1,
     Reachable = 2,
 };
-using OrbisNpReachabilityStateCallback = void (*)(s32 userId, OrbisNpReachabilityState state,
+using OrbisNpReachabilityStateCallback = void (*)(s32 user_id, OrbisNpReachabilityState state,
                                                   void* userdata);
-using OrbisNpStateCallback = void (*)(s32 userId, OrbisNpState state, OrbisNpId* npId,
+using OrbisNpStateCallback = void (*)(s32 user_id, OrbisNpState state, OrbisNpId* np_id,
                                       void* userdata);
-using OrbisNpStateCallbackA = void (*)(s32 userId, OrbisNpState state, void* userdata);
-using OrbisNpStateCallbackForToolkit = void (*)(s32 userId, OrbisNpState state, void* userdata);
+using OrbisNpStateCallbackA = void (*)(s32 user_id, OrbisNpState state, void* userdata);
+using OrbisNpStateCallbackForToolkit = void (*)(s32 user_id, OrbisNpState state, void* userdata);
 
 enum class OrbisNpGamePresenseStatus {
     Offline = 0,

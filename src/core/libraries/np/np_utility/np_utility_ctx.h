@@ -13,11 +13,11 @@
 namespace Libraries::Np::NpUtility {
 
 struct LookupTimeouts {
-    s32 resolveRetry = 0;
-    u32 resolveTimeout = 0;
-    u32 connTimeout = 0;
-    u32 sendTimeout = 0;
-    u32 recvTimeout = 0;
+    s32 resolve_retry = 0;
+    u32 resolve_timeout = 0;
+    u32 conn_timeout = 0;
+    u32 send_timeout = 0;
+    u32 recv_timeout = 0;
 };
 
 struct LookupRequestCtx {
@@ -25,8 +25,8 @@ struct LookupRequestCtx {
     std::condition_variable cv;
     std::optional<s32> result;
 
-    s32 titleCtxId = 0;
-    bool isAsync = false;
+    s32 title_ctx_id = 0;
+    bool is_async = false;
     bool used = false;
     bool aborted = false;
     std::optional<LookupTimeouts> timeouts;
@@ -55,8 +55,8 @@ struct LookupRequestCtx {
 };
 
 struct WordFilterTitleCtx {
-    s32 userId = -1;
-    OrbisNpId selfNpId{};
+    s32 user_id = -1;
+    OrbisNpId self_np_id{};
     std::optional<LookupTimeouts> timeouts;
 };
 

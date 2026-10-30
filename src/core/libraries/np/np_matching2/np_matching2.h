@@ -171,21 +171,21 @@ enum OrbisNpMatching2Role : u8 {
 };
 
 // Context callback function
-using OrbisNpMatching2ContextCallback = void (*)(OrbisNpMatching2ContextId contextId,
+using OrbisNpMatching2ContextCallback = void (*)(OrbisNpMatching2ContextId context_id,
                                                  OrbisNpMatching2Event event,
-                                                 OrbisNpMatching2EventCause cause, s32 errorCode,
+                                                 OrbisNpMatching2EventCause cause, s32 error_code,
                                                  void* userdata);
 
 // Lobby event callback function
-using OrbisNpMatching2LobbyEventCallback = void (*)(OrbisNpMatching2ContextId contextId,
-                                                    OrbisNpMatching2LobbyId lobbyId,
+using OrbisNpMatching2LobbyEventCallback = void (*)(OrbisNpMatching2ContextId context_id,
+                                                    OrbisNpMatching2LobbyId lobby_id,
                                                     OrbisNpMatching2Event event, const void* data,
                                                     void* userdata);
 
 // Lobby message callback function
-using OrbisNpMatching2LobbyMessageCallback = void (*)(OrbisNpMatching2ContextId contextId,
-                                                      OrbisNpMatching2LobbyId lobbyId,
-                                                      OrbisNpMatching2LobbyMemberId srcMemberId,
+using OrbisNpMatching2LobbyMessageCallback = void (*)(OrbisNpMatching2ContextId context_id,
+                                                      OrbisNpMatching2LobbyId lobby_id,
+                                                      OrbisNpMatching2LobbyMemberId src_member_id,
                                                       OrbisNpMatching2Event event, const void* data,
                                                       void* userdata);
 
@@ -195,23 +195,23 @@ using OrbisNpMatching2RequestCallback = void (*)(OrbisNpMatching2ContextId,
                                                  int, const void*, void*);
 
 // Room event callback function
-using OrbisNpMatching2RoomEventCallback = void (*)(OrbisNpMatching2ContextId contextId,
-                                                   OrbisNpMatching2RoomId roomId,
+using OrbisNpMatching2RoomEventCallback = void (*)(OrbisNpMatching2ContextId context_id,
+                                                   OrbisNpMatching2RoomId room_id,
                                                    OrbisNpMatching2Event event, const void* data,
                                                    void* userdata);
 
 // Room message callback function
-using OrbisNpMatching2RoomMessageCallback = void (*)(OrbisNpMatching2ContextId contextId,
-                                                     OrbisNpMatching2RoomId roomId,
-                                                     OrbisNpMatching2RoomMemberId srcMemberId,
+using OrbisNpMatching2RoomMessageCallback = void (*)(OrbisNpMatching2ContextId context_id,
+                                                     OrbisNpMatching2RoomId room_id,
+                                                     OrbisNpMatching2RoomMemberId src_member_id,
                                                      OrbisNpMatching2Event event, const void* data,
                                                      void* userdata);
 
 // Signaling callback function
-using OrbisNpMatching2SignalingCallback = void (*)(OrbisNpMatching2ContextId contextId,
-                                                   OrbisNpMatching2RoomId roomId,
-                                                   OrbisNpMatching2RoomMemberId roomMemberId,
-                                                   OrbisNpMatching2Event event, s32 errorCode,
+using OrbisNpMatching2SignalingCallback = void (*)(OrbisNpMatching2ContextId context_id,
+                                                   OrbisNpMatching2RoomId room_id,
+                                                   OrbisNpMatching2RoomMemberId room_member_id,
+                                                   OrbisNpMatching2Event event, s32 error_code,
                                                    void* userdata);
 
 struct OrbisNpMatching2RoomGroup;
@@ -247,7 +247,7 @@ struct OrbisNpMatching2BinAttr {
     OrbisNpMatching2AttributeId id;
     u8 pad[6];
     u8* data;
-    u64 dataSize;
+    u64 data_size;
 };
 
 // Range filter
@@ -258,14 +258,14 @@ struct OrbisNpMatching2RangeFilter {
 
 // Integer-type search condition
 struct OrbisNpMatching2IntSearchFilter {
-    OrbisNpMatching2Operator searchOperator;
+    OrbisNpMatching2Operator search_operator;
     u8 padding[7];
     OrbisNpMatching2IntAttr attr;
 };
 
 // Binary-type search condition
 struct OrbisNpMatching2BinSearchFilter {
-    OrbisNpMatching2Operator searchOperator;
+    OrbisNpMatching2Operator search_operator;
     u8 padding[7];
     OrbisNpMatching2BinAttr attr;
 };
@@ -282,235 +282,235 @@ struct OrbisNpMatching2Range {
 struct OrbisNpMatching2SignalingOptParam {
     OrbisNpMatching2SignalingType type;
     OrbisNpMatching2SignalingFlag flag;
-    OrbisNpMatching2RoomMemberId memberId;
+    OrbisNpMatching2RoomMemberId member_id;
     u8 padding[4];
 };
 
 // Set groups in a room
 struct OrbisNpMatching2RoomGroupConfig {
     u32 slots;
-    bool hasLabel;
+    bool has_label;
     OrbisNpMatching2GroupLabel label;
-    bool hasPassword;
+    bool has_password;
     u8 pad[2];
 };
 
 // Set group password
 struct OrbisNpMatching2RoomGroupPasswordConfig {
-    OrbisNpMatching2RoomGroupId groupId;
-    bool hasPassword;
+    OrbisNpMatching2RoomGroupId group_id;
+    bool has_password;
     u8 pad[1];
 };
 
 // Group (of slots in a room)
 struct OrbisNpMatching2RoomGroup {
     OrbisNpMatching2RoomGroupId id;
-    bool hasPasswd;
-    bool hasLabel;
+    bool has_passwd;
+    bool has_label;
     u8 pad;
     OrbisNpMatching2GroupLabel label;
     u32 slots;
-    u32 groupMembers;
+    u32 group_members;
 };
 
 // Group information
 struct OrbisNpMatching2RoomGroupInfo {
     OrbisNpMatching2RoomGroupId id;
-    bool hasPasswd;
+    bool has_passwd;
     u8 pad[2];
     u32 slots;
-    u32 groupMembers;
+    u32 group_members;
 };
 
 union OrbisNpMatching2RoomMessageDestination {
-    OrbisNpMatching2RoomMemberId unicastTarget;
+    OrbisNpMatching2RoomMemberId unicast_target;
 
     struct {
-        OrbisNpMatching2RoomMemberId* memberId;
-        u64 memberIdNum;
-    } multicastTarget;
+        OrbisNpMatching2RoomMemberId* member_id;
+        u64 member_id_num;
+    } multicast_target;
 };
 static_assert(sizeof(OrbisNpMatching2RoomMessageDestination) == 0x10);
 
 struct OrbisNpMatching2SendRoomMessageRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2CastType castType;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2CastType cast_type;
     u8 padding[3];
     OrbisNpMatching2RoomMessageDestination dst;
     const void* msg;
-    u32 msgLen;
+    u32 msg_len;
     s32 option;
 };
 static_assert(sizeof(OrbisNpMatching2SendRoomMessageRequest) == 0x30);
 
 struct OrbisNpMatching2RoomMessageInfo {
     bool filtered;
-    OrbisNpMatching2CastType castType;
+    OrbisNpMatching2CastType cast_type;
     u8 padding[2];
     OrbisNpMatching2RoomMessageDestination* dst;
-    OrbisNpId* srcMember;
+    OrbisNpId* src_member;
     void* msg;
-    u32 msgLen;
+    u32 msg_len;
 };
 static_assert(sizeof(OrbisNpMatching2RoomMessageInfo) == 0x28);
 
 struct OrbisNpMatching2RoomMessageInfoA {
     bool filtered;
-    OrbisNpMatching2CastType castType;
+    OrbisNpMatching2CastType cast_type;
     u8 padding[6];
-    OrbisNpPeerAddressA srcMember;
-    OrbisNpOnlineId srcMemberOnlineId;
+    OrbisNpPeerAddressA src_member;
+    OrbisNpOnlineId src_member_online_id;
     OrbisNpMatching2RoomMessageDestination* dst;
     const void* msg;
-    u64 msgLen;
+    u64 msg_len;
 };
-static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, srcMember) == 0x08);
-static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, srcMemberOnlineId) == 0x18);
+static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, src_member) == 0x08);
+static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, src_member_online_id) == 0x18);
 static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, dst) == 0x30);
 static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, msg) == 0x38);
-static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, msgLen) == 0x40);
+static_assert(offsetof(OrbisNpMatching2RoomMessageInfoA, msg_len) == 0x40);
 static_assert(sizeof(OrbisNpMatching2RoomMessageInfoA) == 0x48);
 
 // Room-internal binary attribute
 struct OrbisNpMatching2RoomBinAttrInternal {
-    Libraries::Rtc::OrbisRtcTick lastUpdate;
-    OrbisNpMatching2RoomMemberId memberId;
+    Rtc::OrbisRtcTick last_update;
+    OrbisNpMatching2RoomMemberId member_id;
     u8 pad[6];
-    OrbisNpMatching2BinAttr binAttr;
+    OrbisNpMatching2BinAttr bin_attr;
 };
 
 // Room member internal binary attribute
 struct OrbisNpMatching2RoomMemberBinAttrInternal {
-    Libraries::Rtc::OrbisRtcTick lastUpdate;
-    OrbisNpMatching2BinAttr binAttr;
+    Rtc::OrbisRtcTick last_update;
+    OrbisNpMatching2BinAttr bin_attr;
 };
 
 // Server
 struct OrbisNpMatching2World {
     OrbisNpMatching2World* next;
-    OrbisNpMatching2WorldId worldId;
-    u32 lobbiesNum;
-    u32 maxLobbyMembersNum;
-    u32 lobbyMembersNum;
-    u32 roomsNum;
-    u32 roomMembersNum;
+    OrbisNpMatching2WorldId world_id;
+    u32 lobbies_num;
+    u32 max_lobby_members_num;
+    u32 lobby_members_num;
+    u32 rooms_num;
+    u32 room_members_num;
     u8 pad[3];
 };
 
 // Room-internal room information
 struct OrbisNpMatching2RoomDataInternal {
-    u16 publicSlots;
-    u16 privateSlots;
-    u16 openPublicSlots;
-    u16 openPrivateSlots;
-    u16 maxSlot;
-    OrbisNpMatching2ServerId serverId;
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2RoomPasswordSlotMask passwdSlotMask;
-    u64 joinedSlotMask;
-    OrbisNpMatching2RoomGroup* roomGroup;
-    u64 roomGroups;
+    u16 public_slots;
+    u16 private_slots;
+    u16 open_public_slots;
+    u16 open_private_slots;
+    u16 max_slot;
+    OrbisNpMatching2ServerId server_id;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2RoomPasswordSlotMask passwd_slot_mask;
+    u64 joined_slot_mask;
+    OrbisNpMatching2RoomGroup* room_group;
+    u64 room_groups;
     OrbisNpMatching2Flags flags;
     u8 pad[4];
-    OrbisNpMatching2RoomBinAttrInternal* internalBinAttr;
-    u64 internalBinAttrs;
+    OrbisNpMatching2RoomBinAttrInternal* internal_bin_attr;
+    u64 internal_bin_attrs;
 };
 
 // Room-external room information
 struct OrbisNpMatching2RoomDataExternal {
     OrbisNpMatching2RoomDataExternal* next;
-    u16 maxSlot;
-    u16 curMembers;
+    u16 max_slot;
+    u16 cur_members;
     OrbisNpMatching2Flags flags;
-    OrbisNpMatching2ServerId serverId;
+    OrbisNpMatching2ServerId server_id;
     u8 pad[2];
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    OrbisNpMatching2RoomId roomId;
-    u64 passwdSlotMask;
-    u64 joinedSlotMask;
-    u16 publicSlots;
-    u16 privateSlots;
-    u16 openPublicSlots;
-    u16 openPrivateSlots;
-    OrbisNpId* ownerNpId;
-    OrbisNpMatching2RoomGroupInfo* roomGroup;
-    u64 roomGroups;
-    OrbisNpMatching2IntAttr* externalSearchIntAttr;
-    u64 externalSearchIntAttrs;
-    OrbisNpMatching2BinAttr* externalSearchBinAttr;
-    u64 externalSearchBinAttrs;
-    OrbisNpMatching2BinAttr* externalBinAttr;
-    u64 externalBinAttrs;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    OrbisNpMatching2RoomId room_id;
+    u64 passwd_slot_mask;
+    u64 joined_slot_mask;
+    u16 public_slots;
+    u16 private_slots;
+    u16 open_public_slots;
+    u16 open_private_slots;
+    OrbisNpId* owner_np_id;
+    OrbisNpMatching2RoomGroupInfo* room_group;
+    u64 room_groups;
+    OrbisNpMatching2IntAttr* external_search_int_attr;
+    u64 external_search_int_attrs;
+    OrbisNpMatching2BinAttr* external_search_bin_attr;
+    u64 external_search_bin_attrs;
+    OrbisNpMatching2BinAttr* external_bin_attr;
+    u64 external_bin_attrs;
 };
 
 // Room-external room information (account-id variant)
 struct OrbisNpMatching2RoomDataExternalA {
     OrbisNpMatching2RoomDataExternalA* next;
-    u16 maxSlot;
-    u16 curMembers;
+    u16 max_slot;
+    u16 cur_members;
     OrbisNpMatching2Flags flags;
-    OrbisNpMatching2ServerId serverId;
+    OrbisNpMatching2ServerId server_id;
     u8 pad[2];
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2RoomPasswordSlotMask passwdSlotMask;
-    u64 joinedSlotMask;
-    u16 publicSlots;
-    u16 privateSlots;
-    u16 openPublicSlots;
-    u16 openPrivateSlots;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2RoomPasswordSlotMask passwd_slot_mask;
+    u64 joined_slot_mask;
+    u16 public_slots;
+    u16 private_slots;
+    u16 open_public_slots;
+    u16 open_private_slots;
     OrbisNpPeerAddressA owner;
-    OrbisNpOnlineId ownerOnlineId;
-    OrbisNpMatching2RoomGroupInfo* roomGroup;
-    u64 roomGroups;
-    OrbisNpMatching2IntAttr* externalSearchIntAttr;
-    u64 externalSearchIntAttrs;
-    OrbisNpMatching2BinAttr* externalSearchBinAttr;
-    u64 externalSearchBinAttrs;
-    OrbisNpMatching2BinAttr* externalBinAttr;
-    u64 externalBinAttrs;
+    OrbisNpOnlineId owner_online_id;
+    OrbisNpMatching2RoomGroupInfo* room_group;
+    u64 room_groups;
+    OrbisNpMatching2IntAttr* external_search_int_attr;
+    u64 external_search_int_attrs;
+    OrbisNpMatching2BinAttr* external_search_bin_attr;
+    u64 external_search_bin_attrs;
+    OrbisNpMatching2BinAttr* external_bin_attr;
+    u64 external_bin_attrs;
 };
 
 // Room-internal room member information
 struct OrbisNpMatching2RoomMemberDataInternal {
     OrbisNpMatching2RoomMemberDataInternal* next;
-    u64 joinDate;
-    OrbisNpId npId;
+    u64 join_date;
+    OrbisNpId np_id;
     u8 pad[4];
-    OrbisNpMatching2RoomMemberId memberId;
-    OrbisNpMatching2TeamId teamId;
-    OrbisNpMatching2NatType natType;
-    OrbisNpMatching2Flags flagAttr;
-    OrbisNpMatching2RoomGroup* roomGroup;
-    OrbisNpMatching2RoomMemberBinAttrInternal* roomMemberBinAttrInternal;
-    u64 roomMemberBinAttrInternalNum;
+    OrbisNpMatching2RoomMemberId member_id;
+    OrbisNpMatching2TeamId team_id;
+    OrbisNpMatching2NatType nat_type;
+    OrbisNpMatching2Flags flag_attr;
+    OrbisNpMatching2RoomGroup* room_group;
+    OrbisNpMatching2RoomMemberBinAttrInternal* room_member_bin_attr_internal;
+    u64 room_member_bin_attr_internal_num;
 };
 static_assert(sizeof(OrbisNpMatching2RoomMemberDataInternal) == 0x58);
 
 // Room-internal room member information (account-id variant)
 struct OrbisNpMatching2RoomMemberDataInternalA {
     OrbisNpMatching2RoomMemberDataInternalA* next;
-    Libraries::Rtc::OrbisRtcTick joinDateTicks;
+    Rtc::OrbisRtcTick join_date_ticks;
     OrbisNpPeerAddressA user;
-    OrbisNpOnlineId onlineId;
+    OrbisNpOnlineId online_id;
     u8 pad[4];
-    OrbisNpMatching2RoomMemberId memberId;
-    OrbisNpMatching2TeamId teamId;
-    OrbisNpMatching2NatType natType;
+    OrbisNpMatching2RoomMemberId member_id;
+    OrbisNpMatching2TeamId team_id;
+    OrbisNpMatching2NatType nat_type;
     OrbisNpMatching2Flags flags;
-    OrbisNpMatching2RoomGroup* roomGroup;
-    OrbisNpMatching2RoomMemberBinAttrInternal* roomMemberInternalBinAttr;
-    u64 roomMemberInternalBinAttrs;
+    OrbisNpMatching2RoomGroup* room_group;
+    OrbisNpMatching2RoomMemberBinAttrInternal* room_member_internal_bin_attr;
+    u64 room_member_internal_bin_attrs;
 };
 
 // Room member ID list
 struct OrbisNpMatching2RoomMemberDataInternalList {
     OrbisNpMatching2RoomMemberDataInternal* members;
-    u64 membersNum;
+    u64 members_num;
     OrbisNpMatching2RoomMemberDataInternal* me;
     OrbisNpMatching2RoomMemberDataInternal* owner;
 };
@@ -518,7 +518,7 @@ struct OrbisNpMatching2RoomMemberDataInternalList {
 // Room member ID list (account-id variant)
 struct OrbisNpMatching2RoomMemberDataInternalListA {
     OrbisNpMatching2RoomMemberDataInternalA* members;
-    u64 membersNum;
+    u64 members_num;
     OrbisNpMatching2RoomMemberDataInternalA* me;
     OrbisNpMatching2RoomMemberDataInternalA* owner;
 };
@@ -526,8 +526,8 @@ struct OrbisNpMatching2RoomMemberDataInternalListA {
 // Room-external room member information
 struct OrbisNpMatching2RoomMemberDataExternal {
     OrbisNpMatching2RoomMemberDataExternal* next;
-    OrbisNpId npId;
-    Libraries::Rtc::OrbisRtcTick joinDate;
+    OrbisNpId np_id;
+    Rtc::OrbisRtcTick join_date;
     OrbisNpMatching2Role role;
     u8 padding[7];
 };
@@ -536,38 +536,38 @@ struct OrbisNpMatching2RoomMemberDataExternal {
 struct OrbisNpMatching2RoomMemberDataExternalA {
     OrbisNpMatching2RoomMemberDataExternalA* next;
     OrbisNpPeerAddressA user;
-    OrbisNpOnlineId onlineId;
-    Libraries::Rtc::OrbisRtcTick joinDate;
+    OrbisNpOnlineId online_id;
+    Rtc::OrbisRtcTick join_date;
     OrbisNpMatching2Role role;
     u8 padding[7];
 };
 
 // Initialization parameter
 struct OrbisNpMatching2InitializeParameter {
-    u64 poolSize;
+    u64 pool_size;
     u64 unknown;
     s32 priority;
     u8 padding[4];
-    u64 stackSize;
+    u64 stack_size;
     u64 size;
-    u64 sslPoolSize;
+    u64 ssl_pool_size;
 };
 static_assert(sizeof(OrbisNpMatching2InitializeParameter) == 0x30);
 
 // Create context parameter
 struct OrbisNpMatching2CreateContextParameter {
-    OrbisNpId* npId;
-    void* npCommunicationId;
-    void* npPassphrase;
-    OrbisNpServiceLabel serviceLabel;
+    OrbisNpId* np_id;
+    void* np_communication_id;
+    void* np_passphrase;
+    OrbisNpServiceLabel service_label;
     u64 size;
 };
 static_assert(sizeof(OrbisNpMatching2CreateContextParameter) == 0x28);
 
 // Create context parameter (account-id variant)
 struct OrbisNpMatching2CreateContextParameterA {
-    Libraries::UserService::OrbisUserServiceUserId userId;
-    OrbisNpServiceLabel serviceLabel;
+    UserService::OrbisUserServiceUserId user_id;
+    OrbisNpServiceLabel service_label;
     u64 size;
 };
 static_assert(sizeof(OrbisNpMatching2CreateContextParameterA) == 16);
@@ -577,108 +577,108 @@ struct OrbisNpMatching2RequestOptParam {
     OrbisNpMatching2RequestCallback callback;
     void* arg;
     u32 timeout;
-    u16 appId;
+    u16 app_id;
     u8 padding[2];
 };
 
 // GetWorldInfoList request
 struct OrbisNpMatching2GetWorldInfoListRequest {
-    OrbisNpMatching2ServerId serverId;
+    OrbisNpMatching2ServerId server_id;
 };
 
 // GetWorldInfoList response
 struct OrbisNpMatching2GetWorldInfoListResponse {
     OrbisNpMatching2World* world;
-    u64 worldNum;
+    u64 world_num;
 };
 
 // CreateJoinRoom request
 struct OrbisNpMatching2CreateJoinRoomRequest {
-    u16 maxSlot;
-    OrbisNpMatching2TeamId teamId;
+    u16 max_slot;
+    OrbisNpMatching2TeamId team_id;
     u8 pad[5];
     OrbisNpMatching2Flags flags;
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    void* roomPasswd;
-    OrbisNpMatching2RoomPasswordSlotMask* passwdSlotMask;
-    void* groupConfig;
-    u64 groupConfigs;
-    void* joinGroupLabel;
-    OrbisNpOnlineId* allowedUser;
-    u64 allowedUsers;
-    OrbisNpOnlineId* blockedUser;
-    u64 blockedUsers;
-    OrbisNpMatching2BinAttr* internalBinAttr;
-    u64 internalBinAttrs;
-    OrbisNpMatching2IntAttr* externalSearchIntAttr;
-    u64 externalSearchIntAttrs;
-    OrbisNpMatching2BinAttr* externalSearchBinAttr;
-    u64 externalSearchBinAttrs;
-    OrbisNpMatching2BinAttr* externalBinAttr;
-    u64 externalBinAttrs;
-    OrbisNpMatching2BinAttr* memberInternalBinAttr;
-    u64 memberInternalBinAttrs;
-    OrbisNpMatching2SignalingOptParam* signalingParam;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    void* room_passwd;
+    OrbisNpMatching2RoomPasswordSlotMask* passwd_slot_mask;
+    void* group_config;
+    u64 group_configs;
+    void* join_group_label;
+    OrbisNpOnlineId* allowed_user;
+    u64 allowed_users;
+    OrbisNpOnlineId* blocked_user;
+    u64 blocked_users;
+    OrbisNpMatching2BinAttr* internal_bin_attr;
+    u64 internal_bin_attrs;
+    OrbisNpMatching2IntAttr* external_search_int_attr;
+    u64 external_search_int_attrs;
+    OrbisNpMatching2BinAttr* external_search_bin_attr;
+    u64 external_search_bin_attrs;
+    OrbisNpMatching2BinAttr* external_bin_attr;
+    u64 external_bin_attrs;
+    OrbisNpMatching2BinAttr* member_internal_bin_attr;
+    u64 member_internal_bin_attrs;
+    OrbisNpMatching2SignalingOptParam* signaling_param;
 };
 static_assert(sizeof(OrbisNpMatching2CreateJoinRoomRequest) == 184);
 
 // CreateJoinRoom request (account-id variant)
 struct OrbisNpMatching2CreateJoinRoomRequestA {
-    u16 maxSlot;
-    OrbisNpMatching2TeamId teamId;
+    u16 max_slot;
+    OrbisNpMatching2TeamId team_id;
     u8 pad[5];
     OrbisNpMatching2Flags flags;
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    void* roomPasswd;
-    OrbisNpMatching2RoomPasswordSlotMask* passwdSlotMask;
-    void* groupConfig;
-    u64 groupConfigs;
-    void* joinGroupLabel;
-    OrbisNpAccountId* allowedUser;
-    u64 allowedUsers;
-    OrbisNpAccountId* blockedUser;
-    u64 blockedUsers;
-    OrbisNpMatching2BinAttr* internalBinAttr;
-    u64 internalBinAttrs;
-    OrbisNpMatching2IntAttr* externalSearchIntAttr;
-    u64 externalSearchIntAttrs;
-    OrbisNpMatching2BinAttr* externalSearchBinAttr;
-    u64 externalSearchBinAttrs;
-    OrbisNpMatching2BinAttr* externalBinAttr;
-    u64 externalBinAttrs;
-    OrbisNpMatching2BinAttr* memberInternalBinAttr;
-    u64 memberInternalBinAttrs;
-    OrbisNpMatching2SignalingOptParam* signalingParam;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    void* room_passwd;
+    OrbisNpMatching2RoomPasswordSlotMask* passwd_slot_mask;
+    void* group_config;
+    u64 group_configs;
+    void* join_group_label;
+    OrbisNpAccountId* allowed_user;
+    u64 allowed_users;
+    OrbisNpAccountId* blocked_user;
+    u64 blocked_users;
+    OrbisNpMatching2BinAttr* internal_bin_attr;
+    u64 internal_bin_attrs;
+    OrbisNpMatching2IntAttr* external_search_int_attr;
+    u64 external_search_int_attrs;
+    OrbisNpMatching2BinAttr* external_search_bin_attr;
+    u64 external_search_bin_attrs;
+    OrbisNpMatching2BinAttr* external_bin_attr;
+    u64 external_bin_attrs;
+    OrbisNpMatching2BinAttr* member_internal_bin_attr;
+    u64 member_internal_bin_attrs;
+    OrbisNpMatching2SignalingOptParam* signaling_param;
 };
 static_assert(sizeof(OrbisNpMatching2CreateJoinRoomRequestA) == 184);
 
 // CreateJoinRoom response
 struct OrbisNpMatching2CreateJoinRoomResponse {
-    const OrbisNpMatching2RoomDataInternal* roomData;
+    const OrbisNpMatching2RoomDataInternal* room_data;
     OrbisNpMatching2RoomMemberDataInternalList members;
 };
 
 // CreateJoinRoom response (account-id variant)
 struct OrbisNpMatching2CreateJoinRoomResponseA {
-    OrbisNpMatching2RoomDataInternal* roomData;
+    OrbisNpMatching2RoomDataInternal* room_data;
     OrbisNpMatching2RoomMemberDataInternalListA members;
 };
 
 // JoinRoom request
 struct OrbisNpMatching2JoinRoomRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2SessionPassword* roomPasswd;
-    OrbisNpMatching2GroupLabel* joinGroupLabel;
-    OrbisNpMatching2BinAttr* roomMemberBinInternalAttr;
-    u64 roomMemberBinInternalAttrNum;
-    OrbisNpMatching2PresenceOptionData optData;
-    OrbisNpMatching2TeamId teamId;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2SessionPassword* room_passwd;
+    OrbisNpMatching2GroupLabel* join_group_label;
+    OrbisNpMatching2BinAttr* room_member_bin_internal_attr;
+    u64 room_member_bin_internal_attr_num;
+    OrbisNpMatching2PresenceOptionData opt_data;
+    OrbisNpMatching2TeamId team_id;
     u8 pad[3];
     OrbisNpMatching2Flags flags;
-    OrbisNpOnlineId* blockedUser;
-    u64 blockedUsers;
+    OrbisNpOnlineId* blocked_user;
+    u64 blocked_users;
 
     s32 Validate() {
         return 0;
@@ -688,17 +688,17 @@ static_assert(sizeof(OrbisNpMatching2JoinRoomRequest) == 0x58);
 
 // JoinRoom request (account-id variant)
 struct OrbisNpMatching2JoinRoomRequestA {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2SessionPassword* roomPasswd;
-    OrbisNpMatching2GroupLabel* joinGroupLabel;
-    OrbisNpMatching2BinAttr* roomMemberBinInternalAttr;
-    u64 roomMemberBinInternalAttrNum;
-    OrbisNpMatching2PresenceOptionData optData;
-    OrbisNpMatching2TeamId teamId;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2SessionPassword* room_passwd;
+    OrbisNpMatching2GroupLabel* join_group_label;
+    OrbisNpMatching2BinAttr* room_member_bin_internal_attr;
+    u64 room_member_bin_internal_attr_num;
+    OrbisNpMatching2PresenceOptionData opt_data;
+    OrbisNpMatching2TeamId team_id;
     u8 pad[3];
     OrbisNpMatching2Flags flags;
-    OrbisNpAccountId* blockedUser;
-    u64 blockedUsers;
+    OrbisNpAccountId* blocked_user;
+    u64 blocked_users;
 
     s32 Validate() {
         return 0;
@@ -708,37 +708,37 @@ static_assert(sizeof(OrbisNpMatching2JoinRoomRequestA) == 0x58);
 
 // LeaveRoom request
 struct OrbisNpMatching2LeaveRoomRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2PresenceOptionData optData;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2PresenceOptionData opt_data;
 };
 
 // LeaveRoom response
 struct OrbisNpMatching2LeaveRoomResponse {
-    OrbisNpMatching2RoomId roomId;
+    OrbisNpMatching2RoomId room_id;
 };
 
 // KickoutRoomMember request
 struct OrbisNpMatching2KickoutRoomMemberRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2RoomMemberId memberId;
-    OrbisNpMatching2BlockKickFlag blockKickFlag;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2RoomMemberId member_id;
+    OrbisNpMatching2BlockKickFlag block_kick_flag;
     u8 padding[5];
-    OrbisNpMatching2PresenceOptionData optData;
+    OrbisNpMatching2PresenceOptionData opt_data;
 };
 static_assert(sizeof(OrbisNpMatching2KickoutRoomMemberRequest) == 0x28);
 
 // SearchRoom request
 struct OrbisNpMatching2SearchRoomRequest {
     s32 option;
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    OrbisNpMatching2RangeFilter rangeFilter;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    OrbisNpMatching2RangeFilter range_filter;
     OrbisNpMatching2Flags flags1;
     OrbisNpMatching2Flags flags2;
-    OrbisNpMatching2IntSearchFilter* intFilter;
-    u64 intFilters;
-    OrbisNpMatching2BinSearchFilter* binFilter;
-    u64 binFilters;
+    OrbisNpMatching2IntSearchFilter* int_filter;
+    u64 int_filters;
+    OrbisNpMatching2BinSearchFilter* bin_filter;
+    u64 bin_filters;
     OrbisNpMatching2AttributeId* attr;
     u64 attrs;
 };
@@ -746,145 +746,145 @@ struct OrbisNpMatching2SearchRoomRequest {
 // SearchRoom response
 struct OrbisNpMatching2SearchRoomResponse {
     OrbisNpMatching2Range range;
-    OrbisNpMatching2RoomDataExternal* roomDataExt;
+    OrbisNpMatching2RoomDataExternal* room_data_ext;
 };
 
 // SearchRoom response (account-id variant)
 struct OrbisNpMatching2SearchRoomResponseA {
     OrbisNpMatching2Range range;
-    OrbisNpMatching2RoomDataExternalA* roomDataExt;
+    OrbisNpMatching2RoomDataExternalA* room_data_ext;
 };
 
 // GetRoomDataExternalList request
 struct OrbisNpMatching2GetRoomDataExternalListRequest {
-    OrbisNpMatching2RoomId* roomId;
-    u64 roomIdNum;
-    const OrbisNpMatching2AttributeId* attrId;
-    u64 attrIdNum;
+    OrbisNpMatching2RoomId* room_id;
+    u64 room_id_num;
+    const OrbisNpMatching2AttributeId* attr_id;
+    u64 attr_id_num;
 };
 
 // GetRoomDataExternalList response
 struct OrbisNpMatching2GetRoomDataExternalListResponse {
-    OrbisNpMatching2RoomDataExternal* roomDataExternal;
-    u64 roomDataExternalNum;
+    OrbisNpMatching2RoomDataExternal* room_data_external;
+    u64 room_data_external_num;
 };
 
 // GetRoomDataExternalList response (account-id variant)
 struct OrbisNpMatching2GetRoomDataExternalListResponseA {
-    OrbisNpMatching2RoomDataExternalA* roomDataExternal;
-    u64 roomDataExternalNum;
+    OrbisNpMatching2RoomDataExternalA* room_data_external;
+    u64 room_data_external_num;
 };
 
 // GetRoomMemberDataExternalList request
 struct OrbisNpMatching2GetRoomMemberDataExternalListRequest {
-    OrbisNpMatching2RoomId roomId;
+    OrbisNpMatching2RoomId room_id;
 };
 
 // GetRoomMemberDataExternalList response
 struct OrbisNpMatching2GetRoomMemberDataExternalListResponse {
-    OrbisNpMatching2RoomMemberDataExternal* roomMemberDataExternal;
-    u64 roomMemberDataExternalNum;
+    OrbisNpMatching2RoomMemberDataExternal* room_member_data_external;
+    u64 room_member_data_external_num;
 };
 
 // GetRoomMemberDataExternalList response (account-id variant)
 struct OrbisNpMatching2GetRoomMemberDataExternalListResponseA {
-    OrbisNpMatching2RoomMemberDataExternalA* roomMemberDataExternal;
-    u64 roomMemberDataExternalNum;
+    OrbisNpMatching2RoomMemberDataExternalA* room_member_data_external;
+    u64 room_member_data_external_num;
 };
 
 // SetRoomDataExternal request
 struct OrbisNpMatching2SetRoomDataExternalRequest {
-    OrbisNpMatching2RoomId roomId;
-    const OrbisNpMatching2IntAttr* roomSearchableIntAttrExternal;
-    u64 roomSearchableIntAttrExternalNum;
-    const OrbisNpMatching2BinAttr* roomSearchableBinAttrExternal;
-    u64 roomSearchableBinAttrExternalNum;
-    const OrbisNpMatching2BinAttr* roomBinAttrExternal;
-    u64 roomBinAttrExternalNum;
+    OrbisNpMatching2RoomId room_id;
+    const OrbisNpMatching2IntAttr* room_searchable_int_attr_external;
+    u64 room_searchable_int_attr_external_num;
+    const OrbisNpMatching2BinAttr* room_searchable_bin_attr_external;
+    u64 room_searchable_bin_attr_external_num;
+    const OrbisNpMatching2BinAttr* room_bin_attr_external;
+    u64 room_bin_attr_external_num;
 };
 
 // SetRoomDataInternal request
 struct OrbisNpMatching2SetRoomDataInternalRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2Flags flagFilter;
-    OrbisNpMatching2Flags flagAttr;
-    const OrbisNpMatching2BinAttr* roomBinAttrInternal;
-    u64 roomBinAttrInternalNum;
-    const OrbisNpMatching2RoomGroupPasswordConfig* passwordConfig;
-    u64 passwordConfigNum;
-    const OrbisNpMatching2RoomPasswordSlotMask* passwordSlotMask;
-    const OrbisNpMatching2RoomMemberId* ownerPrivilegeRank;
-    u64 ownerPrivilegeRankNum;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2Flags flag_filter;
+    OrbisNpMatching2Flags flag_attr;
+    const OrbisNpMatching2BinAttr* room_bin_attr_internal;
+    u64 room_bin_attr_internal_num;
+    const OrbisNpMatching2RoomGroupPasswordConfig* password_config;
+    u64 password_config_num;
+    const OrbisNpMatching2RoomPasswordSlotMask* password_slot_mask;
+    const OrbisNpMatching2RoomMemberId* owner_privilege_rank;
+    u64 owner_privilege_rank_num;
 };
 
 // GetRoomDataInternal request
 struct OrbisNpMatching2GetRoomDataInternalRequest {
-    OrbisNpMatching2RoomId roomId;
-    const OrbisNpMatching2AttributeId* attrId;
-    u64 attrIdNum;
+    OrbisNpMatching2RoomId room_id;
+    const OrbisNpMatching2AttributeId* attr_id;
+    u64 attr_id_num;
 };
 
 // SetRoomMemberDataInternal request
 struct OrbisNpMatching2SetRoomMemberDataInternalRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2RoomMemberId memberId;
-    OrbisNpMatching2TeamId teamId;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2RoomMemberId member_id;
+    OrbisNpMatching2TeamId team_id;
     u8 padding[5];
-    OrbisNpMatching2FlagAttr flagFilter;
-    OrbisNpMatching2FlagAttr flagAttr;
-    const OrbisNpMatching2BinAttr* roomMemberBinAttrInternal;
-    u64 roomMemberBinAttrInternalNum;
+    OrbisNpMatching2FlagAttr flag_filter;
+    OrbisNpMatching2FlagAttr flag_attr;
+    const OrbisNpMatching2BinAttr* room_member_bin_attr_internal;
+    u64 room_member_bin_attr_internal_num;
 };
 static_assert(sizeof(OrbisNpMatching2SetRoomMemberDataInternalRequest) == 0x28);
 
 // GetRoomMemberDataInternal request
 struct OrbisNpMatching2GetRoomMemberDataInternalRequest {
-    OrbisNpMatching2RoomId roomId;
-    OrbisNpMatching2RoomMemberId memberId;
+    OrbisNpMatching2RoomId room_id;
+    OrbisNpMatching2RoomMemberId member_id;
     u8 padding[6];
-    const OrbisNpMatching2AttributeId* attrId;
-    u64 attrIdNum;
+    const OrbisNpMatching2AttributeId* attr_id;
+    u64 attr_id_num;
 };
 static_assert(sizeof(OrbisNpMatching2GetRoomMemberDataInternalRequest) == 0x20);
 
 // GetRoomMemberDataInternal response
 struct OrbisNpMatching2GetRoomMemberDataInternalResponse {
-    OrbisNpMatching2RoomMemberDataInternal* roomMemberDataInternal;
+    OrbisNpMatching2RoomMemberDataInternal* room_member_data_internal;
 };
 
 // GetRoomMemberDataInternal response (account-id variant)
 struct OrbisNpMatching2GetRoomMemberDataInternalResponseA {
-    OrbisNpMatching2RoomMemberDataInternalA* roomMemberDataInternal;
+    OrbisNpMatching2RoomMemberDataInternalA* room_member_data_internal;
 };
 
 // SetUserInfo request
 struct OrbisNpMatching2SetUserInfoRequest {
-    OrbisNpMatching2ServerId serverId;
+    OrbisNpMatching2ServerId server_id;
     u8 padding[6];
-    OrbisNpMatching2BinAttr* userBinAttr;
-    u64 userBinAttrs;
+    OrbisNpMatching2BinAttr* user_bin_attr;
+    u64 user_bin_attrs;
 };
 
 // Session a user is currently joined to
 struct OrbisNpMatching2JoinedSessionInfo {
-    OrbisNpMatching2SessionType sessionType;
+    OrbisNpMatching2SessionType session_type;
     u8 padding[1];
-    OrbisNpMatching2ServerId serverId;
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2LobbyId lobbyId;
-    OrbisNpMatching2RoomId roomId;
-    Libraries::Rtc::OrbisRtcTick joinDate;
+    OrbisNpMatching2ServerId server_id;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2LobbyId lobby_id;
+    OrbisNpMatching2RoomId room_id;
+    Rtc::OrbisRtcTick join_date;
 };
 
 // User information
 // from PS3 this was NpUserInfo2; setting addresses like our other A and nonA types TODO: confirm
 struct OrbisNpMatching2UserInfo {
     OrbisNpMatching2UserInfo* next;
-    OrbisNpId npId;
-    OrbisNpMatching2BinAttr* userBinAttr;
-    u64 userBinAttrNum;
-    OrbisNpMatching2JoinedSessionInfo joinedSessionInfo;
-    u64 joinedSessionInfoNum;
+    OrbisNpId np_id;
+    OrbisNpMatching2BinAttr* user_bin_attr;
+    u64 user_bin_attr_num;
+    OrbisNpMatching2JoinedSessionInfo joined_session_info;
+    u64 joined_session_info_num;
 };
 
 // User information (account-id variant)
@@ -892,101 +892,101 @@ struct OrbisNpMatching2UserInfo {
 struct OrbisNpMatching2UserInfoA {
     OrbisNpMatching2UserInfoA* next;
     OrbisNpPeerAddressA user;
-    OrbisNpOnlineId userOnlineId;
-    OrbisNpMatching2BinAttr* userBinAttr;
-    u64 userBinAttrNum;
-    OrbisNpMatching2JoinedSessionInfo joinedSessionInfo;
-    u64 joinedSessionInfoNum;
+    OrbisNpOnlineId user_online_id;
+    OrbisNpMatching2BinAttr* user_bin_attr;
+    u64 user_bin_attr_num;
+    OrbisNpMatching2JoinedSessionInfo joined_session_info;
+    u64 joined_session_info_num;
 };
 
 // GetUserInfoList request
 struct OrbisNpMatching2GetUserInfoListRequest {
-    OrbisNpMatching2ServerId serverId;
+    OrbisNpMatching2ServerId server_id;
     u8 padding[6];
-    OrbisNpId* npId;
-    u64 npIdNum;
-    const OrbisNpMatching2AttributeId* attrId;
-    u64 attrIdNum;
+    OrbisNpId* np_id;
+    u64 np_id_num;
+    const OrbisNpMatching2AttributeId* attr_id;
+    u64 attr_id_num;
     s32 option;
 };
 
 // GetUserInfoList response
 struct OrbisNpMatching2GetUserInfoListResponse {
-    OrbisNpMatching2UserInfo* userInfo;
-    u64 userInfoNum;
+    OrbisNpMatching2UserInfo* user_info;
+    u64 user_info_num;
 };
 
 // GetUserInfoList response (account-id variant)
 struct OrbisNpMatching2GetUserInfoListResponseA {
-    OrbisNpMatching2UserInfoA* userInfo;
-    u64 userInfoNum;
+    OrbisNpMatching2UserInfoA* user_info;
+    u64 user_info_num;
 };
 
 // Room data internal update information
 struct OrbisNpMatching2RoomDataInternalUpdate {
-    OrbisNpMatching2RoomDataInternal* chgRoomDataInternal;
-    OrbisNpMatching2FlagAttr* chgFlagAttr;
-    OrbisNpMatching2FlagAttr* prevFlagAttr;
-    OrbisNpMatching2RoomPasswordSlotMask* chgRoomPasswordSlotMask;
-    OrbisNpMatching2RoomPasswordSlotMask* prevRoomPasswordSlotMask;
-    OrbisNpMatching2RoomGroup** chgRoomGroup;
-    u64 chgRoomGroupNum;
-    OrbisNpMatching2RoomBinAttrInternal** chgRoomBinAttrInternal;
-    u64 chgRoomBinAttrInternalNum;
+    OrbisNpMatching2RoomDataInternal* chg_room_data_internal;
+    OrbisNpMatching2FlagAttr* chg_flag_attr;
+    OrbisNpMatching2FlagAttr* prev_flag_attr;
+    OrbisNpMatching2RoomPasswordSlotMask* chg_room_password_slot_mask;
+    OrbisNpMatching2RoomPasswordSlotMask* prev_room_password_slot_mask;
+    OrbisNpMatching2RoomGroup** chg_room_group;
+    u64 chg_room_group_num;
+    OrbisNpMatching2RoomBinAttrInternal** chg_room_bin_attr_internal;
+    u64 chg_room_bin_attr_internal_num;
 };
 
 // Room member data internal update information
 struct OrbisNpMatching2RoomMemberDataInternalUpdate {
-    OrbisNpMatching2RoomMemberDataInternal* chgRoomMemberDataInternal;
-    OrbisNpMatching2FlagAttr* chgFlagAttr;
-    OrbisNpMatching2FlagAttr* prevFlagAttr;
-    OrbisNpMatching2TeamId* chgTeamId;
-    OrbisNpMatching2RoomMemberBinAttrInternal** chgRoomMemberBinAttrInternal;
-    u64 chgRoomMemberBinAttrInternalNum;
+    OrbisNpMatching2RoomMemberDataInternal* chg_room_member_data_internal;
+    OrbisNpMatching2FlagAttr* chg_flag_attr;
+    OrbisNpMatching2FlagAttr* prev_flag_attr;
+    OrbisNpMatching2TeamId* chg_team_id;
+    OrbisNpMatching2RoomMemberBinAttrInternal** chg_room_member_bin_attr_internal;
+    u64 chg_room_member_bin_attr_internal_num;
 };
 static_assert(sizeof(OrbisNpMatching2RoomMemberDataInternalUpdate) == 0x30);
 static_assert(offsetof(OrbisNpMatching2RoomMemberDataInternalUpdate,
-                       chgRoomMemberBinAttrInternal) == 0x20);
+                       chg_room_member_bin_attr_internal) == 0x20);
 static_assert(offsetof(OrbisNpMatching2RoomMemberDataInternalUpdate,
-                       chgRoomMemberBinAttrInternalNum) == 0x28);
+                       chg_room_member_bin_attr_internal_num) == 0x28);
 
 // Room member data internal update information (account-id variant)
 struct OrbisNpMatching2RoomMemberDataInternalUpdateA {
-    OrbisNpMatching2RoomMemberDataInternalA* chgRoomMemberDataInternal;
-    OrbisNpMatching2FlagAttr* chgFlagAttr;
-    OrbisNpMatching2FlagAttr* prevFlagAttr;
-    OrbisNpMatching2TeamId* chgTeamId;
-    OrbisNpMatching2RoomMemberBinAttrInternal** chgRoomMemberBinAttrInternal;
-    u64 chgRoomMemberBinAttrInternalNum;
+    OrbisNpMatching2RoomMemberDataInternalA* chg_room_member_data_internal;
+    OrbisNpMatching2FlagAttr* chg_flag_attr;
+    OrbisNpMatching2FlagAttr* prev_flag_attr;
+    OrbisNpMatching2TeamId* chg_team_id;
+    OrbisNpMatching2RoomMemberBinAttrInternal** chg_room_member_bin_attr_internal;
+    u64 chg_room_member_bin_attr_internal_num;
 };
 static_assert(sizeof(OrbisNpMatching2RoomMemberDataInternalUpdateA) == 0x30);
 static_assert(offsetof(OrbisNpMatching2RoomMemberDataInternalUpdateA,
-                       chgRoomMemberBinAttrInternal) == 0x20);
+                       chg_room_member_bin_attr_internal) == 0x20);
 static_assert(offsetof(OrbisNpMatching2RoomMemberDataInternalUpdateA,
-                       chgRoomMemberBinAttrInternalNum) == 0x28);
+                       chg_room_member_bin_attr_internal_num) == 0x28);
 
 // Room update information
 struct OrbisNpMatching2RoomUpdate {
-    OrbisNpMatching2EventCause eventCause;
+    OrbisNpMatching2EventCause event_cause;
     u8 padding[3];
-    s32 errorCode;
-    OrbisNpMatching2PresenceOptionData optData;
+    s32 error_code;
+    OrbisNpMatching2PresenceOptionData opt_data;
 };
 
 // Room member update information
 struct OrbisNpMatching2RoomMemberUpdate {
-    OrbisNpMatching2RoomMemberDataInternal* roomMemberDataInternal;
-    OrbisNpMatching2EventCause eventCause;
+    OrbisNpMatching2RoomMemberDataInternal* room_member_data_internal;
+    OrbisNpMatching2EventCause event_cause;
     u8 padding[7];
-    OrbisNpMatching2PresenceOptionData optData;
+    OrbisNpMatching2PresenceOptionData opt_data;
 };
 
 // Room member update information (account-id variant)
 struct OrbisNpMatching2RoomMemberUpdateA {
-    OrbisNpMatching2RoomMemberDataInternalA* roomMemberDataInternal;
-    OrbisNpMatching2EventCause eventCause;
+    OrbisNpMatching2RoomMemberDataInternalA* room_member_data_internal;
+    OrbisNpMatching2EventCause event_cause;
     u8 padding[7];
-    OrbisNpMatching2PresenceOptionData optData;
+    OrbisNpMatching2PresenceOptionData opt_data;
 };
 
 // Signaling connection information address
@@ -1000,9 +1000,9 @@ struct OrbisNpMatching2SignalingConnectionInfoAddr {
 union OrbisNpMatching2SignalingConnectionInfo {
     u32 rtt;
     u32 bandwidth;
-    OrbisNpId npId;
+    OrbisNpId np_id;
     OrbisNpMatching2SignalingConnectionInfoAddr address;
-    u32 packetLoss;
+    u32 packet_loss;
 };
 static_assert(sizeof(OrbisNpMatching2SignalingConnectionInfo) == 0x24);
 
@@ -1010,15 +1010,15 @@ static_assert(sizeof(OrbisNpMatching2SignalingConnectionInfo) == 0x24);
 union OrbisNpMatching2SignalingConnectionInfoA {
     u32 rtt;
     u32 bandwidth;
-    OrbisNpPeerAddressA peerAddrA;
+    OrbisNpPeerAddressA peer_addr_a;
     OrbisNpMatching2SignalingConnectionInfoAddr address;
-    u32 packetLoss;
+    u32 packet_loss;
 };
 static_assert(sizeof(OrbisNpMatching2SignalingConnectionInfoA) == 0x10);
 
 // SignalingGetPingInfo request
 struct OrbisNpMatching2SignalingGetPingInfoRequest {
-    OrbisNpMatching2RoomId roomId;
+    OrbisNpMatching2RoomId room_id;
     u8 pad[16];
 
     s32 Validate() {
@@ -1028,10 +1028,10 @@ struct OrbisNpMatching2SignalingGetPingInfoRequest {
 
 // SignalingGetPingInfo response
 struct OrbisNpMatching2SignalingGetPingInfoResponse {
-    OrbisNpMatching2ServerId serverId;
+    OrbisNpMatching2ServerId server_id;
     u8 pad[2];
-    OrbisNpMatching2WorldId worldId;
-    OrbisNpMatching2RoomId roomId;
+    OrbisNpMatching2WorldId world_id;
+    OrbisNpMatching2RoomId room_id;
     u32 rtt;
     u8 reserved[20];
 };
@@ -1041,80 +1041,81 @@ static_assert(sizeof(OrbisNpMatching2SignalingGetPingInfoResponse) == 0x28);
 struct OrbisNpMatching2SignalingParam {
     s32 type;
     s32 flag;
-    OrbisNpMatching2RoomMemberId mainMember;
+    OrbisNpMatching2RoomMemberId main_member;
     u8 pad[4];
 };
 
 s32 sceNpMatching2CreateContext(const OrbisNpMatching2CreateContextParameter* param,
-                                OrbisNpMatching2ContextId* ctxId);
+                                OrbisNpMatching2ContextId* ctx_id);
 s32 sceNpMatching2CreateContextA(const OrbisNpMatching2CreateContextParameterA* param,
-                                 OrbisNpMatching2ContextId* ctxId);
-s32 sceNpMatching2CreateJoinRoom(OrbisNpMatching2ContextId ctxId,
+                                 OrbisNpMatching2ContextId* ctx_id);
+s32 sceNpMatching2CreateJoinRoom(OrbisNpMatching2ContextId ctx_id,
                                  OrbisNpMatching2CreateJoinRoomRequest* request,
-                                 OrbisNpMatching2RequestOptParam* requestOpt,
-                                 OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2JoinRoom(OrbisNpMatching2ContextId ctxId,
+                                 OrbisNpMatching2RequestOptParam* request_opt,
+                                 OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2JoinRoom(OrbisNpMatching2ContextId ctx_id,
                            OrbisNpMatching2JoinRoomRequest* request,
-                           OrbisNpMatching2RequestOptParam* requestOpt,
-                           OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2CreateJoinRoomA(OrbisNpMatching2ContextId ctxId,
+                           OrbisNpMatching2RequestOptParam* request_opt,
+                           OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2CreateJoinRoomA(OrbisNpMatching2ContextId ctx_id,
                                   OrbisNpMatching2CreateJoinRoomRequestA* request,
-                                  OrbisNpMatching2RequestOptParam* requestOpt,
-                                  OrbisNpMatching2RequestId* requestId);
+                                  OrbisNpMatching2RequestOptParam* request_opt,
+                                  OrbisNpMatching2RequestId* request_id);
 s32 sceNpMatching2RegisterContextCallback(OrbisNpMatching2ContextCallback callback, void* userdata);
-s32 sceNpMatching2RegisterLobbyEventCallback(OrbisNpMatching2ContextId ctxId,
+s32 sceNpMatching2RegisterLobbyEventCallback(OrbisNpMatching2ContextId ctx_id,
                                              OrbisNpMatching2LobbyEventCallback callback,
                                              void* userdata);
-s32 sceNpMatching2RegisterRoomEventCallback(OrbisNpMatching2ContextId ctxId,
+s32 sceNpMatching2RegisterRoomEventCallback(OrbisNpMatching2ContextId ctx_id,
                                             OrbisNpMatching2RoomEventCallback callback,
                                             void* userdata);
-s32 sceNpMatching2RegisterSignalingCallback(OrbisNpMatching2ContextId ctxId,
+s32 sceNpMatching2RegisterSignalingCallback(OrbisNpMatching2ContextId ctx_id,
                                             OrbisNpMatching2SignalingCallback callback,
                                             void* userdata);
-s32 sceNpMatching2ContextStart(OrbisNpMatching2ContextId ctxId, u64 timeout);
-s32 sceNpMatching2ContextStop(OrbisNpMatching2ContextId ctxId);
+s32 sceNpMatching2ContextStart(OrbisNpMatching2ContextId ctx_id, u64 timeout);
+s32 sceNpMatching2ContextStop(OrbisNpMatching2ContextId ctx_id);
 s32 sceNpMatching2Initialize(OrbisNpMatching2InitializeParameter* param);
 s32 sceNpMatching2Terminate();
-s32 sceNpMatching2SetDefaultRequestOptParam(OrbisNpMatching2ContextId ctxId,
-                                            OrbisNpMatching2RequestOptParam* requestOpt);
-s32 sceNpMatching2GetServerId(OrbisNpMatching2ContextId ctxId, OrbisNpMatching2ServerId* serverId);
-s32 sceNpMatching2GetWorldInfoList(OrbisNpMatching2ContextId ctxId,
+s32 sceNpMatching2SetDefaultRequestOptParam(OrbisNpMatching2ContextId ctx_id,
+                                            OrbisNpMatching2RequestOptParam* request_opt);
+s32 sceNpMatching2GetServerId(OrbisNpMatching2ContextId ctx_id,
+                              OrbisNpMatching2ServerId* server_id);
+s32 sceNpMatching2GetWorldInfoList(OrbisNpMatching2ContextId ctx_id,
                                    OrbisNpMatching2GetWorldInfoListRequest* request,
-                                   OrbisNpMatching2RequestOptParam* requestOpt,
-                                   OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2LeaveRoom(OrbisNpMatching2ContextId ctxId,
+                                   OrbisNpMatching2RequestOptParam* request_opt,
+                                   OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2LeaveRoom(OrbisNpMatching2ContextId ctx_id,
                             OrbisNpMatching2LeaveRoomRequest* request,
-                            OrbisNpMatching2RequestOptParam* requestOpt,
-                            OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2SearchRoom(OrbisNpMatching2ContextId ctxId,
+                            OrbisNpMatching2RequestOptParam* request_opt,
+                            OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2SearchRoom(OrbisNpMatching2ContextId ctx_id,
                              OrbisNpMatching2SearchRoomRequest* request,
-                             OrbisNpMatching2RequestOptParam* requestOpt,
-                             OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2SetUserInfo(OrbisNpMatching2ContextId ctxId,
+                             OrbisNpMatching2RequestOptParam* request_opt,
+                             OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2SetUserInfo(OrbisNpMatching2ContextId ctx_id,
                               OrbisNpMatching2SetUserInfoRequest* request,
-                              OrbisNpMatching2RequestOptParam* requestOpt,
-                              OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2SendRoomMessage(OrbisNpMatching2ContextId ctxId, void* request,
-                                  OrbisNpMatching2RequestOptParam* requestOpt,
-                                  OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2SetRoomDataExternal(OrbisNpMatching2ContextId ctxId,
+                              OrbisNpMatching2RequestOptParam* request_opt,
+                              OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2SendRoomMessage(OrbisNpMatching2ContextId ctx_id, void* request,
+                                  OrbisNpMatching2RequestOptParam* request_opt,
+                                  OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2SetRoomDataExternal(OrbisNpMatching2ContextId ctx_id,
                                       OrbisNpMatching2SetRoomDataExternalRequest* request,
-                                      OrbisNpMatching2RequestOptParam* requestOpt,
-                                      OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2SetRoomDataInternal(OrbisNpMatching2ContextId ctxId,
+                                      OrbisNpMatching2RequestOptParam* request_opt,
+                                      OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2SetRoomDataInternal(OrbisNpMatching2ContextId ctx_id,
                                       OrbisNpMatching2SetRoomDataInternalRequest* request,
-                                      OrbisNpMatching2RequestOptParam* requestOpt,
-                                      OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2SignalingGetConnectionStatus(OrbisNpMatching2ContextId ctxId,
-                                               OrbisNpMatching2RoomId roomId,
-                                               OrbisNpMatching2RoomMemberId memberId,
-                                               s32* connStatus, void* peerAddr, u16* peerPort);
-s32 sceNpMatching2AbortContextStart(OrbisNpMatching2ContextId ctxId);
-s32 sceNpMatching2DestroyContext(OrbisNpMatching2ContextId ctxId);
-s32 sceNpMatching2RegisterLobbyMessageCallback(OrbisNpMatching2ContextId ctxId,
+                                      OrbisNpMatching2RequestOptParam* request_opt,
+                                      OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2SignalingGetConnectionStatus(OrbisNpMatching2ContextId ctx_id,
+                                               OrbisNpMatching2RoomId room_id,
+                                               OrbisNpMatching2RoomMemberId member_id,
+                                               s32* conn_status, void* peer_addr, u16* peer_port);
+s32 sceNpMatching2AbortContextStart(OrbisNpMatching2ContextId ctx_id);
+s32 sceNpMatching2DestroyContext(OrbisNpMatching2ContextId ctx_id);
+s32 sceNpMatching2RegisterLobbyMessageCallback(OrbisNpMatching2ContextId ctx_id,
                                                OrbisNpMatching2LobbyMessageCallback callback,
                                                void* userdata);
-s32 sceNpMatching2RegisterRoomMessageCallback(OrbisNpMatching2ContextId ctxId,
+s32 sceNpMatching2RegisterRoomMessageCallback(OrbisNpMatching2ContextId ctx_id,
                                               OrbisNpMatching2RoomMessageCallback callback,
                                               void* userdata);
 s32 sceNpMatching2GetMemoryInfo();
@@ -1125,63 +1126,63 @@ s32 sceNpMatching2GetSignalingOptParamLocal();
 s32 sceNpMatching2GetLobbyInfoList();
 s32 sceNpMatching2GetLobbyMemberDataInternal();
 s32 sceNpMatching2GetLobbyMemberDataInternalList();
-s32 sceNpMatching2GetRoomDataExternalList(OrbisNpMatching2ContextId ctxId,
+s32 sceNpMatching2GetRoomDataExternalList(OrbisNpMatching2ContextId ctx_id,
                                           OrbisNpMatching2GetRoomDataExternalListRequest* request,
-                                          OrbisNpMatching2RequestOptParam* requestOpt,
-                                          OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2GetRoomDataInternal(OrbisNpMatching2ContextId ctxId,
+                                          OrbisNpMatching2RequestOptParam* request_opt,
+                                          OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2GetRoomDataInternal(OrbisNpMatching2ContextId ctx_id,
                                       OrbisNpMatching2GetRoomDataInternalRequest* request,
-                                      OrbisNpMatching2RequestOptParam* requestOpt,
-                                      OrbisNpMatching2RequestId* requestId);
+                                      OrbisNpMatching2RequestOptParam* request_opt,
+                                      OrbisNpMatching2RequestId* request_id);
 s32 sceNpMatching2GetRoomMemberDataExternalList(
-    OrbisNpMatching2ContextId ctxId, OrbisNpMatching2GetRoomMemberDataExternalListRequest* request,
-    OrbisNpMatching2RequestOptParam* requestOpt, OrbisNpMatching2RequestId* requestId);
+    OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2GetRoomMemberDataExternalListRequest* request,
+    OrbisNpMatching2RequestOptParam* request_opt, OrbisNpMatching2RequestId* request_id);
 s32 sceNpMatching2GetRoomMemberDataInternal(
-    OrbisNpMatching2ContextId ctxId,
+    OrbisNpMatching2ContextId ctx_id,
     const OrbisNpMatching2GetRoomMemberDataInternalRequest* request,
-    const OrbisNpMatching2RequestOptParam* requestOpt, OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2GetUserInfoListA(OrbisNpMatching2ContextId ctxId,
+    const OrbisNpMatching2RequestOptParam* request_opt, OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2GetUserInfoListA(OrbisNpMatching2ContextId ctx_id,
                                    OrbisNpMatching2GetUserInfoListRequest* request,
-                                   OrbisNpMatching2RequestOptParam* requestOpt,
-                                   OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2GetUserInfoList(OrbisNpMatching2ContextId ctxId,
+                                   OrbisNpMatching2RequestOptParam* request_opt,
+                                   OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2GetUserInfoList(OrbisNpMatching2ContextId ctx_id,
                                   OrbisNpMatching2GetUserInfoListRequest* request,
-                                  OrbisNpMatching2RequestOptParam* requestOpt,
-                                  OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2GrantRoomOwner(OrbisNpMatching2ContextId ctxId, void* reqParam, void* optParam,
-                                 s32* reqId);
-s32 sceNpMatching2JoinLobby(OrbisNpMatching2ContextId ctxId, void* reqParam, void* optParam,
-                            s32* reqId);
-s32 sceNpMatching2JoinRoomA(OrbisNpMatching2ContextId ctxId,
+                                  OrbisNpMatching2RequestOptParam* request_opt,
+                                  OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2GrantRoomOwner(OrbisNpMatching2ContextId ctx_id, void* req_param, void* opt_param,
+                                 s32* req_id);
+s32 sceNpMatching2JoinLobby(OrbisNpMatching2ContextId ctx_id, void* req_param, void* opt_param,
+                            s32* req_id);
+s32 sceNpMatching2JoinRoomA(OrbisNpMatching2ContextId ctx_id,
                             OrbisNpMatching2JoinRoomRequestA* request,
-                            OrbisNpMatching2RequestOptParam* requestOpt,
-                            OrbisNpMatching2RequestId* requestId);
-s32 sceNpMatching2KickoutRoomMember(OrbisNpMatching2ContextId ctxId,
+                            OrbisNpMatching2RequestOptParam* request_opt,
+                            OrbisNpMatching2RequestId* request_id);
+s32 sceNpMatching2KickoutRoomMember(OrbisNpMatching2ContextId ctx_id,
                                     OrbisNpMatching2KickoutRoomMemberRequest* request,
-                                    OrbisNpMatching2RequestOptParam* requestOpt,
-                                    OrbisNpMatching2RequestId* requestId);
+                                    OrbisNpMatching2RequestOptParam* request_opt,
+                                    OrbisNpMatching2RequestId* request_id);
 s32 sceNpMatching2LeaveLobby();
 s32 sceNpMatching2SendLobbyChatMessage();
-s32 sceNpMatching2SendRoomChatMessage(OrbisNpMatching2ContextId ctxId, void* reqParam,
-                                      void* optParam, s32* reqId);
+s32 sceNpMatching2SendRoomChatMessage(OrbisNpMatching2ContextId ctx_id, void* req_param,
+                                      void* opt_param, s32* req_id);
 s32 sceNpMatching2SetLobbyMemberDataInternal();
 s32 sceNpMatching2SetRoomMemberDataInternal(
-    OrbisNpMatching2ContextId ctxId,
+    OrbisNpMatching2ContextId ctx_id,
     const OrbisNpMatching2SetRoomMemberDataInternalRequest* request,
-    const OrbisNpMatching2RequestOptParam* requestOpt, OrbisNpMatching2RequestId* requestId);
+    const OrbisNpMatching2RequestOptParam* request_opt, OrbisNpMatching2RequestId* request_id);
 s32 sceNpMatching2SetSignalingOptParam();
 s32 sceNpMatching2SignalingGetPeerNetInfo();
-s32 sceNpMatching2SignalingGetPingInfo(OrbisNpMatching2ContextId ctxId, const void* reqParam,
-                                       const void* optParam, s32* reqId);
+s32 sceNpMatching2SignalingGetPingInfo(OrbisNpMatching2ContextId ctx_id, const void* req_param,
+                                       const void* opt_param, s32* req_id);
 s32 sceNpMatching2SignalingCancelPeerNetInfo();
-s32 sceNpMatching2SignalingGetConnectionInfoA(OrbisNpMatching2ContextId ctxId,
-                                              OrbisNpMatching2RoomId roomId,
-                                              OrbisNpMatching2RoomMemberId memberId, u32 infoType,
-                                              void* connInfo);
-s32 sceNpMatching2SignalingGetConnectionInfo(OrbisNpMatching2ContextId ctxId,
-                                             OrbisNpMatching2RoomId roomId,
-                                             OrbisNpMatching2RoomMemberId memberId, u32 infoType,
-                                             void* connInfo);
+s32 sceNpMatching2SignalingGetConnectionInfoA(OrbisNpMatching2ContextId ctx_id,
+                                              OrbisNpMatching2RoomId room_id,
+                                              OrbisNpMatching2RoomMemberId member_id, u32 info_type,
+                                              void* conn_info);
+s32 sceNpMatching2SignalingGetConnectionInfo(OrbisNpMatching2ContextId ctx_id,
+                                             OrbisNpMatching2RoomId room_id,
+                                             OrbisNpMatching2RoomMemberId member_id, u32 info_type,
+                                             void* conn_info);
 s32 sceNpMatching2SignalingGetLocalNetInfo(void* info);
 s32 sceNpMatching2SignalingGetPeerNetInfoResult();
 

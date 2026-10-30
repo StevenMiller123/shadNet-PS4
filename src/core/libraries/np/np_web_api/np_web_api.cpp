@@ -139,137 +139,137 @@ namespace Libraries::Np::NpWebApi {
 static bool g_is_initialized = false;
 static s32 g_active_library_contexts = 0;
 
-s32 sceNpWebApiCreateContext(s32 libCtxId, OrbisNpOnlineId* onlineId) {
-    if (libCtxId >= 0x8000) {
+s32 sceNpWebApiCreateContext(s32 lib_ctx_id, OrbisNpOnlineId* online_id) {
+    if (lib_ctx_id >= 0x8000) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_LIB_CONTEXT_ID;
     }
-    if (onlineId == nullptr) {
+    if (online_id == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    return createUserContextWithOnlineId(libCtxId, onlineId);
+    return createUserContextWithOnlineId(lib_ctx_id, online_id);
 }
 
-s32 sceNpWebApiCreatePushEventFilter(s32 libCtxId,
-                                     const OrbisNpWebApiPushEventFilterParameter* pFilterParam,
-                                     u64 filterParamNum) {
-    if (pFilterParam == nullptr || filterParamNum == 0) {
+s32 sceNpWebApiCreatePushEventFilter(s32 lib_ctx_id,
+                                     const OrbisNpWebApiPushEventFilterParameter* filter_param,
+                                     u64 filter_param_num) {
+    if (filter_param == nullptr || filter_param_num == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_WARNING(Lib_NpWebApi, "called, libCtxId = {:#x}", libCtxId);
-    return createPushEventFilter(libCtxId, pFilterParam, filterParamNum);
+    LOG_WARNING(Lib_NpWebApi, "called, lib_ctx_id = {:#x}", lib_ctx_id);
+    return createPushEventFilter(lib_ctx_id, filter_param, filter_param_num);
 }
 
 s32 sceNpWebApiCreateServicePushEventFilter(
-    s32 libCtxId, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const OrbisNpWebApiServicePushEventFilterParameter* pFilterParam, u64 filterParamNum) {
-    if (pNpServiceName == nullptr || pFilterParam == nullptr || filterParamNum == 0) {
+    s32 lib_ctx_id, s32 handle_id, const char* np_service_name, u32 np_service_label,
+    const OrbisNpWebApiServicePushEventFilterParameter* filter_param, u64 filter_param_num) {
+    if (np_service_name == nullptr || filter_param == nullptr || filter_param_num == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    if (getCompiledSdkVersion() >= Common::ElfInfo::FW_200 && npServiceLabel == -1) {
+    if (getCompiledSdkVersion() >= Common::ElfInfo::FW_200 && np_service_label == -1) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
     LOG_WARNING(Lib_NpWebApi,
-                "called, libCtxId = {:#x}, handleId = {:#x}, pNpServiceName = '{}', "
-                "npServiceLabel = {:#x}",
-                libCtxId, handleId, pNpServiceName, npServiceLabel);
-    return createServicePushEventFilter(libCtxId, handleId, pNpServiceName, npServiceLabel,
-                                        pFilterParam, filterParamNum);
+                "called, lib_ctx_id = {:#x}, handle_id = {:#x}, np_service_name = '{}', "
+                "np_service_label = {:#x}",
+                lib_ctx_id, handle_id, np_service_name, np_service_label);
+    return createServicePushEventFilter(lib_ctx_id, handle_id, np_service_name, np_service_label,
+                                        filter_param, filter_param_num);
 }
 
-s32 sceNpWebApiDeletePushEventFilter(s32 libCtxId, s32 filterId) {
-    LOG_INFO(Lib_NpWebApi, "called, libCtxId = {:#x}, filterId = {:#x}", libCtxId, filterId);
-    return deletePushEventFilter(libCtxId, filterId);
+s32 sceNpWebApiDeletePushEventFilter(s32 lib_ctx_id, s32 filter_id) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_ctx_id = {:#x}, filter_id = {:#x}", lib_ctx_id, filter_id);
+    return deletePushEventFilter(lib_ctx_id, filter_id);
 }
 
-s32 sceNpWebApiDeleteServicePushEventFilter(s32 libCtxId, s32 filterId) {
-    LOG_INFO(Lib_NpWebApi, "called, libCtxId = {:#x}, filterId = {:#x}", libCtxId, filterId);
-    return deleteServicePushEventFilter(libCtxId, filterId);
+s32 sceNpWebApiDeleteServicePushEventFilter(s32 lib_ctx_id, s32 filter_id) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_ctx_id = {:#x}, filter_id = {:#x}", lib_ctx_id, filter_id);
+    return deleteServicePushEventFilter(lib_ctx_id, filter_id);
 }
 
-s32 sceNpWebApiRegisterExtdPushEventCallback(s32 titleUserCtxId, s32 filterId,
-                                             OrbisNpWebApiExtdPushEventCallback cbFunc,
-                                             void* pUserArg) {
-    if (cbFunc == nullptr) {
+s32 sceNpWebApiRegisterExtdPushEventCallback(s32 title_user_ctx_id, s32 filter_id,
+                                             OrbisNpWebApiExtdPushEventCallback cb_func,
+                                             void* user_arg) {
+    if (cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, filterId = {:#x}, cbFunc = {}",
-             titleUserCtxId, filterId, reinterpret_cast<void*>(cbFunc));
-    return registerExtdPushEventCallback(titleUserCtxId, filterId, cbFunc, nullptr, pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, filter_id = {:#x}, cb_func = {}",
+             title_user_ctx_id, filter_id, reinterpret_cast<void*>(cb_func));
+    return registerExtdPushEventCallback(title_user_ctx_id, filter_id, cb_func, nullptr, user_arg);
 }
 
-s32 sceNpWebApiRegisterNotificationCallback(s32 titleUserCtxId,
-                                            OrbisNpWebApiNotificationCallback cbFunc,
-                                            void* pUserArg) {
-    if (cbFunc == nullptr) {
+s32 sceNpWebApiRegisterNotificationCallback(s32 title_user_ctx_id,
+                                            OrbisNpWebApiNotificationCallback cb_func,
+                                            void* user_arg) {
+    if (cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, cbFunc = {}", titleUserCtxId,
-             reinterpret_cast<void*>(cbFunc));
-    return registerNotificationCallback(titleUserCtxId, cbFunc, pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, cb_func = {}", title_user_ctx_id,
+             reinterpret_cast<void*>(cb_func));
+    return registerNotificationCallback(title_user_ctx_id, cb_func, user_arg);
 }
 
-s32 sceNpWebApiRegisterPushEventCallback(s32 titleUserCtxId, s32 filterId,
-                                         OrbisNpWebApiPushEventCallback cbFunc, void* pUserArg) {
-    if (getCompiledSdkVersion() >= Common::ElfInfo::FW_100 && cbFunc == nullptr) {
+s32 sceNpWebApiRegisterPushEventCallback(s32 title_user_ctx_id, s32 filter_id,
+                                         OrbisNpWebApiPushEventCallback cb_func, void* user_arg) {
+    if (getCompiledSdkVersion() >= Common::ElfInfo::FW_100 && cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, filterId = {:#x}, cbFunc = {}",
-             titleUserCtxId, filterId, reinterpret_cast<void*>(cbFunc));
-    return registerPushEventCallback(titleUserCtxId, filterId, cbFunc, pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, filter_id = {:#x}, cb_func = {}",
+             title_user_ctx_id, filter_id, reinterpret_cast<void*>(cb_func));
+    return registerPushEventCallback(title_user_ctx_id, filter_id, cb_func, user_arg);
 }
 
-s32 sceNpWebApiRegisterServicePushEventCallback(s32 titleUserCtxId, s32 filterId,
-                                                OrbisNpWebApiServicePushEventCallback cbFunc,
-                                                void* pUserArg) {
-    if (getCompiledSdkVersion() >= Common::ElfInfo::FW_100 && cbFunc == nullptr) {
+s32 sceNpWebApiRegisterServicePushEventCallback(s32 title_user_ctx_id, s32 filter_id,
+                                                OrbisNpWebApiServicePushEventCallback cb_func,
+                                                void* user_arg) {
+    if (getCompiledSdkVersion() >= Common::ElfInfo::FW_100 && cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, filterId = {:#x}, cbFunc = {}",
-             titleUserCtxId, filterId, reinterpret_cast<void*>(cbFunc));
-    return registerServicePushEventCallback(titleUserCtxId, filterId, cbFunc, nullptr, nullptr,
-                                            pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, filter_id = {:#x}, cb_func = {}",
+             title_user_ctx_id, filter_id, reinterpret_cast<void*>(cb_func));
+    return registerServicePushEventCallback(title_user_ctx_id, filter_id, cb_func, nullptr, nullptr,
+                                            user_arg);
 }
 
-s32 sceNpWebApiUnregisterNotificationCallback(s32 titleUserCtxId) {
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}", titleUserCtxId);
-    return unregisterNotificationCallback(titleUserCtxId);
+s32 sceNpWebApiUnregisterNotificationCallback(s32 title_user_ctx_id) {
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}", title_user_ctx_id);
+    return unregisterNotificationCallback(title_user_ctx_id);
 }
 
-s32 sceNpWebApiUnregisterPushEventCallback(s32 titleUserCtxId, s32 callbackId) {
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, callbackId = {:#x}", titleUserCtxId,
-             callbackId);
-    return unregisterPushEventCallback(titleUserCtxId, callbackId);
+s32 sceNpWebApiUnregisterPushEventCallback(s32 title_user_ctx_id, s32 callback_id) {
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, callback_id = {:#x}",
+             title_user_ctx_id, callback_id);
+    return unregisterPushEventCallback(title_user_ctx_id, callback_id);
 }
 
-s32 sceNpWebApiUnregisterServicePushEventCallback(s32 titleUserCtxId, s32 callbackId) {
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, callbackId = {:#x}", titleUserCtxId,
-             callbackId);
-    return unregisterServicePushEventCallback(titleUserCtxId, callbackId);
+s32 sceNpWebApiUnregisterServicePushEventCallback(s32 title_user_ctx_id, s32 callback_id) {
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, callback_id = {:#x}",
+             title_user_ctx_id, callback_id);
+    return unregisterServicePushEventCallback(title_user_ctx_id, callback_id);
 }
 
-s32 sceNpWebApiAbortHandle(s32 libCtxId, s32 handleId) {
-    LOG_INFO(Lib_NpWebApi, "called, libCtxId = {:#x}, handleId = {:#x}", libCtxId, handleId);
-    return abortHandle(libCtxId, handleId);
+s32 sceNpWebApiAbortHandle(s32 lib_ctx_id, s32 handle_id) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_ctx_id = {:#x}, handle_id = {:#x}", lib_ctx_id, handle_id);
+    return abortHandle(lib_ctx_id, handle_id);
 }
 
-s32 sceNpWebApiAbortRequest(s64 requestId) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}", requestId);
-    return abortRequest(requestId);
+s32 sceNpWebApiAbortRequest(s64 request_id) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}", request_id);
+    return abortRequest(request_id);
 }
 
-s32 sceNpWebApiAddHttpRequestHeader(s64 requestId, const char* pFieldName, const char* pValue) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pFieldName = '{}', pValue = '{}'", requestId,
-             (pFieldName ? pFieldName : "null"), (pValue ? pValue : "null"));
-    if (pFieldName == nullptr || pValue == nullptr)
+s32 sceNpWebApiAddHttpRequestHeader(s64 request_id, const char* field_name, const char* value) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, field_name = '{}', value = '{}'",
+             request_id, (field_name ? field_name : "null"), (value ? value : "null"));
+    if (field_name == nullptr || value == nullptr)
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
-    return addHttpRequestHeaderInternal(requestId, pFieldName, pValue);
+    return addHttpRequestHeaderInternal(request_id, field_name, value);
 }
 
-s32 sceNpWebApiAddMultipartPart(s64 requestId, const OrbisNpWebApiMultipartPartParameter* pParam,
-                                s32* pIndex) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, headerNum = {}, contentLength = {}",
-             requestId, (pParam ? pParam->headerNum : 0), (pParam ? pParam->contentLength : 0));
-    return addMultipartPart(requestId, pParam, pIndex);
+s32 sceNpWebApiAddMultipartPart(s64 request_id, const OrbisNpWebApiMultipartPartParameter* param,
+                                s32* index) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, header_num = {}, content_length = {}",
+             request_id, (param ? param->header_num : 0), (param ? param->content_length : 0));
+    return addMultipartPart(request_id, param, index);
 }
 
 void sceNpWebApiCheckTimeout() {
@@ -279,56 +279,51 @@ void sceNpWebApiCheckTimeout() {
     return checkTimeout();
 }
 
-s32 sceNpWebApiClearAllUnusedConnection(s32 userCtxId, bool bRemainKeepAliveConnection) {
-    LOG_ERROR(Lib_NpWebApi,
-              "called (STUBBED), userCtxId = {:#x}, "
-              "bRemainKeepAliveConnection = {}",
-              userCtxId, bRemainKeepAliveConnection);
+s32 sceNpWebApiClearAllUnusedConnection(s32 user_ctx_id, bool remain_keep_alive_connection) {
+    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called");
     return ORBIS_OK;
 }
 
-s32 sceNpWebApiClearUnusedConnection(s32 userCtxId, const char* pApiGroup,
-                                     bool bRemainKeepAliveConnection) {
-    LOG_ERROR(Lib_NpWebApi,
-              "called (STUBBED), userCtxId = {:#x}, "
-              "pApiGroup = '{}', bRemainKeepAliveConnection = {}",
-              userCtxId, (pApiGroup ? pApiGroup : "null"), bRemainKeepAliveConnection);
+s32 sceNpWebApiClearUnusedConnection(s32 user_ctx_id, const char* api_group,
+                                     bool remain_keep_alive_connection) {
+    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called");
     return ORBIS_OK;
 }
 
-s32 sceNpWebApiCreateContextA(s32 libCtxId, s32 userId) {
-    if (libCtxId >= 0x8000) {
+s32 sceNpWebApiCreateContextA(s32 lib_ctx_id, s32 user_id) {
+    if (lib_ctx_id >= 0x8000) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_LIB_CONTEXT_ID;
     }
-    if (userId == ORBIS_USER_SERVICE_USER_ID_INVALID) {
+    if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    return createUserContext(libCtxId, userId);
+    return createUserContext(lib_ctx_id, user_id);
 }
 
 s32 sceNpWebApiCreateExtdPushEventFilter(
-    s32 libCtxId, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const OrbisNpWebApiExtdPushEventFilterParameter* pFilterParam, u64 filterParamNum) {
-    if ((pNpServiceName != nullptr && npServiceLabel == -1) || pFilterParam == nullptr ||
-        filterParamNum == 0) {
+    s32 lib_ctx_id, s32 handle_id, const char* np_service_name, u32 np_service_label,
+    const OrbisNpWebApiExtdPushEventFilterParameter* filter_param, u64 filter_param_num) {
+    if ((np_service_name != nullptr && np_service_label == -1) || filter_param == nullptr ||
+        filter_param_num == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
-    LOG_INFO(
-        Lib_NpWebApi,
-        "called, libCtxId = {:#x}, handleId = {:#x}, pNpServiceName = '{}', npServiceLabel = {:#x}",
-        libCtxId, handleId, (pNpServiceName ? pNpServiceName : "null"), npServiceLabel);
-    return createExtendedPushEventFilter(libCtxId, handleId, pNpServiceName, npServiceLabel,
-                                         pFilterParam, filterParamNum, false);
+    LOG_INFO(Lib_NpWebApi,
+             "called, lib_ctx_id = {:#x}, handle_id = {:#x}, np_service_name = '{}', "
+             "np_service_label = {:#x}",
+             lib_ctx_id, handle_id, (np_service_name ? np_service_name : "null"), np_service_label);
+    return createExtendedPushEventFilter(lib_ctx_id, handle_id, np_service_name, np_service_label,
+                                         filter_param, filter_param_num, false);
 }
 
-s32 sceNpWebApiCreateHandle(s32 libCtxId) {
-    return createHandle(libCtxId);
+s32 sceNpWebApiCreateHandle(s32 lib_ctx_id) {
+    return createHandle(lib_ctx_id);
 }
 
-s32 sceNpWebApiCreateMultipartRequest(s32 titleUserCtxId, const char* pApiGroup, const char* pPath,
-                                      OrbisNpWebApiHttpMethod method, s64* pRequestId) {
-    if (pApiGroup == nullptr || pPath == nullptr) {
+s32 sceNpWebApiCreateMultipartRequest(s32 title_user_ctx_id, const char* api_group,
+                                      const char* path, OrbisNpWebApiHttpMethod method,
+                                      s64* request_id) {
+    if (api_group == nullptr || path == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
@@ -338,23 +333,23 @@ s32 sceNpWebApiCreateMultipartRequest(s32 titleUserCtxId, const char* pApiGroup,
     }
 
     LOG_INFO(Lib_NpWebApi,
-             "called, titleUserCtxId = {:#x}, pApiGroup = '{}', pPath = '{}', method = {}",
-             titleUserCtxId, pApiGroup, pPath, magic_enum::enum_name(method));
+             "called, title_user_ctx_id = {:#x}, api_group = '{}', path = '{}', method = {}",
+             title_user_ctx_id, api_group, path, magic_enum::enum_name(method));
 
-    return createRequest(titleUserCtxId, pApiGroup, pPath, method, nullptr, nullptr, pRequestId,
+    return createRequest(title_user_ctx_id, api_group, path, method, nullptr, nullptr, request_id,
                          true);
 }
 
-s32 sceNpWebApiCreateRequest(s32 titleUserCtxId, const char* pApiGroup, const char* pPath,
+s32 sceNpWebApiCreateRequest(s32 title_user_ctx_id, const char* api_group, const char* path,
                              OrbisNpWebApiHttpMethod method,
-                             const OrbisNpWebApiContentParameter* pContentParameter,
-                             s64* pRequestId) {
-    if (pApiGroup == nullptr || pPath == nullptr) {
+                             const OrbisNpWebApiContentParameter* content_parameter,
+                             s64* request_id) {
+    if (api_group == nullptr || path == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
-    if (pContentParameter != nullptr && pContentParameter->contentLength != 0 &&
-        pContentParameter->pContentType == nullptr) {
+    if (content_parameter != nullptr && content_parameter->content_length != 0 &&
+        content_parameter->content_type == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_CONTENT_PARAMETER;
     }
 
@@ -364,87 +359,83 @@ s32 sceNpWebApiCreateRequest(s32 titleUserCtxId, const char* pApiGroup, const ch
     }
 
     LOG_INFO(Lib_NpWebApi,
-             "called, titleUserCtxId = {:#x}, pApiGroup = '{}', pPath = '{}', method = {}",
-             titleUserCtxId, pApiGroup, pPath, magic_enum::enum_name(method));
+             "called, title_user_ctx_id = {:#x}, api_group = '{}', path = '{}', method = {}",
+             title_user_ctx_id, api_group, path, magic_enum::enum_name(method));
 
-    return createRequest(titleUserCtxId, pApiGroup, pPath, method, pContentParameter, nullptr,
-                         pRequestId, false);
+    return createRequest(title_user_ctx_id, api_group, path, method, content_parameter, nullptr,
+                         request_id, false);
 }
 
-s32 sceNpWebApiDeleteContext(s32 titleUserCtxId) {
-    LOG_INFO(Lib_NpWebApi, "called titleUserCtxId = {:#x}", titleUserCtxId);
-    return deleteUserContext(titleUserCtxId);
+s32 sceNpWebApiDeleteContext(s32 title_user_ctx_id) {
+    LOG_INFO(Lib_NpWebApi, "called title_user_ctx_id = {:#x}", title_user_ctx_id);
+    return deleteUserContext(title_user_ctx_id);
 }
 
-s32 sceNpWebApiDeleteExtdPushEventFilter(s32 libCtxId, s32 filterId) {
-    LOG_INFO(Lib_NpWebApi, "called libCtxId = {:#x}, filterId = {:#x}", libCtxId, filterId);
-    return deleteExtendedPushEventFilter(libCtxId, filterId);
+s32 sceNpWebApiDeleteExtdPushEventFilter(s32 lib_ctx_id, s32 filter_id) {
+    LOG_INFO(Lib_NpWebApi, "called lib_ctx_id = {:#x}, filter_id = {:#x}", lib_ctx_id, filter_id);
+    return deleteExtendedPushEventFilter(lib_ctx_id, filter_id);
 }
 
-s32 sceNpWebApiDeleteHandle(s32 libCtxId, s32 handleId) {
-    LOG_INFO(Lib_NpWebApi, "called libCtxId = {:#x}, handleId = {:#x}", libCtxId, handleId);
-    return deleteHandle(libCtxId, handleId);
+s32 sceNpWebApiDeleteHandle(s32 lib_ctx_id, s32 handle_id) {
+    LOG_INFO(Lib_NpWebApi, "called lib_ctx_id = {:#x}, handle_id = {:#x}", lib_ctx_id, handle_id);
+    return deleteHandle(lib_ctx_id, handle_id);
 }
 
-s32 sceNpWebApiDeleteRequest(s64 requestId) {
-    LOG_INFO(Lib_NpWebApi, "called requestId = {:#x}", requestId);
-    return deleteRequest(requestId);
+s32 sceNpWebApiDeleteRequest(s64 request_id) {
+    LOG_INFO(Lib_NpWebApi, "called request_id = {:#x}", request_id);
+    return deleteRequest(request_id);
 }
 
-s32 sceNpWebApiGetConnectionStats(s32 userCtxId, const char* pApiGroup,
-                                  OrbisNpWebApiConnectionStats* pStats) {
-    LOG_ERROR(Lib_NpWebApi,
-              "called (STUBBED), userCtxId = {:#x}, "
-              "pApiGroup = '{}', pStats = {}",
-              userCtxId, (pApiGroup ? pApiGroup : "null"), fmt::ptr(pStats));
+s32 sceNpWebApiGetConnectionStats(s32 user_ctx_id, const char* api_group,
+                                  OrbisNpWebApiConnectionStats* stats) {
+    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpWebApiGetErrorCode() {
     const s32 code = getLastWebApiError();
-    LOG_INFO(Lib_NpWebApi, "called, lastErrorCode = {:#x}", code);
+    LOG_INFO(Lib_NpWebApi, "called, last_error_code = {:#x}", code);
     return code;
 }
 
-s32 sceNpWebApiGetHttpResponseHeaderValue(s64 requestId, const char* pFieldName, char* pValue,
-                                          u64 valueSize) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pFieldName = '{}', valueSize = {}",
-             requestId, (pFieldName ? pFieldName : "null"), valueSize);
-    if (pFieldName == nullptr || pValue == nullptr || valueSize == 0) {
+s32 sceNpWebApiGetHttpResponseHeaderValue(s64 request_id, const char* field_name, char* value,
+                                          u64 value_size) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, field_name = '{}', value_size = {}",
+             request_id, (field_name ? field_name : "null"), value_size);
+    if (field_name == nullptr || value == nullptr || value_size == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    return getHttpResponseHeaderValueInternal(requestId, pFieldName, pValue, valueSize, nullptr);
+    return getHttpResponseHeaderValueInternal(request_id, field_name, value, value_size, nullptr);
 }
 
-s32 sceNpWebApiGetHttpResponseHeaderValueLength(s64 requestId, const char* pFieldName,
-                                                u64* pValueLength) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pFieldName = '{}'", requestId,
-             (pFieldName ? pFieldName : "null"));
-    if (pFieldName == nullptr || pValueLength == nullptr) {
+s32 sceNpWebApiGetHttpResponseHeaderValueLength(s64 request_id, const char* field_name,
+                                                u64* value_length) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, field_name = '{}'", request_id,
+             (field_name ? field_name : "null"));
+    if (field_name == nullptr || value_length == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    return getHttpResponseHeaderValueInternal(requestId, pFieldName, nullptr, 0, pValueLength);
+    return getHttpResponseHeaderValueInternal(request_id, field_name, nullptr, 0, value_length);
 }
 
-s32 sceNpWebApiGetHttpStatusCode(s64 requestId, s32* out_status_code) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}", requestId);
+s32 sceNpWebApiGetHttpStatusCode(s64 request_id, s32* out_status_code) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}", request_id);
     // On newer SDKs, NULL output pointer is invalid
     if (getCompiledSdkVersion() > Common::ElfInfo::FW_100 && out_status_code == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    s32 returncode = getHttpStatusCodeInternal(requestId, out_status_code);
+    s32 returncode = getHttpStatusCodeInternal(request_id, out_status_code);
     return returncode;
 }
 
-s32 sceNpWebApiGetMemoryPoolStats(s32 libCtxId, OrbisNpWebApiMemoryPoolStats* pCurrentStat) {
-    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called, libCtxId = {:#x}, pCurrentStat = {}", libCtxId,
-              fmt::ptr(pCurrentStat));
+s32 sceNpWebApiGetMemoryPoolStats(s32 lib_ctx_id, OrbisNpWebApiMemoryPoolStats* current_stat) {
+    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called");
     return ORBIS_OK;
 }
 
-s32 sceNpWebApiInitialize(s32 libHttpCtxId, u64 poolSize) {
-    LOG_INFO(Lib_NpWebApi, "called, libHttpCtxId = {:#x}, poolSize = {:#x} bytes", libHttpCtxId,
-             poolSize);
+s32 sceNpWebApiInitialize(s32 lib_http_ctx_id, u64 pool_size) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_http_ctx_id = {:#x}, pool_size = {:#x} bytes",
+             lib_http_ctx_id, pool_size);
     if (!g_is_initialized) {
         g_is_initialized = true;
         s32 result = initializeLibrary();
@@ -453,16 +444,16 @@ s32 sceNpWebApiInitialize(s32 libHttpCtxId, u64 poolSize) {
         }
     }
 
-    s32 result = createLibraryContext(libHttpCtxId, poolSize, nullptr, 0);
+    s32 result = createLibraryContext(lib_http_ctx_id, pool_size, nullptr, 0);
     if (result >= ORBIS_OK) {
         g_active_library_contexts++;
     }
     return result;
 }
 
-s32 sceNpWebApiInitializeForPresence(s32 libHttpCtxId, u64 poolSize) {
-    LOG_INFO(Lib_NpWebApi, "called, libHttpCtxId = {:#x}, poolSize = {:#x} bytes", libHttpCtxId,
-             poolSize);
+s32 sceNpWebApiInitializeForPresence(s32 lib_http_ctx_id, u64 pool_size) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_http_ctx_id = {:#x}, pool_size = {:#x} bytes",
+             lib_http_ctx_id, pool_size);
     if (!g_is_initialized) {
         g_is_initialized = true;
         s32 result = initializeLibrary();
@@ -471,7 +462,7 @@ s32 sceNpWebApiInitializeForPresence(s32 libHttpCtxId, u64 poolSize) {
         }
     }
 
-    s32 result = createLibraryContext(libHttpCtxId, poolSize, nullptr, 3);
+    s32 result = createLibraryContext(lib_http_ctx_id, pool_size, nullptr, 3);
     if (result >= ORBIS_OK) {
         g_active_library_contexts++;
     }
@@ -479,58 +470,59 @@ s32 sceNpWebApiInitializeForPresence(s32 libHttpCtxId, u64 poolSize) {
 }
 
 s32 sceNpWebApiIntCreateCtxIndExtdPushEventFilter(
-    s32 libCtxId, s32 handleId, const OrbisNpWebApiExtdPushEventFilterParameter* pFilterParam,
-    u64 filterParamNum) {
-    if (pFilterParam == nullptr || filterParamNum == 0) {
+    s32 lib_ctx_id, s32 handle_id, const OrbisNpWebApiExtdPushEventFilterParameter* filter_param,
+    u64 filter_param_num) {
+    if (filter_param == nullptr || filter_param_num == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
-    LOG_INFO(Lib_NpWebApi, "called, libCtxId = {:#x}, handleId = {:#x}", libCtxId, handleId);
-    return createExtendedPushEventFilter(libCtxId, handleId, nullptr, -1, pFilterParam,
-                                         filterParamNum, true);
+    LOG_INFO(Lib_NpWebApi, "called, lib_ctx_id = {:#x}, handle_id = {:#x}", lib_ctx_id, handle_id);
+    return createExtendedPushEventFilter(lib_ctx_id, handle_id, nullptr, -1, filter_param,
+                                         filter_param_num, true);
 }
 
-s32 sceNpWebApiIntCreateRequest(s32 titleUserCtxId, const char* pApiGroup, const char* pPath,
+s32 sceNpWebApiIntCreateRequest(s32 title_user_ctx_id, const char* api_group, const char* path,
                                 OrbisNpWebApiHttpMethod method,
-                                const OrbisNpWebApiContentParameter* pContentParameter,
-                                const OrbisNpWebApiIntCreateRequestExtraArgs* pInternalArgs,
-                                s64* pRequestId) {
+                                const OrbisNpWebApiContentParameter* content_parameter,
+                                const OrbisNpWebApiIntCreateRequestExtraArgs* internal_args,
+                                s64* request_id) {
     LOG_INFO(Lib_NpWebApi, "called");
-    if (pApiGroup == nullptr || pPath == nullptr ||
+    if (api_group == nullptr || path == nullptr ||
         method > OrbisNpWebApiHttpMethod::ORBIS_NP_WEBAPI_HTTP_METHOD_PATCH) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
-    if (pContentParameter != nullptr && pContentParameter->contentLength != 0 &&
-        pContentParameter->pContentType == nullptr) {
+    if (content_parameter != nullptr && content_parameter->content_length != 0 &&
+        content_parameter->content_type == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_CONTENT_PARAMETER;
     }
 
     LOG_INFO(Lib_NpWebApi,
-             "called, titleUserCtxId = {:#x}, pApiGroup = '{}', pPath = '{}', method = {}",
-             titleUserCtxId, pApiGroup, pPath, magic_enum::enum_name(method));
+             "called, title_user_ctx_id = {:#x}, api_group = '{}', path = '{}', method = {}",
+             title_user_ctx_id, api_group, path, magic_enum::enum_name(method));
 
-    return createRequest(titleUserCtxId, pApiGroup, pPath, method, pContentParameter, pInternalArgs,
-                         pRequestId, false);
+    return createRequest(title_user_ctx_id, api_group, path, method, content_parameter,
+                         internal_args, request_id, false);
 }
 
 s32 sceNpWebApiIntCreateServicePushEventFilter(
-    s32 libCtxId, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const OrbisNpWebApiServicePushEventFilterParameter* pFilterParam, u64 filterParamNum) {
-    if (pFilterParam == nullptr || filterParamNum == 0) {
+    s32 lib_ctx_id, s32 handle_id, const char* np_service_name, u32 np_service_label,
+    const OrbisNpWebApiServicePushEventFilterParameter* filter_param, u64 filter_param_num) {
+    if (filter_param == nullptr || filter_param_num == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
     LOG_WARNING(Lib_NpWebApi,
-                "called, libCtxId = {:#x}, handleId = {:#x}, pNpServiceName = '{}', "
-                "npServiceLabel = {:#x}",
-                libCtxId, handleId, (pNpServiceName ? pNpServiceName : "null"), npServiceLabel);
-    return createServicePushEventFilter(libCtxId, handleId, pNpServiceName, npServiceLabel,
-                                        pFilterParam, filterParamNum);
+                "called, lib_ctx_id = {:#x}, handle_id = {:#x}, np_service_name = '{}', "
+                "np_service_label = {:#x}",
+                lib_ctx_id, handle_id, (np_service_name ? np_service_name : "null"),
+                np_service_label);
+    return createServicePushEventFilter(lib_ctx_id, handle_id, np_service_name, np_service_label,
+                                        filter_param, filter_param_num);
 }
 
 s32 sceNpWebApiIntInitialize(const OrbisNpWebApiInitializeParameter* args) {
     LOG_INFO(Lib_NpWebApi, "called");
-    if (args == nullptr || args->structSize != sizeof(OrbisNpWebApiInitializeParameter)) {
+    if (args == nullptr || args->struct_size != sizeof(OrbisNpWebApiInitializeParameter)) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
@@ -542,7 +534,7 @@ s32 sceNpWebApiIntInitialize(const OrbisNpWebApiInitializeParameter* args) {
         }
     }
 
-    s32 result = createLibraryContext(args->libHttpCtxId, args->poolSize, args->pName, 2);
+    s32 result = createLibraryContext(args->lib_http_ctx_id, args->pool_size, args->name, 2);
     if (result >= ORBIS_OK) {
         g_active_library_contexts++;
     }
@@ -550,116 +542,117 @@ s32 sceNpWebApiIntInitialize(const OrbisNpWebApiInitializeParameter* args) {
 }
 
 s32 sceNpWebApiIntRegisterServicePushEventCallback(
-    s32 titleUserCtxId, s32 filterId, OrbisNpWebApiInternalServicePushEventCallback cbFunc,
-    void* pUserArg) {
-    if (cbFunc == nullptr) {
+    s32 title_user_ctx_id, s32 filter_id, OrbisNpWebApiInternalServicePushEventCallback cb_func,
+    void* user_arg) {
+    if (cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, cbFunc = {}", titleUserCtxId,
-             reinterpret_cast<void*>(cbFunc));
-    return registerServicePushEventCallback(titleUserCtxId, filterId, nullptr, cbFunc, nullptr,
-                                            pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, cb_func = {}", title_user_ctx_id,
+             reinterpret_cast<void*>(cb_func));
+    return registerServicePushEventCallback(title_user_ctx_id, filter_id, nullptr, cb_func, nullptr,
+                                            user_arg);
 }
 
 s32 sceNpWebApiIntRegisterServicePushEventCallbackA(
-    s32 titleUserCtxId, s32 filterId, OrbisNpWebApiInternalServicePushEventCallbackA cbFunc,
-    void* pUserArg) {
-    if (cbFunc == nullptr) {
+    s32 title_user_ctx_id, s32 filter_id, OrbisNpWebApiInternalServicePushEventCallbackA cb_func,
+    void* user_arg) {
+    if (cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, cbFunc = {}", titleUserCtxId,
-             reinterpret_cast<void*>(cbFunc));
-    return registerServicePushEventCallback(titleUserCtxId, filterId, nullptr, nullptr, cbFunc,
-                                            pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, cb_func = {}", title_user_ctx_id,
+             reinterpret_cast<void*>(cb_func));
+    return registerServicePushEventCallback(title_user_ctx_id, filter_id, nullptr, nullptr, cb_func,
+                                            user_arg);
 }
 
-s32 sceNpWebApiReadData(s64 requestId, void* pData, u64 size) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pData = {}, size = {:#x}", requestId,
-             fmt::ptr(pData), size);
-    if (pData == nullptr || size == 0) {
+s32 sceNpWebApiReadData(s64 request_id, void* data, u64 size) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, data = {}, size = {:#x}", request_id,
+             fmt::ptr(data), size);
+    if (data == nullptr || size == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    return readDataInternal(requestId, pData, size);
+    return readDataInternal(request_id, data, size);
 }
 
-s32 sceNpWebApiRegisterExtdPushEventCallbackA(s32 titleUserCtxId, s32 filterId,
-                                              OrbisNpWebApiExtdPushEventCallbackA cbFunc,
-                                              void* pUserArg) {
-    if (cbFunc == nullptr) {
+s32 sceNpWebApiRegisterExtdPushEventCallbackA(s32 title_user_ctx_id, s32 filter_id,
+                                              OrbisNpWebApiExtdPushEventCallbackA cb_func,
+                                              void* user_arg) {
+    if (cb_func == nullptr) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, cbFunc = {}", titleUserCtxId,
-             reinterpret_cast<void*>(cbFunc));
-    return registerExtdPushEventCallbackA(titleUserCtxId, filterId, cbFunc, pUserArg);
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, cb_func = {}", title_user_ctx_id,
+             reinterpret_cast<void*>(cb_func));
+    return registerExtdPushEventCallbackA(title_user_ctx_id, filter_id, cb_func, user_arg);
 }
 
-s32 sceNpWebApiSendMultipartRequest(s64 requestId, s32 partIndex, const void* pData, u64 dataSize) {
-    if (partIndex <= 0 || pData == nullptr || dataSize == 0) {
-        return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
-    }
-
-    LOG_INFO(Lib_NpWebApi,
-             "called, requestId = {:#x}, "
-             "partIndex = {:#x}, pData = {}, dataSize = {:#x}",
-             requestId, partIndex, fmt::ptr(pData), dataSize);
-    return sendRequest(requestId, partIndex, pData, dataSize, 0, nullptr);
-}
-
-s32 sceNpWebApiSendMultipartRequest2(s64 requestId, s32 partIndex, const void* pData, u64 dataSize,
-                                     OrbisNpWebApiResponseInformationOption* pRespInfoOption) {
-    if (partIndex <= 0 || pData == nullptr || dataSize == 0) {
+s32 sceNpWebApiSendMultipartRequest(s64 request_id, s32 part_index, const void* data,
+                                    u64 data_size) {
+    if (part_index <= 0 || data == nullptr || data_size == 0) {
         return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
     }
 
     LOG_INFO(Lib_NpWebApi,
-             "called, requestId = {:#x}, "
-             "partIndex = {:#x}, pData = {}, dataSize = {:#x}, pRespInfoOption = {}",
-             requestId, partIndex, fmt::ptr(pData), dataSize, fmt::ptr(pRespInfoOption));
-    return sendRequest(requestId, partIndex, pData, dataSize, 1, pRespInfoOption);
+             "called, request_id = {:#x}, "
+             "part_index = {:#x}, data = {}, data_size = {:#x}",
+             request_id, part_index, fmt::ptr(data), data_size);
+    return sendRequest(request_id, part_index, data, data_size, 0, nullptr);
 }
 
-s32 sceNpWebApiSendRequest(s64 requestId, const void* pData, u64 dataSize) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pData = {}, dataSize = {:#x}", requestId,
-             fmt::ptr(pData), dataSize);
-    return sendRequest(requestId, 0, pData, dataSize, 0, nullptr);
-}
+s32 sceNpWebApiSendMultipartRequest2(s64 request_id, s32 part_index, const void* data,
+                                     u64 data_size,
+                                     OrbisNpWebApiResponseInformationOption* resp_info_option) {
+    if (part_index <= 0 || data == nullptr || data_size == 0) {
+        return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
+    }
 
-s32 sceNpWebApiSendRequest2(s64 requestId, const void* pData, u64 dataSize,
-                            OrbisNpWebApiResponseInformationOption* pRespInfoOption) {
     LOG_INFO(Lib_NpWebApi,
-             "called, requestId = {:#x}, "
-             "pData = {}, dataSize = {:#x}, pRespInfoOption = {}",
-             requestId, fmt::ptr(pData), dataSize, fmt::ptr(pRespInfoOption));
-    return sendRequest(requestId, 0, pData, dataSize, 1, pRespInfoOption);
+             "called, request_id = {:#x}, "
+             "part_index = {:#x}, data = {}, data_size = {:#x}, resp_info_option = {}",
+             request_id, part_index, fmt::ptr(data), data_size, fmt::ptr(resp_info_option));
+    return sendRequest(request_id, part_index, data, data_size, 1, resp_info_option);
 }
 
-s32 sceNpWebApiSetHandleTimeout(s32 libCtxId, s32 handleId, u32 timeout) {
-    LOG_INFO(Lib_NpWebApi, "called, libCtxId = {:#x}, handleId = {:#x}, timeout = {} ms", libCtxId,
-             handleId, timeout);
-    return setHandleTimeout(libCtxId, handleId, timeout);
+s32 sceNpWebApiSendRequest(s64 request_id, const void* data, u64 data_size) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, data = {}, data_size = {:#x}", request_id,
+             fmt::ptr(data), data_size);
+    return sendRequest(request_id, 0, data, data_size, 0, nullptr);
 }
 
-s32 sceNpWebApiSetMaxConnection(s32 libCtxId, s32 maxConnection) {
-    LOG_ERROR(Lib_NpWebApi, "called (STUBBED), libCtxId = {:#x}, maxConnection = {}", libCtxId,
-              maxConnection);
+s32 sceNpWebApiSendRequest2(s64 request_id, const void* data, u64 data_size,
+                            OrbisNpWebApiResponseInformationOption* resp_info_option) {
+    LOG_INFO(Lib_NpWebApi,
+             "called, request_id = {:#x}, "
+             "data = {}, data_size = {:#x}, resp_info_option = {}",
+             request_id, fmt::ptr(data), data_size, fmt::ptr(resp_info_option));
+    return sendRequest(request_id, 0, data, data_size, 1, resp_info_option);
+}
+
+s32 sceNpWebApiSetHandleTimeout(s32 lib_ctx_id, s32 handle_id, u32 timeout) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_ctx_id = {:#x}, handle_id = {:#x}, timeout = {} ms",
+             lib_ctx_id, handle_id, timeout);
+    return setHandleTimeout(lib_ctx_id, handle_id, timeout);
+}
+
+s32 sceNpWebApiSetMaxConnection(s32 lib_ctx_id, s32 max_connection) {
+    LOG_ERROR(Lib_NpWebApi, "(STUBBED) called");
     return ORBIS_OK;
 }
 
-s32 sceNpWebApiSetMultipartContentType(s64 requestId, const char* pTypeName,
-                                       const char* pBoundary) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, pTypeName = '{}', pBoundary = '{}'",
-             requestId, (pTypeName ? pTypeName : "null"), (pBoundary ? pBoundary : "null"));
-    return setMultipartContentType(requestId, pTypeName, pBoundary);
+s32 sceNpWebApiSetMultipartContentType(s64 request_id, const char* type_name,
+                                       const char* boundary) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, type_name = '{}', boundary = '{}'",
+             request_id, (type_name ? type_name : "null"), (boundary ? boundary : "null"));
+    return setMultipartContentType(request_id, type_name, boundary);
 }
 
-s32 sceNpWebApiSetRequestTimeout(s64 requestId, u32 timeout) {
-    LOG_INFO(Lib_NpWebApi, "called, requestId = {:#x}, timeout = {} ms", requestId, timeout);
-    return setRequestTimeout(requestId, timeout);
+s32 sceNpWebApiSetRequestTimeout(s64 request_id, u32 timeout) {
+    LOG_INFO(Lib_NpWebApi, "called, request_id = {:#x}, timeout = {} ms", request_id, timeout);
+    return setRequestTimeout(request_id, timeout);
 }
 
-s32 sceNpWebApiTerminate(s32 libCtxId) {
-    LOG_INFO(Lib_NpWebApi, "called, libCtxId = {:#x}", libCtxId);
-    s32 result = terminateContext(libCtxId);
+s32 sceNpWebApiTerminate(s32 lib_ctx_id) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_ctx_id = {:#x}", lib_ctx_id);
+    s32 result = terminateContext(lib_ctx_id);
     if (result != ORBIS_OK) {
         return result;
     }
@@ -671,15 +664,15 @@ s32 sceNpWebApiTerminate(s32 libCtxId) {
     return ORBIS_OK;
 }
 
-s32 sceNpWebApiUnregisterExtdPushEventCallback(s32 titleUserCtxId, s32 callbackId) {
-    LOG_INFO(Lib_NpWebApi, "called, titleUserCtxId = {:#x}, callbackId = {:#x}", titleUserCtxId,
-             callbackId);
-    return unregisterExtdPushEventCallback(titleUserCtxId, callbackId);
+s32 sceNpWebApiUnregisterExtdPushEventCallback(s32 title_user_ctx_id, s32 callback_id) {
+    LOG_INFO(Lib_NpWebApi, "called, title_user_ctx_id = {:#x}, callback_id = {:#x}",
+             title_user_ctx_id, callback_id);
+    return unregisterExtdPushEventCallback(title_user_ctx_id, callback_id);
 }
 
-s32 sceNpWebApiVshInitialize(s32 libHttpCtxId, u64 poolSize) {
-    LOG_INFO(Lib_NpWebApi, "called, libHttpCtxId = {:#x}, poolSize = {:#x} bytes", libHttpCtxId,
-             poolSize);
+s32 sceNpWebApiVshInitialize(s32 lib_http_ctx_id, u64 pool_size) {
+    LOG_INFO(Lib_NpWebApi, "called, lib_http_ctx_id = {:#x}, pool_size = {:#x} bytes",
+             lib_http_ctx_id, pool_size);
     if (!g_is_initialized) {
         g_is_initialized = true;
         s32 result = initializeLibrary();
@@ -688,7 +681,7 @@ s32 sceNpWebApiVshInitialize(s32 libHttpCtxId, u64 poolSize) {
         }
     }
 
-    s32 result = createLibraryContext(libHttpCtxId, poolSize, nullptr, 4);
+    s32 result = createLibraryContext(lib_http_ctx_id, pool_size, nullptr, 4);
     if (result >= ORBIS_OK) {
         g_active_library_contexts++;
     }

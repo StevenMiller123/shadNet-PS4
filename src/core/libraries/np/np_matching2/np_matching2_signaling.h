@@ -20,12 +20,12 @@ void QueueMatching2SignalingEvent(ContextObject& ctx, OrbisNpMatching2RoomId roo
                                   OrbisNpMatching2RoomMemberId member_id,
                                   OrbisNpMatching2Event event, s32 error_code);
 
-u32 GetRoomPingUs(const ContextObject& ctx, OrbisNpMatching2RoomId roomId);
+u32 GetRoomPingUs(const ContextObject& ctx, OrbisNpMatching2RoomId room_id);
 void* BuildSignalingGetPingInfoPayload(ContextObject& ctx, CallbackPayload& payload,
-                                       OrbisNpMatching2RoomId roomId);
-s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId roomId,
-                                OrbisNpMatching2RoomMemberId memberId, u32 infoType, void* connInfo,
-                                bool a_variant);
+                                       OrbisNpMatching2RoomId room_id);
+s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId room_id,
+                                OrbisNpMatching2RoomMemberId member_id, u32 info_type,
+                                void* conn_info, bool a_variant);
 s32 FillMatching2LocalNetInfo(void* info);
 
 } // namespace Libraries::Np::NpMatching2

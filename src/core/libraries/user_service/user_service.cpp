@@ -83,7 +83,6 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
         u64 copy_len = std::min<u64>(name_len, sizeof(np_id.handle.data));
         std::memset(user_name, 0x0, name_len);
         std::strncpy(user_name, np_id.handle.data, copy_len);
-        LOG_INFO(Lib_UserService, "called, returning user_name {}", user_name);
         return ORBIS_OK;
     }
     // Fallback to the real function instead.
@@ -97,7 +96,7 @@ s32 sceUserServiceGetEvent(OrbisUserServiceEvent* event) {
                         event->event == OrbisUserServiceEventType::Logout)) {
         LOG_INFO(Lib_UserService, "Handling {} event",
                  event->event == OrbisUserServiceEventType::Login ? "login" : "logout");
-        Np::NpManager::UpdateNpStateFromEvent(event->event, event->userId);
+        Np::NpManager::UpdateNpStateFromEvent(event->event, event->user_id);
     } else if (result == 0) {
         LOG_INFO(Lib_UserService, "returned event type {}", event->event);
     } else if (result != ORBIS_USER_SERVICE_ERROR_NO_EVENT) {

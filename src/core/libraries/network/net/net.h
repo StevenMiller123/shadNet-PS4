@@ -13,10 +13,10 @@ struct OrbisNetInAddr {
 
 struct OrbisNetIn6Addr {
     union {
-        u8 __u6_addr8[16];
-        u16 __u6_addr16[8];
-        u32 __u6_addr32[4];
-    } __u6_addr;
+        u8 u6_addr8[16];
+        u16 u6_addr16[8];
+        u32 u6_addr32[4];
+    } u6_addr;
 };
 
 union OrbisNetResolverAddrUn {

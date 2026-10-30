@@ -38,9 +38,9 @@ bool NetUtilInternal::RetrieveIp() {
         return false;
     }
 
-    char netmaskStr[INET_ADDRSTRLEN];
-    sceNetInetNtop(AF_INET, &sa.sin_addr, netmaskStr, INET_ADDRSTRLEN);
-    ip = netmaskStr;
+    char netmask_str[INET_ADDRSTRLEN];
+    sceNetInetNtop(AF_INET, &sa.sin_addr, netmask_str, INET_ADDRSTRLEN);
+    ip = netmask_str;
 
     close(sockfd);
 

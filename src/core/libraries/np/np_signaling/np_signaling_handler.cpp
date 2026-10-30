@@ -70,7 +70,7 @@ void HandleStunEcho(const StunEcho& echo) {
             ctx.ext_addr.store(echo.ext_ip);
             ctx.ext_port.store(echo.ext_port);
             ctx.stun_cv.notify_all();
-            LOG_DEBUG(Lib_NpSignaling, "ctxId={} ext_addr={:#x} ext_port={}", ctx_id, echo.ext_ip,
+            LOG_DEBUG(Lib_NpSignaling, "ctx_id={} ext_addr={:#x} ext_port={}", ctx_id, echo.ext_ip,
                       sceNetNtohs(echo.ext_port));
         }
     }

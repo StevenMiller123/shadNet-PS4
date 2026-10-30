@@ -69,28 +69,28 @@ static void RegisterNpSignalingHooks() {
 
 namespace Libraries::Np::NpSignaling {
 
-s32 sceNpSignalingInitialize(s64 memorySize, s32 threadPriority, s32 cpuAffinityMask,
-                             s64 threadStackSize) {
+s32 sceNpSignalingInitialize(s64 memory_size, s32 thread_priority, s32 cpu_affinity_mask,
+                             s64 thread_stack_size) {
     if (GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_ALREADY_INITIALIZED;
     }
     SignalingMutexGuard lock;
 
-    if (memorySize == 0) {
-        memorySize = 0x20000;
+    if (memory_size == 0) {
+        memory_size = 0x20000;
     }
-    if (threadPriority == 0) {
-        threadPriority = 700;
+    if (thread_priority == 0) {
+        thread_priority = 700;
     }
-    if (threadStackSize == 0) {
-        threadStackSize = 0x4000;
+    if (thread_stack_size == 0) {
+        thread_stack_size = 0x4000;
     }
 
     LOG_INFO(Lib_NpSignaling,
-             "memorySize={} threadPriority={} cpuAffinityMask={} threadStackSize={}", memorySize,
-             threadPriority, cpuAffinityMask, threadStackSize);
+             "memory_size={} thread_priority={} cpu_affinity_mask={} thread_stack_size={}",
+             memory_size, thread_priority, cpu_affinity_mask, thread_stack_size);
 
-    const s32 heap_rc = InitSignalingHeap(memorySize);
+    const s32 heap_rc = InitSignalingHeap(memory_size);
     if (heap_rc < 0) {
         return heap_rc;
     }
@@ -99,14 +99,14 @@ s32 sceNpSignalingInitialize(s64 memorySize, s32 threadPriority, s32 cpuAffinity
 
     GetState()->initialized = true;
 
-    const s32 rc = StartMainRuntime(threadPriority, cpuAffinityMask, threadStackSize);
+    const s32 rc = StartMainRuntime(thread_priority, cpu_affinity_mask, thread_stack_size);
     if (rc < 0) {
         GetState()->initialized = false;
         ShutdownSignalingHeap();
         return rc;
     }
 
-    const s32 echo_rc = StartEchoRuntime(threadPriority, cpuAffinityMask);
+    const s32 echo_rc = StartEchoRuntime(thread_priority, cpu_affinity_mask);
     if (echo_rc < 0) {
         GetState()->initialized = false;
         ShutdownRuntime();
@@ -136,28 +136,28 @@ s32 sceNpSignalingTerminate() {
         state->ResetSig1Data();
     }
     for (u64 i = 0; i < context_count; ++i) {
-        NpSignaling::ReleaseContextRef();
+        ReleaseContextRef();
     }
 
     LOG_INFO(Lib_NpSignaling, "called");
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingCreateContext(const void* npId, void* callback, void* callbackArg,
-                                OrbisNpSignalingContextId* outContextId) {
+s32 sceNpSignalingCreateContext(const void* np_id, void* callback, void* callback_arg,
+                                OrbisNpSignalingContextId* out_context_id) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
     }
-    if (!npId || !outContextId) {
+    if (!np_id || !out_context_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     OrbisNpId owner_npid{};
     OrbisNpOnlineId owner_online_id{};
-    if (NormalizeNpId(npId, &owner_npid, &owner_online_id) != ORBIS_OK) {
+    if (NormalizeNpId(np_id, &owner_npid, &owner_online_id) != ORBIS_OK) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
@@ -176,7 +176,7 @@ s32 sceNpSignalingCreateContext(const void* npId, void* callback, void* callback
 
         NpSignalingContext& ctx = GetState()->contexts[ctx_id];
         ctx.callback = reinterpret_cast<OrbisNpSignalingHandler>(callback);
-        ctx.callback_arg = callbackArg;
+        ctx.callback_arg = callback_arg;
         ctx.active = true;
         ctx.owner_npid = owner_npid;
         ctx.owner_online_id = owner_online_id;
@@ -185,36 +185,36 @@ s32 sceNpSignalingCreateContext(const void* npId, void* callback, void* callback
         ctx.activate_budget_us = kActivateBudgetMaxUs;
         ctx.activate_last_update_us = NowUs();
         ctx.bound_port = ConfiguredPort();
-        *outContextId = ctx_id;
+        *out_context_id = ctx_id;
 
-        LOG_INFO(Lib_NpSignaling, "ctxId={} owner='{}' callback={} arg={} sdk={:#x} p2p_port={}",
+        LOG_INFO(Lib_NpSignaling, "ctx_id={} owner='{}' callback={} arg={} sdk={:#x} p2p_port={}",
                  ctx_id, OnlineIdToString(owner_online_id), fmt::ptr(callback),
-                 fmt::ptr(callbackArg), ctx.compiled_sdk_version, ctx.bound_port);
+                 fmt::ptr(callback_arg), ctx.compiled_sdk_version, ctx.bound_port);
     }
 
-    NpSignaling::AddContextRef();
+    AddContextRef();
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingCreateContextA(s32 userId, void* callback, void* callbackArg,
-                                 OrbisNpSignalingContextId* outContextId) {
+s32 sceNpSignalingCreateContextA(s32 user_id, void* callback, void* callback_arg,
+                                 OrbisNpSignalingContextId* out_context_id) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
     }
-    if (userId == -1 || !outContextId) {
+    if (user_id == -1 || !out_context_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     OrbisNpId owner_npid{};
-    const s32 npid_rc = sceNpGetNpId(userId, reinterpret_cast<::OrbisNpId*>(&owner_npid));
+    const s32 npid_rc = sceNpGetNpId(user_id, reinterpret_cast<::OrbisNpId*>(&owner_npid));
     if (npid_rc < 0) {
         return npid_rc;
     }
     OrbisNpAccountId account_id = 0;
-    const s32 account_rc = sceNpGetAccountIdA(userId, &account_id);
+    const s32 account_rc = sceNpGetAccountIdA(user_id, &account_id);
     if (account_rc < 0) {
         return account_rc;
     }
@@ -237,7 +237,7 @@ s32 sceNpSignalingCreateContextA(s32 userId, void* callback, void* callbackArg,
 
         NpSignalingContext& ctx = GetState()->contexts[ctx_id];
         ctx.callback = reinterpret_cast<OrbisNpSignalingHandler>(callback);
-        ctx.callback_arg = callbackArg;
+        ctx.callback_arg = callback_arg;
         ctx.active = true;
         ctx.owner_npid = owner_npid;
         ctx.owner_online_id = owner_npid.handle;
@@ -248,17 +248,17 @@ s32 sceNpSignalingCreateContextA(s32 userId, void* callback, void* callbackArg,
         ctx.activate_budget_us = kActivateBudgetMaxUs;
         ctx.activate_last_update_us = NowUs();
         ctx.bound_port = ConfiguredPort();
-        *outContextId = ctx_id;
+        *out_context_id = ctx_id;
 
-        LOG_INFO(Lib_NpSignaling, "ctxId={} userId={} owner='{}' accountId={:#x}", ctx_id, userId,
-                 OnlineIdToString(ctx.owner_online_id), account_id);
+        LOG_INFO(Lib_NpSignaling, "ctx_id={} user_id={} owner='{}' account_id={:#x}", ctx_id,
+                 user_id, OnlineIdToString(ctx.owner_online_id), account_id);
     }
 
-    NpSignaling::AddContextRef();
+    AddContextRef();
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingDeleteContext(OrbisNpSignalingContextId ctxId) {
+s32 sceNpSignalingDeleteContext(OrbisNpSignalingContextId ctx_id) {
     std::vector<s32> active_conns;
     {
         SignalingMutexGuard lock;
@@ -266,111 +266,111 @@ s32 sceNpSignalingDeleteContext(OrbisNpSignalingContextId ctxId) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
 
-        LOG_INFO(Lib_NpSignaling, "ctxId={}", ctxId);
+        LOG_INFO(Lib_NpSignaling, "ctx_id={}", ctx_id);
 
         for (const auto& [cid, ci] : GetState()->connections) {
-            if (ci.ctx_id == ctxId && ci.status != ORBIS_NP_SIGNALING_CONN_STATUS_INACTIVE) {
+            if (ci.ctx_id == ctx_id && ci.status != ORBIS_NP_SIGNALING_CONN_STATUS_INACTIVE) {
                 active_conns.push_back(cid);
             }
         }
     }
 
     for (const s32 cid : active_conns) {
-        NpSignaling::TerminateSig1(cid);
+        TerminateSig1(cid);
     }
 
     {
         SignalingMutexGuard lock;
-        RemoveContextConnectionsLocked(ctxId);
+        RemoveContextConnectionsLocked(ctx_id);
         for (auto it = GetState()->peer_netinfo_results.begin();
              it != GetState()->peer_netinfo_results.end();) {
-            it = (it->second.ctx_id == ctxId) ? GetState()->peer_netinfo_results.erase(it)
-                                              : std::next(it);
+            it = (it->second.ctx_id == ctx_id) ? GetState()->peer_netinfo_results.erase(it)
+                                               : std::next(it);
         }
-        GetState()->contexts.erase(ctxId);
+        GetState()->contexts.erase(ctx_id);
     }
 
-    NpSignaling::ReleaseContextRef();
+    ReleaseContextRef();
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingActivateConnection(OrbisNpSignalingContextId ctxId, const void* peerNpId,
-                                     OrbisNpSignalingConnectionId* outConnId) {
+s32 sceNpSignalingActivateConnection(OrbisNpSignalingContextId ctx_id, const void* peer_np_id,
+                                     OrbisNpSignalingConnectionId* out_conn_id) {
     const s64 call_time = NowMs();
-    LOG_INFO(Lib_NpSignaling, "(STUBBED) t={} ctxId={} peerNpId={:p} outConnId={:p}", call_time,
-             ctxId, peerNpId, fmt::ptr(outConnId));
+    LOG_INFO(Lib_NpSignaling, "(STUBBED) t={} ctx_id={} peer_np_id={:p} out_conn_id={:p}",
+             call_time, ctx_id, peer_np_id, fmt::ptr(out_conn_id));
 
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             LOG_INFO(Lib_NpSignaling,
-                     "result: t={} ctxId={} peer='<unresolved>' "
+                     "result: t={} ctx_id={} peer='<unresolved>' "
                      "rc={:#x}",
-                     call_time, ctxId, ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED);
+                     call_time, ctx_id, ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED);
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
     }
-    if (!peerNpId || !outConnId) {
+    if (!peer_np_id || !out_conn_id) {
         LOG_INFO(Lib_NpSignaling,
-                 "result: t={} ctxId={} peer='<unresolved>' "
+                 "result: t={} ctx_id={} peer='<unresolved>' "
                  "rc={:#x}",
-                 call_time, ctxId, ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT);
+                 call_time, ctx_id, ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT);
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     OrbisNpId peer_npid{};
     OrbisNpOnlineId peer_online_id{};
-    const s32 normalize_rc = NormalizeNpId(peerNpId, &peer_npid, &peer_online_id);
+    const s32 normalize_rc = NormalizeNpId(peer_np_id, &peer_npid, &peer_online_id);
     if (normalize_rc != ORBIS_OK) {
         return normalize_rc;
     }
 
     const std::string peer_online_id_str = OnlineIdToString(peer_online_id);
-    const s32 rc = NpSignaling::ActivateSig1(ctxId, peer_npid, peer_online_id, outConnId);
+    const s32 rc = ActivateSig1(ctx_id, peer_npid, peer_online_id, out_conn_id);
     if (rc == ORBIS_OK) {
         LOG_INFO(Lib_NpSignaling,
-                 "result: t={} ctxId={} peer='{}' rc={:#x} "
-                 "connId={}",
-                 call_time, ctxId, peer_online_id_str, rc, *outConnId);
+                 "result: t={} ctx_id={} peer='{}' rc={:#x} "
+                 "conn_id={}",
+                 call_time, ctx_id, peer_online_id_str, rc, *out_conn_id);
     } else {
-        LOG_INFO(Lib_NpSignaling, "result: t={} ctxId={} peer='{}' rc={:#x}", call_time, ctxId,
+        LOG_INFO(Lib_NpSignaling, "result: t={} ctx_id={} peer='{}' rc={:#x}", call_time, ctx_id,
                  peer_online_id_str, rc);
     }
     return rc;
 }
 
-s32 sceNpSignalingActivateConnectionA(OrbisNpSignalingContextId ctxId,
-                                      const OrbisNpSignalingAccountPlatformPair* peerAddr,
-                                      OrbisNpSignalingConnectionId* outConnId) {
+s32 sceNpSignalingActivateConnectionA(OrbisNpSignalingContextId ctx_id,
+                                      const OrbisNpSignalingAccountPlatformPair* peer_addr,
+                                      OrbisNpSignalingConnectionId* out_conn_id) {
     OrbisNpId peer_npid{};
-    if (peerAddr && peerAddr->accountId != 0 && peerAddr->platformType != 0 && outConnId &&
-        NpSignaling::FindMatching2MemberNpId(peerAddr->accountId, &peer_npid)) {
-        s32 rc = NpSignaling::ActivateSig1(ctxId, peer_npid, peer_npid.handle, outConnId);
+    if (peer_addr && peer_addr->account_id != 0 && peer_addr->platform_type != 0 && out_conn_id &&
+        FindMatching2MemberNpId(peer_addr->account_id, &peer_npid)) {
+        s32 rc = ActivateSig1(ctx_id, peer_npid, peer_npid.handle, out_conn_id);
         if (rc == ORBIS_NP_SIGNALING_ERROR_OWN_NP_ID) {
             rc = ORBIS_NP_SIGNALING_ERROR_OWN_PEER_ADDRESS;
         }
         LOG_INFO(Lib_NpSignaling,
-                 "ctxId={} accountId={:#x} platform={} peer='{}' rc={:#x} connId={}", ctxId,
-                 peerAddr->accountId, peerAddr->platformType, OnlineIdToString(peer_npid.handle),
-                 rc, rc == ORBIS_OK ? *outConnId : 0);
+                 "ctx_id={} account_id={:#x} platform={} peer='{}' rc={:#x} conn_id={}", ctx_id,
+                 peer_addr->account_id, peer_addr->platform_type,
+                 OnlineIdToString(peer_npid.handle), rc, rc == ORBIS_OK ? *out_conn_id : 0);
         return rc;
     }
-    LOG_INFO(Lib_NpSignaling, "(STUBBED) ctxId={}", ctxId);
+    LOG_INFO(Lib_NpSignaling, "(STUBBED) ctx_id={}", ctx_id);
 
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!peerAddr || peerAddr->accountId == 0 || !outConnId || peerAddr->platformType == 0) {
+    if (!peer_addr || peer_addr->account_id == 0 || !out_conn_id || peer_addr->platform_type == 0) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
-    const auto ctx_it = GetState()->contexts.find(ctxId);
+    const auto ctx_it = GetState()->contexts.find(ctx_id);
     if (ctx_it == GetState()->contexts.end() || !ctx_it->second.active) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
-    if ((ctx_it->second.flags & 0x4) != 0 && ctx_it->second.account_id == peerAddr->accountId &&
-        ctx_it->second.platform_type == peerAddr->platformType) {
+    if ((ctx_it->second.flags & 0x4) != 0 && ctx_it->second.account_id == peer_addr->account_id &&
+        ctx_it->second.platform_type == peer_addr->platform_type) {
         return ORBIS_NP_SIGNALING_ERROR_OWN_PEER_ADDRESS;
     }
 
@@ -383,82 +383,82 @@ s32 sceNpSignalingActivateConnectionA(OrbisNpSignalingContextId ctxId,
     }
     ConnectionInfo ci{};
     ci.conn_id = cid;
-    ci.ctx_id = ctxId;
+    ci.ctx_id = ctx_id;
     ci.status = ORBIS_NP_SIGNALING_CONN_STATUS_PENDING;
     GetState()->connections[cid] = std::move(ci);
-    *outConnId = cid;
+    *out_conn_id = cid;
 
-    LOG_INFO(Lib_NpSignaling, "ctxId={} accountId={:#x} platform={} connId={}", ctxId,
-             peerAddr->accountId, peerAddr->platformType, cid);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} account_id={:#x} platform={} conn_id={}", ctx_id,
+             peer_addr->account_id, peer_addr->platform_type, cid);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingDeactivateConnection(OrbisNpSignalingContextId ctxId,
-                                       OrbisNpSignalingConnectionId connId) {
+s32 sceNpSignalingDeactivateConnection(OrbisNpSignalingContextId ctx_id,
+                                       OrbisNpSignalingConnectionId conn_id) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
-        if (!IsContextValidLocked(ctxId)) {
+        if (!IsContextValidLocked(ctx_id)) {
             return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
         }
 
-        const auto it = GetState()->connections.find(connId);
-        if (it == GetState()->connections.end() || it->second.ctx_id != ctxId) {
+        const auto it = GetState()->connections.find(conn_id);
+        if (it == GetState()->connections.end() || it->second.ctx_id != ctx_id) {
             return ORBIS_NP_SIGNALING_ERROR_CONN_NOT_FOUND;
         }
 
-        LOG_INFO(Lib_NpSignaling, "t={} ctxId={} connId={} peer='{}' status={}", NowMs(), ctxId,
-                 connId, OnlineIdToString(it->second.online_id), it->second.status);
+        LOG_INFO(Lib_NpSignaling, "t={} ctx_id={} conn_id={} peer='{}' status={}", NowMs(), ctx_id,
+                 conn_id, OnlineIdToString(it->second.online_id), it->second.status);
     }
 
-    NpSignaling::DeactivateSig1(connId);
+    DeactivateSig1(conn_id);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingTerminateConnection(OrbisNpSignalingContextId ctxId,
-                                      OrbisNpSignalingConnectionId connId) {
+s32 sceNpSignalingTerminateConnection(OrbisNpSignalingContextId ctx_id,
+                                      OrbisNpSignalingConnectionId conn_id) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
-        if (!IsContextValidLocked(ctxId)) {
+        if (!IsContextValidLocked(ctx_id)) {
             return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
         }
-        const auto it = GetState()->connections.find(connId);
-        if (it == GetState()->connections.end() || it->second.ctx_id != ctxId) {
+        const auto it = GetState()->connections.find(conn_id);
+        if (it == GetState()->connections.end() || it->second.ctx_id != ctx_id) {
             return ORBIS_NP_SIGNALING_ERROR_CONN_NOT_FOUND;
         }
-        LOG_INFO(Lib_NpSignaling, "ctxId={} connId={}", ctxId, connId);
+        LOG_INFO(Lib_NpSignaling, "ctx_id={} conn_id={}", ctx_id, conn_id);
     }
 
-    NpSignaling::TerminateSig1(connId);
+    TerminateSig1(conn_id);
     {
         SignalingMutexGuard lock;
-        RemoveConnectionLocked(connId);
+        RemoveConnectionLocked(conn_id);
     }
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetConnectionStatus(OrbisNpSignalingContextId ctxId,
-                                      OrbisNpSignalingConnectionId connId, u32* outStatus,
-                                      u32* outPeerAddr, u16* outPeerPort) {
+s32 sceNpSignalingGetConnectionStatus(OrbisNpSignalingContextId ctx_id,
+                                      OrbisNpSignalingConnectionId conn_id, u32* out_status,
+                                      u32* out_peer_addr, u16* out_peer_port) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!outStatus) {
+    if (!out_status) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    if (!IsContextValidLocked(ctxId)) {
+    if (!IsContextValidLocked(ctx_id)) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
 
-    const auto it = GetState()->connections.find(connId);
-    if (it == GetState()->connections.end() || it->second.ctx_id != ctxId) {
-        *outStatus = ORBIS_NP_SIGNALING_CONN_STATUS_INACTIVE;
+    const auto it = GetState()->connections.find(conn_id);
+    if (it == GetState()->connections.end() || it->second.ctx_id != ctx_id) {
+        *out_status = ORBIS_NP_SIGNALING_CONN_STATUS_INACTIVE;
         return ORBIS_OK;
     }
 
@@ -467,71 +467,71 @@ s32 sceNpSignalingGetConnectionStatus(OrbisNpSignalingContextId ctxId,
         transport_it != GetState()->peer_transports.end() ? &transport_it->second : nullptr;
     const s32 state = ConnectionStateFromStatus(it->second.status);
     if (state == 10) {
-        *outStatus = ORBIS_NP_SIGNALING_CONN_STATUS_ACTIVE;
-        if (outPeerAddr && transport) {
-            *outPeerAddr = transport->addr;
+        *out_status = ORBIS_NP_SIGNALING_CONN_STATUS_ACTIVE;
+        if (out_peer_addr && transport) {
+            *out_peer_addr = transport->addr;
         }
-        if (outPeerPort && transport) {
-            *outPeerPort = transport->port;
+        if (out_peer_port && transport) {
+            *out_peer_port = transport->port;
         }
     } else if (state != 0) {
-        *outStatus = ORBIS_NP_SIGNALING_CONN_STATUS_PENDING;
+        *out_status = ORBIS_NP_SIGNALING_CONN_STATUS_PENDING;
     } else {
-        *outStatus = ORBIS_NP_SIGNALING_CONN_STATUS_INACTIVE;
+        *out_status = ORBIS_NP_SIGNALING_CONN_STATUS_INACTIVE;
     }
 
-    LOG_INFO(Lib_NpSignaling, "t={} ctxId={} connId={} peer='{}' status={}", NowMs(), ctxId, connId,
-             OnlineIdToString(it->second.online_id), *outStatus);
+    LOG_INFO(Lib_NpSignaling, "t={} ctx_id={} conn_id={} peer='{}' status={}", NowMs(), ctx_id,
+             conn_id, OnlineIdToString(it->second.online_id), *out_status);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetConnectionInfo(OrbisNpSignalingContextId ctxId,
-                                    OrbisNpSignalingConnectionId connId, s32 infoCode,
-                                    void* outInfo) {
+s32 sceNpSignalingGetConnectionInfo(OrbisNpSignalingContextId ctx_id,
+                                    OrbisNpSignalingConnectionId conn_id, s32 info_code,
+                                    void* out_info) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!outInfo) {
+    if (!out_info) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    const s32 rc = GetConnectionInfoInternal(ctxId, connId, infoCode, outInfo, nullptr);
-    LOG_INFO(Lib_NpSignaling, "ctxId={} connId={} infoCode={} rc={:#x}", ctxId, connId, infoCode,
-             static_cast<u32>(rc));
+    const s32 rc = GetConnectionInfoInternal(ctx_id, conn_id, info_code, out_info, nullptr);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} conn_id={} info_code={} rc={:#x}", ctx_id, conn_id,
+             info_code, static_cast<u32>(rc));
     return rc;
 }
 
-s32 sceNpSignalingGetConnectionInfoA(OrbisNpSignalingContextId ctxId,
-                                     OrbisNpSignalingConnectionId connId, s32 infoCode,
-                                     void* outInfo) {
+s32 sceNpSignalingGetConnectionInfoA(OrbisNpSignalingContextId ctx_id,
+                                     OrbisNpSignalingConnectionId conn_id, s32 info_code,
+                                     void* out_info) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!outInfo) {
+    if (!out_info) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    const s32 rc = GetConnectionInfoInternal(ctxId, connId, infoCode, nullptr, outInfo);
-    LOG_INFO(Lib_NpSignaling, "ctxId={} connId={} infoCode={} rc={:#x}", ctxId, connId, infoCode,
-             static_cast<u32>(rc));
+    const s32 rc = GetConnectionInfoInternal(ctx_id, conn_id, info_code, nullptr, out_info);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} conn_id={} info_code={} rc={:#x}", ctx_id, conn_id,
+             info_code, static_cast<u32>(rc));
     return rc;
 }
 
-s32 sceNpSignalingGetConnectionFromNpId(OrbisNpSignalingContextId ctxId, const void* peerNpId,
-                                        OrbisNpSignalingConnectionId* outConnId) {
+s32 sceNpSignalingGetConnectionFromNpId(OrbisNpSignalingContextId ctx_id, const void* peer_np_id,
+                                        OrbisNpSignalingConnectionId* out_conn_id) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
     }
-    if (!peerNpId || !outConnId) {
+    if (!peer_np_id || !out_conn_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     OrbisNpId peer_npid{};
     OrbisNpOnlineId peer_online_id{};
-    if (NormalizeNpId(peerNpId, &peer_npid, &peer_online_id) != ORBIS_OK) {
+    if (NormalizeNpId(peer_np_id, &peer_npid, &peer_online_id) != ORBIS_OK) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
@@ -539,11 +539,11 @@ s32 sceNpSignalingGetConnectionFromNpId(OrbisNpSignalingContextId ctxId, const v
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!IsContextValidLocked(ctxId)) {
+    if (!IsContextValidLocked(ctx_id)) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
 
-    const auto it = GetState()->npid_to_conn.find(MakeCtxNpIdKey(ctxId, peer_npid));
+    const auto it = GetState()->npid_to_conn.find(MakeCtxNpIdKey(ctx_id, peer_npid));
     if (it == GetState()->npid_to_conn.end()) {
         return ORBIS_NP_SIGNALING_ERROR_CONN_NOT_FOUND;
     }
@@ -552,76 +552,77 @@ s32 sceNpSignalingGetConnectionFromNpId(OrbisNpSignalingContextId ctxId, const v
         return ORBIS_NP_SIGNALING_ERROR_CONN_NOT_FOUND;
     }
 
-    *outConnId = it->second;
-    LOG_INFO(Lib_NpSignaling, "ctxId={} npid='{}' connId={}", ctxId,
+    *out_conn_id = it->second;
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} npid='{}' conn_id={}", ctx_id,
              OnlineIdToString(peer_online_id), it->second);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetConnectionFromPeerAddress(OrbisNpSignalingContextId ctxId, u32 peerAddr,
-                                               u16 peerPort,
-                                               OrbisNpSignalingConnectionId* outConnId) {
+s32 sceNpSignalingGetConnectionFromPeerAddress(OrbisNpSignalingContextId ctx_id, u32 peer_addr,
+                                               u16 peer_port,
+                                               OrbisNpSignalingConnectionId* out_conn_id) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!outConnId) {
+    if (!out_conn_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    if (!IsContextValidLocked(ctxId)) {
+    if (!IsContextValidLocked(ctx_id)) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
 
     for (const auto& [id, ci] : GetState()->connections) {
         const auto transport_it = GetState()->peer_transports.find(ci.transport_id);
-        if (transport_it != GetState()->peer_transports.end() && ci.ctx_id == ctxId &&
-            transport_it->second.addr == peerAddr && transport_it->second.port == peerPort &&
+        if (transport_it != GetState()->peer_transports.end() && ci.ctx_id == ctx_id &&
+            transport_it->second.addr == peer_addr && transport_it->second.port == peer_port &&
             ConnectionStateFromStatus(ci.status) == 10) {
-            *outConnId = id;
-            LOG_INFO(Lib_NpSignaling, "ctxId={} addr={:#x} port={} connId={}", ctxId, peerAddr,
-                     ntohs(peerPort), id);
+            *out_conn_id = id;
+            LOG_INFO(Lib_NpSignaling, "ctx_id={} addr={:#x} port={} conn_id={}", ctx_id, peer_addr,
+                     ntohs(peer_port), id);
             return ORBIS_OK;
         }
     }
     return ORBIS_NP_SIGNALING_ERROR_CONN_NOT_FOUND;
 }
 
-s32 sceNpSignalingGetConnectionFromPeerAddressA(OrbisNpSignalingContextId ctxId,
-                                                const OrbisNpSignalingAccountPlatformPair* peerAddr,
-                                                OrbisNpSignalingConnectionId* outConnId) {
+s32 sceNpSignalingGetConnectionFromPeerAddressA(
+    OrbisNpSignalingContextId ctx_id, const OrbisNpSignalingAccountPlatformPair* peer_addr,
+    OrbisNpSignalingConnectionId* out_conn_id) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!peerAddr || !outConnId) {
+    if (!peer_addr || !out_conn_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    const auto ctx_it = GetState()->contexts.find(ctxId);
+    const auto ctx_it = GetState()->contexts.find(ctx_id);
     if (ctx_it == GetState()->contexts.end() || !ctx_it->second.active) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
     if ((ctx_it->second.flags & 0x4) == 0) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    LOG_INFO(Lib_NpSignaling, "ctxId={} accountId={:#x}", ctxId, peerAddr->accountId);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} account_id={:#x}", ctx_id, peer_addr->account_id);
     return ORBIS_NP_SIGNALING_ERROR_CONN_NOT_FOUND;
 }
 
-s32 sceNpSignalingSetContextOption(OrbisNpSignalingContextId ctxId, s32 optionId, s32 optionValue) {
+s32 sceNpSignalingSetContextOption(OrbisNpSignalingContextId ctx_id, s32 option_id,
+                                   s32 option_value) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    const auto it = GetState()->contexts.find(ctxId);
+    const auto it = GetState()->contexts.find(ctx_id);
     if (it == GetState()->contexts.end() || !it->second.active) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
-    if (optionId != ORBIS_NP_SIGNALING_CONTEXT_OPTION_FLAG) {
+    if (option_id != ORBIS_NP_SIGNALING_CONTEXT_OPTION_FLAG) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    if (optionValue == 0) {
+    if (option_value == 0) {
         it->second.flags &= ~0x2u;
-    } else if (optionValue == 1) {
+    } else if (option_value == 1) {
         it->second.flags |= 0x2u;
     } else {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
@@ -629,27 +630,27 @@ s32 sceNpSignalingSetContextOption(OrbisNpSignalingContextId ctxId, s32 optionId
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetContextOption(OrbisNpSignalingContextId ctxId, s32 optionId,
-                                   s32* outOptionValue) {
+s32 sceNpSignalingGetContextOption(OrbisNpSignalingContextId ctx_id, s32 option_id,
+                                   s32* out_option_value) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!outOptionValue) {
+    if (!out_option_value) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    const auto it = GetState()->contexts.find(ctxId);
+    const auto it = GetState()->contexts.find(ctx_id);
     if (it == GetState()->contexts.end() || !it->second.active) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
-    if (optionId != ORBIS_NP_SIGNALING_CONTEXT_OPTION_FLAG) {
+    if (option_id != ORBIS_NP_SIGNALING_CONTEXT_OPTION_FLAG) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    *outOptionValue = (it->second.flags & 0x2u) != 0 ? 1 : 0;
+    *out_option_value = (it->second.flags & 0x2u) != 0 ? 1 : 0;
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetLocalNetInfo(OrbisNpSignalingContextId ctxId, OrbisNpSignalingNetInfo* info) {
+s32 sceNpSignalingGetLocalNetInfo(OrbisNpSignalingContextId ctx_id, OrbisNpSignalingNetInfo* info) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
@@ -667,129 +668,130 @@ s32 sceNpSignalingGetLocalNetInfo(OrbisNpSignalingContextId ctxId, OrbisNpSignal
     if (netinfo->GetIp().empty()) {
         netinfo->RetrieveIp();
     }
-    info->localAddr = ParseIpv4Nbo(netinfo->GetIp());
-    if (info->localAddr == 0) {
-        info->localAddr = ParseIpv4Nbo("127.0.0.1");
+    info->local_addr = ParseIpv4Nbo(netinfo->GetIp());
+    if (info->local_addr == 0) {
+        info->local_addr = ParseIpv4Nbo("127.0.0.1");
     }
 
     OrbisNetCtlNatInfo nat_info{};
     nat_info.size = sizeof(nat_info);
-    info->mappedAddr = 0;
-    info->natStatus = 0;
+    info->mapped_addr = 0;
+    info->nat_status = 0;
     if (sceNetCtlGetNatInfo(&nat_info) >= 0) {
-        info->mappedAddr = nat_info.mapped_addr;
-        info->natStatus = nat_info.nat_type;
+        info->mapped_addr = nat_info.mapped_addr;
+        info->nat_status = nat_info.nat_type;
     }
-    if (info->mappedAddr == 0) {
+    if (info->mapped_addr == 0) {
         const u32 external = netinfo->GetExternalIp();
-        info->mappedAddr = external != 0 ? external : info->localAddr;
+        info->mapped_addr = external != 0 ? external : info->local_addr;
     }
-    info->_pad_14 = 0;
+    info->pad_14 = 0;
 
-    LOG_INFO(Lib_NpSignaling, "localAddr={:#x} mappedAddr={:#x} natStatus={}", info->localAddr,
-             info->mappedAddr, info->natStatus);
+    LOG_INFO(Lib_NpSignaling, "local_addr={:#x} mapped_addr={:#x} nat_status={}", info->local_addr,
+             info->mapped_addr, info->nat_status);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetPeerNetInfo(OrbisNpSignalingContextId ctxId, const void* peerNpId,
-                                 OrbisNpSignalingRequestId* outReqId) {
+s32 sceNpSignalingGetPeerNetInfo(OrbisNpSignalingContextId ctx_id, const void* peer_np_id,
+                                 OrbisNpSignalingRequestId* out_req_id) {
     {
         SignalingMutexGuard lock;
         if (!GetState()->initialized) {
             return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
         }
     }
-    if (!peerNpId || !outReqId) {
+    if (!peer_np_id || !out_req_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     OrbisNpId peer_npid{};
-    if (NormalizeNpId(peerNpId, &peer_npid, nullptr) != ORBIS_OK) {
+    if (NormalizeNpId(peer_np_id, &peer_npid, nullptr) != ORBIS_OK) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     s32 req_id = 0;
     {
         SignalingMutexGuard lock;
-        if (!IsContextValidLocked(ctxId)) {
+        if (!IsContextValidLocked(ctx_id)) {
             return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
         }
-        req_id = StagePeerNetInfoResultLocked(ctxId);
+        req_id = StagePeerNetInfoResultLocked(ctx_id);
         if (req_id == 0) {
             return ORBIS_NP_MATCHING2_SIGNALING_ERROR_OUT_OF_MEMORY;
         }
     }
-    *outReqId = static_cast<u32>(req_id);
-    LOG_INFO(Lib_NpSignaling, "ctxId={} reqId={:#x}", ctxId, *outReqId);
+    *out_req_id = static_cast<u32>(req_id);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} req_id={:#x}", ctx_id, *out_req_id);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetPeerNetInfoA(OrbisNpSignalingContextId ctxId, const void* peerAccountPayload,
-                                  OrbisNpSignalingRequestId* outReqId) {
+s32 sceNpSignalingGetPeerNetInfoA(OrbisNpSignalingContextId ctx_id,
+                                  const void* peer_account_payload,
+                                  OrbisNpSignalingRequestId* out_req_id) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!peerAccountPayload || !outReqId) {
+    if (!peer_account_payload || !out_req_id) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    const auto ctx_it = GetState()->contexts.find(ctxId);
+    const auto ctx_it = GetState()->contexts.find(ctx_id);
     if (ctx_it == GetState()->contexts.end() || !ctx_it->second.active) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
     if ((ctx_it->second.flags & 0x4) == 0) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    const s32 req_id = StagePeerNetInfoResultLocked(ctxId);
+    const s32 req_id = StagePeerNetInfoResultLocked(ctx_id);
     if (req_id == 0) {
         return ORBIS_NP_MATCHING2_SIGNALING_ERROR_OUT_OF_MEMORY;
     }
-    *outReqId = static_cast<u32>(req_id);
-    LOG_INFO(Lib_NpSignaling, "ctxId={} reqId={:#x}", ctxId, *outReqId);
+    *out_req_id = static_cast<u32>(req_id);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} req_id={:#x}", ctx_id, *out_req_id);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingCancelPeerNetInfo(OrbisNpSignalingContextId ctxId, s32 reqOrConnId) {
+s32 sceNpSignalingCancelPeerNetInfo(OrbisNpSignalingContextId ctx_id, s32 req_or_conn_id) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!IsContextValidLocked(ctxId)) {
+    if (!IsContextValidLocked(ctx_id)) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
-    if (!DropPeerNetInfoResultLocked(ctxId, reqOrConnId)) {
+    if (!DropPeerNetInfoResultLocked(ctx_id, req_or_conn_id)) {
         return ORBIS_NP_SIGNALING_ERROR_REQ_NOT_FOUND;
     }
-    LOG_INFO(Lib_NpSignaling, "ctxId={} reqOrConnId={:#x}", ctxId, reqOrConnId);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} req_or_conn_id={:#x}", ctx_id, req_or_conn_id);
     return ORBIS_OK;
 }
 
-s32 sceNpSignalingGetPeerNetInfoResult(OrbisNpSignalingContextId ctxId,
-                                       OrbisNpSignalingConnectionId connId,
-                                       OrbisNpSignalingNetInfo* peerNetInfo) {
+s32 sceNpSignalingGetPeerNetInfoResult(OrbisNpSignalingContextId ctx_id,
+                                       OrbisNpSignalingConnectionId conn_id,
+                                       OrbisNpSignalingNetInfo* peer_net_info) {
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
         return ORBIS_NP_SIGNALING_ERROR_NOT_INITIALIZED;
     }
-    if (!peerNetInfo) {
+    if (!peer_net_info) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    if (!IsContextValidLocked(ctxId)) {
+    if (!IsContextValidLocked(ctx_id)) {
         return ORBIS_NP_SIGNALING_ERROR_CTX_NOT_FOUND;
     }
-    if (peerNetInfo->size != sizeof(OrbisNpSignalingNetInfo)) {
+    if (peer_net_info->size != sizeof(OrbisNpSignalingNetInfo)) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
 
     PeerNetInfoResult result{};
-    if (!TakePeerNetInfoResultLocked(ctxId, connId, &result)) {
+    if (!TakePeerNetInfoResultLocked(ctx_id, conn_id, &result)) {
         return ORBIS_NP_SIGNALING_ERROR_RESULT_NOT_FOUND;
     }
-    peerNetInfo->localAddr = result.local_ipv4;
-    peerNetInfo->mappedAddr = result.external_ipv4;
-    peerNetInfo->natStatus = static_cast<s32>(result.nat_route_kind);
-    peerNetInfo->_pad_14 = 0;
-    LOG_INFO(Lib_NpSignaling, "ctxId={} connId={:#x} ext={:#x}", ctxId, connId,
+    peer_net_info->local_addr = result.local_ipv4;
+    peer_net_info->mapped_addr = result.external_ipv4;
+    peer_net_info->nat_status = static_cast<s32>(result.nat_route_kind);
+    peer_net_info->pad_14 = 0;
+    LOG_INFO(Lib_NpSignaling, "ctx_id={} conn_id={:#x} ext={:#x}", ctx_id, conn_id,
              result.external_ipv4);
     return ORBIS_OK;
 }
@@ -801,9 +803,9 @@ s32 sceNpSignalingGetMemoryInfo(OrbisNpSignalingMemoryInfo* info) {
     if (!info) {
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
-    info->currentInUse = 0;
-    info->peakInUse = 0;
-    info->maxSystemSize = 0x20000;
+    info->current_in_use = 0;
+    info->peak_in_use = 0;
+    info->max_system_size = 0x20000;
     return ORBIS_OK;
 }
 
@@ -815,9 +817,9 @@ s32 sceNpSignalingGetConnectionStatistics(OrbisNpSignalingConnectionStatistics* 
         return ORBIS_NP_SIGNALING_ERROR_INVALID_ARGUMENT;
     }
     SignalingMutexGuard lock;
-    SnapshotConnectionStatisticsLocked(&stats->peakConnectionCount, &stats->activeConnectionCount,
-                                       &stats->transientConnectionCount,
-                                       &stats->establishedConnectionCount);
+    SnapshotConnectionStatisticsLocked(
+        &stats->peak_connection_count, &stats->active_connection_count,
+        &stats->transient_connection_count, &stats->established_connection_count);
     return ORBIS_OK;
 }
 

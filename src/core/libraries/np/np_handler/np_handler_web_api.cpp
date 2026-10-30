@@ -9,49 +9,51 @@
 namespace Libraries::Np {
 
 void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n) {
-    LOG_INFO(NpHandler, "svc='{}' type='{}' bytes={}", n.npServiceName, n.dataType, n.data.size());
+    LOG_INFO(NpHandler, "svc='{}' type='{}' bytes={}", n.np_service_name, n.data_type,
+             n.data.size());
     NpWebApi::PushEventInput ev;
-    ev.targetUserId = user_id;
-    ev.npServiceName = n.npServiceName;
-    ev.npServiceLabel = n.npServiceLabel;
-    ev.dataType = n.dataType;
+    ev.target_user_id = user_id;
+    ev.np_service_name = n.np_service_name;
+    ev.np_service_label = n.np_service_label;
+    ev.data_type = n.data_type;
     ev.data = n.data;
-    if (!n.fromNpid.empty()) {
-        ev.hasFrom = true;
-        u64 copy_len = std::min<u64>(n.fromNpid.length(), 16);
-        std::memcpy(ev.fromOnlineId.data, n.fromNpid.data(), copy_len);
+    if (!n.from_npid.empty()) {
+        ev.has_from = true;
+        u64 copy_len = std::min<u64>(n.from_npid.length(), 16);
+        std::memcpy(ev.from_online_id.data, n.from_npid.data(), copy_len);
     }
-    if (!n.toNpid.empty()) {
-        ev.hasTo = true;
-        u64 copy_len = std::min<u64>(n.toNpid.length(), 16);
-        std::memcpy(ev.toOnlineId.data, n.toNpid.data(), copy_len);
+    if (!n.to_npid.empty()) {
+        ev.has_to = true;
+        u64 copy_len = std::min<u64>(n.to_npid.length(), 16);
+        std::memcpy(ev.to_online_id.data, n.to_npid.data(), copy_len);
     }
-    ev.extdData = n.extdData;
-    ev.toAccountId = n.toAccountId != 0 ? n.toAccountId : GetAccountId(user_id);
-    ev.fromAccountId = n.fromAccountId;
-    if (ev.fromAccountId == 0) {
-        for (const auto& kv : n.extdData) {
+    ev.extd_data = n.extd_data;
+    ev.to_account_id = n.to_account_id != 0 ? n.to_account_id : GetAccountId(user_id);
+    ev.from_account_id = n.from_account_id;
+    if (ev.from_account_id == 0) {
+        for (const auto& kv : n.extd_data) {
             if (kv.first == "fromAccountId") {
-                ev.fromAccountId = std::strtoull(kv.second.c_str(), nullptr, 10);
+                ev.from_account_id = std::strtoull(kv.second.c_str(), nullptr, 10);
                 break;
             }
         }
     }
-    if (ev.toAccountId != 0) {
-        ev.hasTo = true;
-        if (n.toNpid.empty()) {
+    if (ev.to_account_id != 0) {
+        ev.has_to = true;
+        if (n.to_npid.empty()) {
             std::lock_guard lock(m_mutex_clients);
             if (const auto it = m_np_ids.find(user_id); it != m_np_ids.end()) {
-                std::memcpy(ev.toOnlineId.data, it->second.handle.data, sizeof(ev.toOnlineId.data));
+                std::memcpy(ev.to_online_id.data, it->second.handle.data,
+                            sizeof(ev.to_online_id.data));
             }
         }
     }
     NpWebApi::EnqueuePushEvent(ev);
 
-    if (n.npServiceName == "sessionInvitation") {
+    if (n.np_service_name == "sessionInvitation") {
         std::string session_id, invitation_id;
-        int64_t valid_until = 0;
-        for (const auto& kv : n.extdData) {
+        s64 valid_until = 0;
+        for (const auto& kv : n.extd_data) {
             if (kv.first == "sessionId") {
                 session_id = kv.second;
             } else if (kv.first == "invitationId") {
@@ -69,10 +71,10 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
                                            return p.invitation_id == invitation_id;
                                        }),
                         v.end());
-                v.push_back({session_id, invitation_id, n.fromNpid, n.toNpid, valid_until});
+                v.push_back({session_id, invitation_id, n.from_npid, n.to_npid, valid_until});
             }
             // TODO: Rework this to be a popup message dialog or something
-            // ImGui::InvitationPrompt::Push(user_id, invitation_id, session_id, n.fromNpid);
+            // ImGui::InvitationPrompt::Push(user_id, invitation_id, session_id, n.from_npid);
         }
     }
 }

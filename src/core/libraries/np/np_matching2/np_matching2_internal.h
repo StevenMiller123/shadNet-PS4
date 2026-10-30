@@ -66,13 +66,13 @@ struct CallbackPayload {
     std::vector<OrbisNpMatching2IntAttr> ext_int_attrs;
     std::vector<OrbisNpMatching2BinAttr> ext_bin_attrs;
     std::vector<OrbisNpMatching2RoomGroupInfo> ext_room_groups;
-    std::vector<Libraries::Np::OrbisNpId> ext_owner_npids;
+    std::vector<OrbisNpId> ext_owner_npids;
     void* request_data = nullptr;
 
     std::unique_ptr<OrbisNpMatching2RoomMessageInfo> room_message_info;
     std::unique_ptr<OrbisNpMatching2RoomMessageInfoA> room_message_info_a;
     std::unique_ptr<OrbisNpMatching2RoomMessageDestination> room_message_dst;
-    std::unique_ptr<Libraries::Np::OrbisNpId> room_message_src_npid;
+    std::unique_ptr<OrbisNpId> room_message_src_npid;
     std::vector<OrbisNpMatching2RoomMemberId> room_message_multicast_members;
     std::vector<u8> room_message_data;
     void* room_message_callback_data = nullptr;
@@ -171,8 +171,8 @@ struct ContextObject : std::enable_shared_from_this<ContextObject> {
 
     OrbisNpMatching2ServerId server_id = 1;
     OrbisNpServiceLabel service_label = 0;
-    Libraries::Np::OrbisNpId owner_np_id{};
-    Libraries::Np::OrbisNpOnlineId online_id{};
+    OrbisNpId owner_np_id{};
+    OrbisNpOnlineId online_id{};
 
     OrbisNpMatching2WorldId world_id = 0;
     OrbisNpMatching2LobbyId lobby_id = 0;
@@ -305,7 +305,7 @@ OrbisNpMatching2RequestId AllocRequestId();
 bool IsInitialized();
 void SetInitialized(bool initialized);
 void StoreRequestCallback(const std::shared_ptr<ContextObject>& ctx,
-                          const OrbisNpMatching2RequestOptParam* requestOpt);
+                          const OrbisNpMatching2RequestOptParam* request_opt);
 RequestCallbackInfo ConsumeRequestCallback(const std::shared_ptr<ContextObject>& ctx);
 
 void* BuildCreateJoinRoomPayload(ContextObject& ctx, CallbackPayload& payload,
@@ -339,9 +339,10 @@ void* BuildGetRoomDataInternalPayload(ContextObject& ctx, CallbackPayload& paylo
 void* BuildGetRoomMemberDataInternalPayload(
     ContextObject& ctx, CallbackPayload& payload,
     const OrbisNpMatching2GetRoomMemberDataInternalRequest& request);
-void* BuildRoomMessagePayload(CallbackPayload& p, bool a_variant, OrbisNpMatching2CastType castType,
-                              const std::vector<OrbisNpMatching2RoomMemberId>& dstMembers,
-                              const MemberCache* srcMember, const std::vector<u8>& msg);
+void* BuildRoomMessagePayload(CallbackPayload& p, bool a_variant,
+                              OrbisNpMatching2CastType cast_type,
+                              const std::vector<OrbisNpMatching2RoomMemberId>& dst_members,
+                              const MemberCache* src_member, const std::vector<u8>& msg);
 void InitEventDispatcher();
 void TermEventDispatcher();
 void ScheduleEvent(PendingEvent ev);

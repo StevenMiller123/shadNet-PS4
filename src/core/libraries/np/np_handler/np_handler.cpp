@@ -122,32 +122,32 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
 
     // Initialize per-user notification callbacks
     auto client = std::make_shared<ShadNet::ShadNetClient>();
-    client->onFriendQuery = [this, user_id](const ShadNet::NotifyFriendQuery& n) {
+    client->on_friend_query = [this, user_id](const ShadNet::NotifyFriendQuery& n) {
         OnFriendQuery(user_id, n);
     };
-    client->onFriendNew = [this, user_id](const ShadNet::NotifyFriendNew& n) {
+    client->on_friend_new = [this, user_id](const ShadNet::NotifyFriendNew& n) {
         OnFriendNew(user_id, n);
     };
-    client->onFriendLost = [this, user_id](const ShadNet::NotifyFriendLost& n) {
+    client->on_friend_lost = [this, user_id](const ShadNet::NotifyFriendLost& n) {
         OnFriendLost(user_id, n);
     };
-    client->onFriendStatus = [this, user_id](const ShadNet::NotifyFriendStatus& n) {
+    client->on_friend_status = [this, user_id](const ShadNet::NotifyFriendStatus& n) {
         OnFriendStatus(user_id, n);
     };
-    client->onWebApiPushEvent = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
+    client->on_web_api_push_event = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
         OnWebApiPushEvent(user_id, n);
     };
-    client->onServiceUnavailable = [this, user_id](const ShadNet::NotifyServiceUnavailable& n) {
+    client->on_service_unavailable = [this, user_id](const ShadNet::NotifyServiceUnavailable& n) {
         OnServiceUnavailable(user_id, n);
     };
-    client->onClientRejected = [this, user_id](const ShadNet::NotifyClientRejected& n) {
+    client->on_client_rejected = [this, user_id](const ShadNet::NotifyClientRejected& n) {
         OnClientRejected(user_id, n);
     };
-    client->onAsyncReply = [this, user_id](ShadNet::CommandType cmd, u64 pkt_id,
-                                           ShadNet::ErrorType err, const std::vector<u8>& body) {
+    client->on_async_reply = [this, user_id](ShadNet::CommandType cmd, u64 pkt_id,
+                                             ShadNet::ErrorType err, const std::vector<u8>& body) {
         OnAsyncReply(user_id, cmd, pkt_id, err, body);
     };
-    client->onLoginResult = [this, user_id](const ShadNet::LoginResult& res) {
+    client->on_login_result = [this, user_id](const ShadNet::LoginResult& res) {
         OnLoginResult(user_id, res);
     };
 
@@ -189,7 +189,7 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
         return false;
     }
 
-    LOG_NOTIFICATION(NpHandler, "{} successfully signed in to shadNet, accountId={}", npid,
+    LOG_NOTIFICATION(NpHandler, "{} successfully signed in to shadNet, account_id={}", npid,
                      client->GetUserId());
 
     NpMatching2::SetMmShadNetClient(client, host, port);
@@ -233,7 +233,6 @@ void NpHandler::DisconnectUser(s32 user_id) {
 
 void NpHandler::FailPendingRequests(s32 user_id, s32 error_code) {
     u64 failed = 0;
-    /* - libSceNpTus is not implemented yet
     {
         std::lock_guard lock(m_mutex_pending_tus);
         for (auto it = m_pending_tus.begin(); it != m_pending_tus.end();) {
@@ -248,7 +247,6 @@ void NpHandler::FailPendingRequests(s32 user_id, s32 error_code) {
             }
         }
     }
-    */
     {
         std::lock_guard lock(m_mutex_pending_score);
         for (auto it = m_pending_score.begin(); it != m_pending_score.end();) {
@@ -476,6 +474,8 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
         OnScoreReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 100 && cmd_val < 201) {
         NpMatching2::OnMatching2Reply(cmd, pkt_id, error, body);
+    } else if (cmd_val >= 201 && cmd_val <= 300) {
+        OnTusReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
         OnAuthReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd != ShadNet::CommandType::SetClientVersion) {
@@ -483,8 +483,6 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
     }
 
     /*
-    } else if (cmd_val >= 201 && cmd_val <= 300) {
-        OnTusReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 301 && cmd_val <= 400) {
         OnTrophyReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd == ShadNet::CommandType::LookupOnlineId) {
@@ -518,7 +516,7 @@ void NpHandler::OnServiceUnavailable(s32 user_id, const ShadNet::NotifyServiceUn
     case N::ReasonServerFull:
         text = n.limit > 0 ? fmt::format("Online matchmaking is full right now ({}/{} players). "
                                          "Try again in a few minutes.",
-                                         n.inUse, n.limit)
+                                         n.in_use, n.limit)
                            : "Online matchmaking is full right now. Try again in a few minutes.";
         break;
     case N::ReasonNotAllowed:

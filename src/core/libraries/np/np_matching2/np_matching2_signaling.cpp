@@ -68,9 +68,7 @@ void QueueMatching2SignalingEvent(ContextObject& ctx, OrbisNpMatching2RoomId roo
                                   OrbisNpMatching2RoomMemberId member_id,
                                   OrbisNpMatching2Event event, s32 error_code) {
     if (!ctx.signaling_callback) {
-        LOG_ERROR(Lib_NpMatching2,
-                  "Event skipped: ctx={} room={} member={} event={:#x} no callback", ctx.ctx_id,
-                  room_id, member_id, static_cast<u16>(event));
+        LOG_ERROR(Lib_NpMatching2, "no callback for event {:#x}", static_cast<u16>(event));
         return;
     }
 
@@ -126,9 +124,9 @@ void StopMatching2SignalingRuntime() {
     NpSignaling::Stop();
 }
 
-u32 GetRoomPingUs(const ContextObject& ctx, OrbisNpMatching2RoomId roomId) {
+u32 GetRoomPingUs(const ContextObject& ctx, OrbisNpMatching2RoomId room_id) {
     auto cache = LockCache(ctx.ctx_id);
-    const auto room_it = cache->rooms.find(roomId);
+    const auto room_it = cache->rooms.find(room_id);
     if (room_it == cache->rooms.end()) {
         return 0;
     }
@@ -151,24 +149,24 @@ u32 GetRoomPingUs(const ContextObject& ctx, OrbisNpMatching2RoomId roomId) {
 }
 
 void* BuildSignalingGetPingInfoPayload(ContextObject& ctx, CallbackPayload& p,
-                                       OrbisNpMatching2RoomId roomId) {
+                                       OrbisNpMatching2RoomId room_id) {
     p.Reset();
 
     auto cache = LockCache(ctx.ctx_id);
-    const auto room_it = cache->rooms.find(roomId);
+    const auto room_it = cache->rooms.find(room_id);
     p.ping_info_response = std::make_unique<OrbisNpMatching2SignalingGetPingInfoResponse>();
     auto& out = *p.ping_info_response;
     out = {};
     if (room_it != cache->rooms.end()) {
-        out.serverId = room_it->second.server_id;
-        out.worldId = room_it->second.world_id;
-        out.roomId = room_it->second.room_id;
+        out.server_id = room_it->second.server_id;
+        out.world_id = room_it->second.world_id;
+        out.room_id = room_it->second.room_id;
     } else {
-        out.serverId = ctx.server_id;
-        out.worldId = ctx.world_id;
-        out.roomId = roomId;
+        out.server_id = ctx.server_id;
+        out.world_id = ctx.world_id;
+        out.room_id = room_id;
     }
-    out.rtt = GetRoomPingUs(ctx, roomId);
+    out.rtt = GetRoomPingUs(ctx, room_id);
 
     p.request_data = p.ping_info_response.get();
     return p.request_data;
@@ -184,36 +182,36 @@ static void FillMappedAddr(OrbisNpMatching2SignalingConnectionInfoAddr& out) {
     out.port = htons(NetUtil::GetP2PAdvertisedPort());
 }
 
-s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId roomId,
-                                OrbisNpMatching2RoomMemberId memberId, u32 infoType, void* connInfo,
-                                bool a_variant) {
-    if (!connInfo) {
+s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId room_id,
+                                OrbisNpMatching2RoomMemberId member_id, u32 info_type,
+                                void* conn_info, bool a_variant) {
+    if (!conn_info) {
         LOG_ERROR(Lib_NpMatching2, "connInfo null");
         return ORBIS_NP_MATCHING2_ERROR_INVALID_ARGUMENT;
     }
 
     auto cache = LockCache(ctx.ctx_id);
-    const auto room_it = cache->rooms.find(roomId);
+    const auto room_it = cache->rooms.find(room_id);
     if (room_it == cache->rooms.end()) {
-        LOG_INFO(Lib_NpMatching2, "room={} not cached for connection info", roomId);
+        LOG_INFO(Lib_NpMatching2, "room={} not cached for connection info", room_id);
         if (a_variant) {
-            *static_cast<OrbisNpMatching2SignalingConnectionInfoA*>(connInfo) = {};
+            *static_cast<OrbisNpMatching2SignalingConnectionInfoA*>(conn_info) = {};
         } else {
-            *static_cast<OrbisNpMatching2SignalingConnectionInfo*>(connInfo) = {};
+            *static_cast<OrbisNpMatching2SignalingConnectionInfo*>(conn_info) = {};
         }
         return ORBIS_OK;
     }
 
-    const auto member_it = room_it->second.members.find(memberId);
+    const auto member_it = room_it->second.members.find(member_id);
     const MemberCache* member =
         member_it != room_it->second.members.end() ? &member_it->second : nullptr;
-    const auto peer_it = cache->peers.find(memberId);
+    const auto peer_it = cache->peers.find(member_id);
     const PeerInfo* peer = peer_it != cache->peers.end() ? &peer_it->second : nullptr;
 
     if (a_variant) {
-        auto* out = static_cast<OrbisNpMatching2SignalingConnectionInfoA*>(connInfo);
+        auto* out = static_cast<OrbisNpMatching2SignalingConnectionInfoA*>(conn_info);
         *out = {};
-        switch (infoType) {
+        switch (info_type) {
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_RTT:
             out->rtt = peer ? peer->ping_us : 0;
             break;
@@ -233,22 +231,22 @@ s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId
             }
             break;
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_PACKET_LOSS:
-            out->packetLoss = 0;
+            out->packet_loss = 0;
             break;
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_PEER_ADDRESS_A:
             if (member) {
-                out->peerAddrA.accountId = member->account_id;
-                out->peerAddrA.platform = member->platform;
+                out->peer_addr_a.account_id = member->account_id;
+                out->peer_addr_a.platform = member->platform;
             }
             break;
         default:
-            LOG_WARNING(Lib_NpMatching2, "unsupported connection info A type={}", infoType);
+            LOG_WARNING(Lib_NpMatching2, "unsupported connection info A type={}", info_type);
             return ORBIS_NP_MATCHING2_SIGNALING_ERROR_INVALID_ARGUMENT;
         }
     } else {
-        auto* out = static_cast<OrbisNpMatching2SignalingConnectionInfo*>(connInfo);
+        auto* out = static_cast<OrbisNpMatching2SignalingConnectionInfo*>(conn_info);
         *out = {};
-        switch (infoType) {
+        switch (info_type) {
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_RTT:
             out->rtt = peer ? peer->ping_us : 0;
             break;
@@ -258,7 +256,7 @@ s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_PEER_NP_ID:
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_PEER_NPID:
             if (member) {
-                out->npId = member->np_id;
+                out->np_id = member->np_id;
             }
             break;
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_MAPPED_ADDR:
@@ -274,16 +272,16 @@ s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId
             }
             break;
         case ORBIS_NP_MATCHING2_SIGNALING_CONN_INFO_PACKET_LOSS:
-            out->packetLoss = 0;
+            out->packet_loss = 0;
             break;
         default:
-            LOG_WARNING(Lib_NpMatching2, "unsupported connection info type={}", infoType);
+            LOG_WARNING(Lib_NpMatching2, "unsupported connection info type={}", info_type);
             return ORBIS_NP_MATCHING2_SIGNALING_ERROR_INVALID_ARGUMENT;
         }
     }
 
     LOG_INFO(Lib_NpMatching2, "connection info{}: ctx={} room={} member={} type={} rtt={}",
-             a_variant ? "A" : "", ctx.ctx_id, roomId, memberId, infoType,
+             a_variant ? "A" : "", ctx.ctx_id, room_id, member_id, info_type,
              peer ? peer->ping_us : 0);
     return ORBIS_OK;
 }
@@ -291,7 +289,7 @@ s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId
 s32 FillMatching2LocalNetInfo(void* info) {
     auto* out = static_cast<NpSignaling::OrbisNpSignalingNetInfo*>(info);
     if (!out || out->size != sizeof(NpSignaling::OrbisNpSignalingNetInfo)) {
-        LOG_ERROR(Lib_NpMatching2, "bad net info (size {})", out ? out->size : 0);
+        LOG_ERROR(Lib_NpMatching2, "invalid size {}", out ? out->size : 0);
         return ORBIS_NP_MATCHING2_ERROR_INVALID_ARGUMENT;
     }
 
@@ -299,26 +297,26 @@ s32 FillMatching2LocalNetInfo(void* info) {
     if (netinfo->GetIp().empty()) {
         netinfo->RetrieveIp();
     }
-    out->localAddr = NpSignaling::ParseIpv4Nbo(netinfo->GetIp());
-    if (out->localAddr == 0) {
-        out->localAddr = NpSignaling::ParseIpv4Nbo("127.0.0.1");
+    out->local_addr = NpSignaling::ParseIpv4Nbo(netinfo->GetIp());
+    if (out->local_addr == 0) {
+        out->local_addr = NpSignaling::ParseIpv4Nbo("127.0.0.1");
     }
-    out->mappedAddr = 0;
-    out->natStatus = 0;
+    out->mapped_addr = 0;
+    out->nat_status = 0;
     OrbisNetCtlNatInfo nat_info{};
     nat_info.size = sizeof(nat_info);
     if (sceNetCtlGetNatInfo(&nat_info) >= 0) {
-        out->mappedAddr = nat_info.mapped_addr;
-        out->natStatus = nat_info.nat_type;
+        out->mapped_addr = nat_info.mapped_addr;
+        out->nat_status = nat_info.nat_type;
     }
-    if (out->mappedAddr == 0) {
+    if (out->mapped_addr == 0) {
         const u32 external = netinfo->GetExternalIp();
-        out->mappedAddr = external != 0 ? external : out->localAddr;
+        out->mapped_addr = external != 0 ? external : out->local_addr;
     }
-    out->_pad_14 = 0;
+    out->pad_14 = 0;
 
-    LOG_INFO(Lib_NpMatching2, "localAddr={:#x} mappedAddr={:#x} natStatus={}", out->localAddr,
-             out->mappedAddr, out->natStatus);
+    LOG_INFO(Lib_NpMatching2, "local_addr={:#x} mapped_addr={:#x} nat_status={}", out->local_addr,
+             out->mapped_addr, out->nat_status);
     return ORBIS_OK;
 }
 

@@ -148,8 +148,7 @@ s32 sceNpRegisterStateCallbackA(OrbisNpStateCallbackA callback, void* userdata) 
     std::scoped_lock lk{g_np_state_callbacks_mutex};
     for (const auto& cb_entry : g_np_state_a_cbs) {
         if (cb_entry.in_use && cb_entry.func == callback) {
-            LOG_ERROR(Lib_NpManager, "callback for {:#x} is already registered",
-                      reinterpret_cast<u64>(callback));
+            LOG_ERROR(Lib_NpManager, "callback already registered");
             return ORBIS_NP_ERROR_CALLBACK_ALREADY_REGISTERED;
         }
     }
@@ -178,7 +177,7 @@ s32 sceNpUnregisterStateCallbackA(s32 callback_id) {
     std::scoped_lock lk{g_np_state_callbacks_mutex};
     auto& cb_entry = g_np_state_a_cbs[callback_id - 1];
     if (!cb_entry.in_use) {
-        LOG_ERROR(Lib_NpManager, "callback id {} is not registered", callback_id);
+        LOG_ERROR(Lib_NpManager, "callback {} not registered", callback_id);
         return ORBIS_NP_ERROR_CALLBACK_NOT_REGISTERED;
     }
     cb_entry = {};

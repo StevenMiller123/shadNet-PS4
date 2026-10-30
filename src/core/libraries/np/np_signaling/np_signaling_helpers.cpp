@@ -162,7 +162,7 @@ static void DispatchThreadMain() {
         }
 
         if (dispatch.callback) {
-            LOG_INFO(Lib_NpSignaling, "t={} ctxId={} connId={} event={}({}) delay={}ms", NowMs(),
+            LOG_INFO(Lib_NpSignaling, "t={} ctx_id={} conn_id={} event={}({}) delay={}ms", NowMs(),
                      dispatch.ctx_id, dispatch.conn_id, dispatch.event_type,
                      SignalingEventName(dispatch.event_type), dispatch.delay_ms);
             dispatch.callback(static_cast<u32>(dispatch.ctx_id), static_cast<u32>(dispatch.conn_id),

@@ -180,16 +180,16 @@ struct FriendEntry {
 
 struct LoginResult {
     ErrorType error = ErrorType::Malformed;
-    std::string avatarUrl;
-    u64 userId = 0;
+    std::string avatar_url;
+    u64 user_id = 0;
     std::vector<FriendEntry> friends;
-    std::vector<std::string> requestsSent;
-    std::vector<std::string> requestsReceived;
+    std::vector<std::string> requests_sent;
+    std::vector<std::string> requests_received;
     std::vector<std::string> blocked;
 };
 
 struct NotifyFriendQuery {
-    std::string fromNpid;
+    std::string from_npid;
 };
 
 struct NotifyFriendNew {
@@ -212,7 +212,7 @@ struct NotifyServiceUnavailable {
     enum : u32 { ReasonServerFull = 1, ReasonNotAllowed = 2, ReasonDisabled = 3 };
     u32 service = 0;
     u32 reason = 0;
-    u32 inUse = 0;
+    u32 in_use = 0;
     u32 limit = 0;
 };
 
@@ -224,15 +224,15 @@ struct NotifyClientRejected {
 };
 
 struct NotifyWebApiPushEvent {
-    std::string npServiceName;
-    u32 npServiceLabel = 0;
-    std::string dataType;
+    std::string np_service_name;
+    u32 np_service_label = 0;
+    std::string data_type;
     std::string data;
-    std::string fromNpid;
-    std::string toNpid;
-    std::vector<std::pair<std::string, std::string>> extdData;
-    u64 fromAccountId = 0;
-    u64 toAccountId = 0;
+    std::string from_npid;
+    std::string to_npid;
+    std::vector<std::pair<std::string, std::string>> extd_data;
+    u64 from_account_id = 0;
+    u64 to_account_id = 0;
 };
 
 struct MatchingBinAttr {
@@ -318,18 +318,18 @@ public:
     std::string GetBearerToken() const;
 
     // Callbacks
-    std::function<void(const LoginResult&)> onLoginResult;
-    std::function<void(const NotifyFriendQuery&)> onFriendQuery;
-    std::function<void(const NotifyFriendNew&)> onFriendNew;
-    std::function<void(const NotifyFriendLost&)> onFriendLost;
-    std::function<void(const NotifyFriendStatus&)> onFriendStatus;
-    std::function<void(const NotifyRoomEvent&)> onRoomEvent;
-    std::function<void(const NotifyRoomMessage&)> onRoomMessage;
-    std::function<void(const NotifyWebApiPushEvent&)> onWebApiPushEvent;
-    std::function<void(const NotifyServiceUnavailable&)> onServiceUnavailable;
-    std::function<void(const NotifyClientRejected&)> onClientRejected;
+    std::function<void(const LoginResult&)> on_login_result;
+    std::function<void(const NotifyFriendQuery&)> on_friend_query;
+    std::function<void(const NotifyFriendNew&)> on_friend_new;
+    std::function<void(const NotifyFriendLost&)> on_friend_lost;
+    std::function<void(const NotifyFriendStatus&)> on_friend_status;
+    std::function<void(const NotifyRoomEvent&)> on_room_event;
+    std::function<void(const NotifyRoomMessage&)> on_room_message;
+    std::function<void(const NotifyWebApiPushEvent&)> on_web_api_push_event;
+    std::function<void(const NotifyServiceUnavailable&)> on_service_unavailable;
+    std::function<void(const NotifyClientRejected&)> on_client_rejected;
     std::function<void(CommandType cmd, u64 pkt_id, ErrorType error, const std::vector<u8>& body)>
-        onAsyncReply;
+        on_async_reply;
 
     u64 SubmitRequest(CommandType cmd, const std::vector<u8>& payload);
 

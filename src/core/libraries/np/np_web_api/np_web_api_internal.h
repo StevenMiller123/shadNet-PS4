@@ -28,62 +28,62 @@ struct OrbisNpWebApiRegisteredExtendedPushEventCallback;
 
 struct OrbisNpWebApiContext {
     s32 type;
-    s32 userCount;
-    s32 libCtxId;
-    s32 libHttpCtxId;
-    Common::RecursiveMutex contextLock;
-    std::map<s32, OrbisNpWebApiUserContext*> userContexts;
+    s32 user_count;
+    s32 lib_ctx_id;
+    s32 lib_http_ctx_id;
+    Common::RecursiveMutex context_lock;
+    std::map<s32, OrbisNpWebApiUserContext*> user_contexts;
     std::map<s32, OrbisNpWebApiHandle*> handles;
-    std::map<s32, OrbisNpWebApiTimerHandle*> timerHandles;
-    std::map<s32, OrbisNpWebApiPushEventFilter*> pushEventFilters;
-    std::map<s32, OrbisNpWebApiServicePushEventFilter*> servicePushEventFilters;
-    std::map<s32, OrbisNpWebApiExtendedPushEventFilter*> extendedPushEventFilters;
+    std::map<s32, OrbisNpWebApiTimerHandle*> timer_handles;
+    std::map<s32, OrbisNpWebApiPushEventFilter*> push_event_filters;
+    std::map<s32, OrbisNpWebApiServicePushEventFilter*> service_push_event_filters;
+    std::map<s32, OrbisNpWebApiExtendedPushEventFilter*> extended_push_event_filters;
     std::string name;
     bool terminated;
 };
 
 struct OrbisNpWebApiUserContext {
-    OrbisNpWebApiContext* parentContext;
-    s32 userCount;
-    s32 userCtxId;
-    s32 userId;
+    OrbisNpWebApiContext* parent_context;
+    s32 user_count;
+    s32 user_ctx_id;
+    s32 user_id;
     std::map<s64, OrbisNpWebApiRequest*> requests;
-    std::map<s32, OrbisNpWebApiRegisteredPushEventCallback*> pushEventCallbacks;
-    std::map<s32, OrbisNpWebApiRegisteredServicePushEventCallback*> servicePushEventCallbacks;
-    std::map<s32, OrbisNpWebApiRegisteredExtendedPushEventCallback*> extendedPushEventCallbacks;
+    std::map<s32, OrbisNpWebApiRegisteredPushEventCallback*> push_event_callbacks;
+    std::map<s32, OrbisNpWebApiRegisteredServicePushEventCallback*> service_push_event_callbacks;
+    std::map<s32, OrbisNpWebApiRegisteredExtendedPushEventCallback*> extended_push_event_callbacks;
     bool deleted;
-    OrbisNpWebApiNotificationCallback notificationCallbackFunction;
-    void* pNotificationCallbackUserArgs;
+    OrbisNpWebApiNotificationCallback notification_callback_function;
+    void* notification_callback_user_args;
 };
 
 struct OrbisNpWebApiRequest {
-    OrbisNpWebApiContext* parentContext;
-    s32 userCount;
-    s64 requestId;
-    std::string userApiGroup;
-    std::string userPath;
-    OrbisNpWebApiHttpMethod userMethod;
-    u64 userContentLength;
-    std::string userContentType;
-    std::vector<std::pair<std::string, std::string>> userHeaders;
+    OrbisNpWebApiContext* parent_context;
+    s32 user_count;
+    s64 request_id;
+    std::string user_api_group;
+    std::string user_path;
+    OrbisNpWebApiHttpMethod user_method;
+    u64 user_content_length;
+    std::string user_content_type;
+    std::vector<std::pair<std::string, std::string>> user_headers;
     bool multipart;
     struct MultipartPart {
-        std::string rawHeaders;
-        u64 contentLength = 0;
+        std::string raw_headers;
+        u64 content_length = 0;
         std::string data;
-        u64 sentSize = 0;
+        u64 sent_size = 0;
     };
-    std::string multipartContentType;
-    std::string multipartBoundary;
-    std::vector<MultipartPart> multipartParts;
+    std::string multipart_content_type;
+    std::string multipart_boundary;
+    std::vector<MultipartPart> multipart_parts;
     bool aborted;
     bool sent;
-    u32 requestTimeout;
-    u64 requestEndTime;
-    bool timedOut;
-    u8 requestState;
-    u64 remainingData;
-    u32 readOffset;
+    u32 request_timeout;
+    u64 request_end_time;
+    bool timed_out;
+    u8 request_state;
+    u64 remaining_data;
+    u32 read_offset;
     char data[64];
     s32 http_connection_id = 0;
     s32 http_request_id = 0;
@@ -91,68 +91,68 @@ struct OrbisNpWebApiRequest {
 };
 
 struct OrbisNpWebApiHandle {
-    s32 handleId;
+    s32 handle_id;
     bool aborted;
     bool deleted;
-    s32 userCount;
+    s32 user_count;
 };
 
 struct OrbisNpWebApiTimerHandle {
-    s32 handleId;
-    u32 handleTimeout;
-    u64 handleEndTime;
-    bool timedOut;
+    s32 handle_id;
+    u32 handle_timeout;
+    u64 handle_end_time;
+    bool timed_out;
 };
 
 struct OrbisNpWebApiPushEventFilter {
-    s32 filterId;
-    std::vector<OrbisNpWebApiPushEventFilterParameter> filterParams;
-    OrbisNpWebApiContext* parentContext;
+    s32 filter_id;
+    std::vector<OrbisNpWebApiPushEventFilterParameter> filter_params;
+    OrbisNpWebApiContext* parent_context;
 };
 
 struct OrbisNpWebApiServicePushEventFilter {
-    s32 filterId;
+    s32 filter_id;
     bool internal;
-    std::vector<OrbisNpWebApiServicePushEventFilterParameter> filterParams;
-    std::string npServiceName;
-    u32 npServiceLabel;
-    OrbisNpWebApiContext* parentContext;
+    std::vector<OrbisNpWebApiServicePushEventFilterParameter> filter_params;
+    std::string np_service_name;
+    u32 np_service_label;
+    OrbisNpWebApiContext* parent_context;
 };
 
 struct OrbisNpWebApiExtendedPushEventFilter {
-    s32 filterId;
+    s32 filter_id;
     bool internal;
-    std::vector<OrbisNpWebApiExtdPushEventFilterParameter> filterParams;
-    std::vector<std::vector<std::string>> extdDataKeys;
-    std::string npServiceName;
-    u32 npServiceLabel;
-    OrbisNpWebApiContext* parentContext;
+    std::vector<OrbisNpWebApiExtdPushEventFilterParameter> filter_params;
+    std::vector<std::vector<std::string>> extd_data_keys;
+    std::string np_service_name;
+    u32 np_service_label;
+    OrbisNpWebApiContext* parent_context;
 };
 
 struct OrbisNpWebApiRegisteredPushEventCallback {
-    s32 callbackId;
-    s32 filterId;
-    OrbisNpWebApiPushEventCallback cbFunc;
-    void* pUserArg;
+    s32 callback_id;
+    s32 filter_id;
+    OrbisNpWebApiPushEventCallback cb_func;
+    void* user_arg;
 };
 
 struct OrbisNpWebApiRegisteredServicePushEventCallback {
-    s32 callbackId;
-    s32 filterId;
-    OrbisNpWebApiServicePushEventCallback cbFunc;
-    OrbisNpWebApiInternalServicePushEventCallback internalCbFunc;
+    s32 callback_id;
+    s32 filter_id;
+    OrbisNpWebApiServicePushEventCallback cb_func;
+    OrbisNpWebApiInternalServicePushEventCallback internal_cb_func;
     // Note: real struct stores both internal callbacks in one field
-    OrbisNpWebApiInternalServicePushEventCallbackA internalCbFuncA;
-    void* pUserArg;
+    OrbisNpWebApiInternalServicePushEventCallbackA internal_cb_func_a;
+    void* user_arg;
 };
 
 struct OrbisNpWebApiRegisteredExtendedPushEventCallback {
-    s32 callbackId;
-    s32 filterId;
-    OrbisNpWebApiExtdPushEventCallback cbFunc;
+    s32 callback_id;
+    s32 filter_id;
+    OrbisNpWebApiExtdPushEventCallback cb_func;
     // Note: real struct stores both callbacks in one field
-    OrbisNpWebApiExtdPushEventCallbackA cbFuncA;
-    void* pUserArg;
+    OrbisNpWebApiExtdPushEventCallbackA cb_func_a;
+    void* user_arg;
 };
 
 // General functions
@@ -160,8 +160,8 @@ s32 initializeLibrary();
 s32 getCompiledSdkVersion();
 
 // Library context functions
-s32 createLibraryContext(s32 libHttpCtxId, u64 poolSize, const char* name, s32 type);
-OrbisNpWebApiContext* findAndValidateContext(s32 libCtxId, s32 flag = 0);
+s32 createLibraryContext(s32 lib_http_ctx_id, u64 pool_size, const char* name, s32 type);
+OrbisNpWebApiContext* findAndValidateContext(s32 lib_ctx_id, s32 flag = 0);
 void releaseContext(OrbisNpWebApiContext* context);
 bool isContextTerminated(OrbisNpWebApiContext* context);
 bool isContextBusy(OrbisNpWebApiContext* context);
@@ -171,131 +171,132 @@ void unlockContext(OrbisNpWebApiContext* context);
 void markContextAsTerminated(OrbisNpWebApiContext* context);
 void checkContextTimeout(OrbisNpWebApiContext* context);
 void checkTimeout();
-s32 deleteContext(s32 libCtxId);
-s32 terminateContext(s32 libCtxId);
+s32 deleteContext(s32 lib_ctx_id);
+s32 terminateContext(s32 lib_ctx_id);
 
 // User context functions
-OrbisNpWebApiUserContext* findUserContextByUserId(OrbisNpWebApiContext* context, s32 userId);
-OrbisNpWebApiUserContext* findUserContext(OrbisNpWebApiContext* context, s32 userCtxId);
-s32 createUserContextWithOnlineId(s32 libCtxId, OrbisNpOnlineId* onlineId);
-s32 createUserContext(s32 libCtxId, s32 userId);
-s32 registerNotificationCallback(s32 titleUserCtxId, OrbisNpWebApiNotificationCallback cbFunc,
-                                 void* pUserArg);
-s32 unregisterNotificationCallback(s32 titleUserCtxId);
-bool isUserContextBusy(OrbisNpWebApiUserContext* userContext);
-bool areUserContextRequestsBusy(OrbisNpWebApiUserContext* userContext);
-void releaseUserContext(OrbisNpWebApiUserContext* userContext);
-void checkUserContextTimeout(OrbisNpWebApiUserContext* userContext);
-s32 deleteUserContext(s32 userCtxId);
+OrbisNpWebApiUserContext* findUserContextByUserId(OrbisNpWebApiContext* context, s32 user_id);
+OrbisNpWebApiUserContext* findUserContext(OrbisNpWebApiContext* context, s32 user_ctx_id);
+s32 createUserContextWithOnlineId(s32 lib_ctx_id, OrbisNpOnlineId* online_id);
+s32 createUserContext(s32 lib_ctx_id, s32 user_id);
+s32 registerNotificationCallback(s32 title_user_ctx_id, OrbisNpWebApiNotificationCallback cb_func,
+                                 void* user_arg);
+s32 unregisterNotificationCallback(s32 title_user_ctx_id);
+bool isUserContextBusy(OrbisNpWebApiUserContext* user_context);
+bool areUserContextRequestsBusy(OrbisNpWebApiUserContext* user_context);
+void releaseUserContext(OrbisNpWebApiUserContext* user_context);
+void checkUserContextTimeout(OrbisNpWebApiUserContext* user_context);
+s32 deleteUserContext(s32 user_ctx_id);
 
 // Request functions
-s32 createRequest(s32 titleUserCtxId, const char* pApiGroup, const char* pPath,
+s32 createRequest(s32 title_user_ctx_id, const char* api_group, const char* path,
                   OrbisNpWebApiHttpMethod method,
-                  const OrbisNpWebApiContentParameter* pContentParameter,
-                  const OrbisNpWebApiIntCreateRequestExtraArgs* pInternalArgs, s64* pRequestId,
-                  bool isMultipart);
-OrbisNpWebApiRequest* findRequest(OrbisNpWebApiUserContext* userContext, s64 requestId);
-OrbisNpWebApiRequest* findRequestAndMarkBusy(OrbisNpWebApiUserContext* userContext, s64 requestId);
+                  const OrbisNpWebApiContentParameter* content_parameter,
+                  const OrbisNpWebApiIntCreateRequestExtraArgs* internal_args, s64* out_request_id,
+                  bool is_multipart);
+OrbisNpWebApiRequest* findRequest(OrbisNpWebApiUserContext* user_context, s64 request_id);
+OrbisNpWebApiRequest* findRequestAndMarkBusy(OrbisNpWebApiUserContext* user_context,
+                                             s64 request_id);
 bool isRequestBusy(OrbisNpWebApiRequest* request);
-s32 setRequestTimeout(s64 requestId, u32 timeout);
+s32 setRequestTimeout(s64 request_id, u32 timeout);
 void startRequestTimer(OrbisNpWebApiRequest* request);
 void checkRequestTimeout(OrbisNpWebApiRequest* request);
-s32 sendRequest(s64 requestId, s32 partIndex, const void* data, u64 dataSize, s8 flag,
-                OrbisNpWebApiResponseInformationOption* pResponseInformationOption);
-s32 setMultipartContentType(s64 requestId, const char* pTypeName, const char* pBoundary);
-s32 addMultipartPart(s64 requestId, const OrbisNpWebApiMultipartPartParameter* pParam, s32* pIndex);
-s32 abortRequestInternal(OrbisNpWebApiContext* context, OrbisNpWebApiUserContext* userContext,
+s32 sendRequest(s64 request_id, s32 part_index, const void* data, u64 data_size, s8 flag,
+                OrbisNpWebApiResponseInformationOption* response_information_option);
+s32 setMultipartContentType(s64 request_id, const char* type_name, const char* boundary);
+s32 addMultipartPart(s64 request_id, const OrbisNpWebApiMultipartPartParameter* param, s32* index);
+s32 abortRequestInternal(OrbisNpWebApiContext* context, OrbisNpWebApiUserContext* user_context,
                          OrbisNpWebApiRequest* request);
-s32 abortRequest(s64 requestId);
+s32 abortRequest(s64 request_id);
 void releaseRequest(OrbisNpWebApiRequest* request);
-s32 deleteRequest(s64 requestId);
+s32 deleteRequest(s64 request_id);
 
-s32 addHttpRequestHeaderInternal(s64 requestId, const char* pFieldName, const char* pValue);
-s32 getHttpResponseHeaderValueInternal(s64 requestId, const char* pFieldName, char* pValue,
-                                       u64 valueSize, u64* pValueLength);
+s32 addHttpRequestHeaderInternal(s64 request_id, const char* field_name, const char* value);
+s32 getHttpResponseHeaderValueInternal(s64 request_id, const char* field_name, char* out_value,
+                                       u64 value_size, u64* value_length);
 s32 getLastWebApiError();
 
 void DrainPushEvents();
 
 // Handle functions
 s32 createHandleInternal(OrbisNpWebApiContext* context);
-s32 createHandle(s32 libCtxId);
-s32 setHandleTimeoutInternal(OrbisNpWebApiContext* context, s32 handleId, u32 timeout);
-s32 setHandleTimeout(s32 libCtxId, s32 handleId, u32 timeout);
-void startHandleTimer(OrbisNpWebApiContext* context, s32 handleId);
+s32 createHandle(s32 lib_ctx_id);
+s32 setHandleTimeoutInternal(OrbisNpWebApiContext* context, s32 handle_id, u32 timeout);
+s32 setHandleTimeout(s32 lib_ctx_id, s32 handle_id, u32 timeout);
+void startHandleTimer(OrbisNpWebApiContext* context, s32 handle_id);
 void releaseHandle(OrbisNpWebApiContext* context, OrbisNpWebApiHandle* handle);
-s32 getHandle(OrbisNpWebApiContext* context, s32 handleId, OrbisNpWebApiHandle** handleOut);
-s32 abortHandle(s32 libCtxId, s32 handleId);
-s32 deleteHandleInternal(OrbisNpWebApiContext* context, s32 handleId);
-s32 deleteHandle(s32 libCtxId, s32 handleId);
+s32 getHandle(OrbisNpWebApiContext* context, s32 handle_id, OrbisNpWebApiHandle** handle_out);
+s32 abortHandle(s32 lib_ctx_id, s32 handle_id);
+s32 deleteHandleInternal(OrbisNpWebApiContext* context, s32 handle_id);
+s32 deleteHandle(s32 lib_ctx_id, s32 handle_id);
 
 // Push event filter functions
 s32 createPushEventFilterInternal(OrbisNpWebApiContext* context,
-                                  const OrbisNpWebApiPushEventFilterParameter* pFilterParam,
-                                  u64 filterParamNum);
-s32 createPushEventFilter(s32 libCtxId, const OrbisNpWebApiPushEventFilterParameter* pFilterParam,
-                          u64 filterParamNum);
-s32 deletePushEventFilterInternal(OrbisNpWebApiContext* context, s32 filterId);
-s32 deletePushEventFilter(s32 libCtxId, s32 filterId);
+                                  const OrbisNpWebApiPushEventFilterParameter* filter_param,
+                                  u64 filter_param_num);
+s32 createPushEventFilter(s32 lib_ctx_id, const OrbisNpWebApiPushEventFilterParameter* filter_param,
+                          u64 filter_param_num);
+s32 deletePushEventFilterInternal(OrbisNpWebApiContext* context, s32 filter_id);
+s32 deletePushEventFilter(s32 lib_ctx_id, s32 filter_id);
 
 // Push event callback functions
-s32 registerPushEventCallbackInternal(OrbisNpWebApiUserContext* userContext, s32 filterId,
-                                      OrbisNpWebApiPushEventCallback cbFunc, void* userArg);
-s32 registerPushEventCallback(s32 titleUserCtxId, s32 filterId,
-                              OrbisNpWebApiPushEventCallback cbFunc, void* pUserArg);
-s32 unregisterPushEventCallback(s32 titleUserCtxId, s32 callbackId);
+s32 registerPushEventCallbackInternal(OrbisNpWebApiUserContext* user_context, s32 filter_id,
+                                      OrbisNpWebApiPushEventCallback cb_func, void* user_arg);
+s32 registerPushEventCallback(s32 title_user_ctx_id, s32 filter_id,
+                              OrbisNpWebApiPushEventCallback cb_func, void* user_arg);
+s32 unregisterPushEventCallback(s32 title_user_ctx_id, s32 callback_id);
 
 // Service push event filter functions
 s32 createServicePushEventFilterInternal(
-    OrbisNpWebApiContext* context, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const OrbisNpWebApiServicePushEventFilterParameter* pFilterParam, u64 filterParamNum);
-s32 createServicePushEventFilter(s32 libCtxId, s32 handleId, const char* pNpServiceName,
-                                 u32 npServiceLabel,
-                                 const OrbisNpWebApiServicePushEventFilterParameter* pFilterParam,
-                                 u64 filterParamNum);
-s32 deleteServicePushEventFilterInternal(OrbisNpWebApiContext* context, s32 filterId);
-s32 deleteServicePushEventFilter(s32 libCtxId, s32 filterId);
+    OrbisNpWebApiContext* context, s32 handle_id, const char* np_service_name, u32 np_service_label,
+    const OrbisNpWebApiServicePushEventFilterParameter* filter_param, u64 filter_param_num);
+s32 createServicePushEventFilter(s32 lib_ctx_id, s32 handle_id, const char* np_service_name,
+                                 u32 np_service_label,
+                                 const OrbisNpWebApiServicePushEventFilterParameter* filter_param,
+                                 u64 filter_param_num);
+s32 deleteServicePushEventFilterInternal(OrbisNpWebApiContext* context, s32 filter_id);
+s32 deleteServicePushEventFilter(s32 lib_ctx_id, s32 filter_id);
 
 // Service push event callback functions
 s32 registerServicePushEventCallbackInternal(
-    OrbisNpWebApiUserContext* userContext, s32 filterId,
-    OrbisNpWebApiServicePushEventCallback cbFunc,
-    OrbisNpWebApiInternalServicePushEventCallback intCbFunc,
-    OrbisNpWebApiInternalServicePushEventCallbackA intCbFuncA, void* pUserArg);
-s32 registerServicePushEventCallback(s32 titleUserCtxId, s32 filterId,
-                                     OrbisNpWebApiServicePushEventCallback cbFunc,
-                                     OrbisNpWebApiInternalServicePushEventCallback intCbFunc,
-                                     OrbisNpWebApiInternalServicePushEventCallbackA intCbFuncA,
-                                     void* pUserArg);
-s32 unregisterServicePushEventCallback(s32 titleUserCtxId, s32 callbackId);
+    OrbisNpWebApiUserContext* user_context, s32 filter_id,
+    OrbisNpWebApiServicePushEventCallback cb_func,
+    OrbisNpWebApiInternalServicePushEventCallback int_cb_func,
+    OrbisNpWebApiInternalServicePushEventCallbackA int_cb_func_a, void* user_arg);
+s32 registerServicePushEventCallback(s32 title_user_ctx_id, s32 filter_id,
+                                     OrbisNpWebApiServicePushEventCallback cb_func,
+                                     OrbisNpWebApiInternalServicePushEventCallback int_cb_func,
+                                     OrbisNpWebApiInternalServicePushEventCallbackA int_cb_func_a,
+                                     void* user_arg);
+s32 unregisterServicePushEventCallback(s32 title_user_ctx_id, s32 callback_id);
 
 // Extended push event filter functions
 s32 createExtendedPushEventFilterInternal(
-    OrbisNpWebApiContext* context, s32 handleId, const char* pNpServiceName, u32 npServiceLabel,
-    const OrbisNpWebApiExtdPushEventFilterParameter* pFilterParam, u64 filterParamNum,
+    OrbisNpWebApiContext* context, s32 handle_id, const char* np_service_name, u32 np_service_label,
+    const OrbisNpWebApiExtdPushEventFilterParameter* filter_param, u64 filter_param_num,
     bool internal);
-s32 createExtendedPushEventFilter(s32 libCtxId, s32 handleId, const char* pNpServiceName,
-                                  u32 npServiceLabel,
-                                  const OrbisNpWebApiExtdPushEventFilterParameter* pFilterParam,
-                                  u64 filterParamNum, bool internal);
-s32 deleteExtendedPushEventFilterInternal(OrbisNpWebApiContext* context, s32 filterId);
-s32 deleteExtendedPushEventFilter(s32 libCtxId, s32 filterId);
+s32 createExtendedPushEventFilter(s32 lib_ctx_id, s32 handle_id, const char* np_service_name,
+                                  u32 np_service_label,
+                                  const OrbisNpWebApiExtdPushEventFilterParameter* filter_param,
+                                  u64 filter_param_num, bool internal);
+s32 deleteExtendedPushEventFilterInternal(OrbisNpWebApiContext* context, s32 filter_id);
+s32 deleteExtendedPushEventFilter(s32 lib_ctx_id, s32 filter_id);
 
 // Extended push event callback functions
-s32 registerExtdPushEventCallbackInternal(OrbisNpWebApiUserContext* userContext, s32 filterId,
-                                          OrbisNpWebApiExtdPushEventCallback cbFunc,
-                                          OrbisNpWebApiExtdPushEventCallbackA cbFuncA,
-                                          void* pUserArg);
-s32 registerExtdPushEventCallback(s32 userCtxId, s32 filterId,
-                                  OrbisNpWebApiExtdPushEventCallback cbFunc,
-                                  OrbisNpWebApiExtdPushEventCallbackA cbFuncA, void* pUserArg);
-s32 registerExtdPushEventCallbackA(s32 userCtxId, s32 filterId,
-                                   OrbisNpWebApiExtdPushEventCallbackA cbFunc, void* pUserArg);
-s32 unregisterExtdPushEventCallback(s32 titleUserCtxId, s32 callbackId);
+s32 registerExtdPushEventCallbackInternal(OrbisNpWebApiUserContext* user_context, s32 filter_id,
+                                          OrbisNpWebApiExtdPushEventCallback cb_func,
+                                          OrbisNpWebApiExtdPushEventCallbackA cb_func_a,
+                                          void* user_arg);
+s32 registerExtdPushEventCallback(s32 user_ctx_id, s32 filter_id,
+                                  OrbisNpWebApiExtdPushEventCallback cb_func,
+                                  OrbisNpWebApiExtdPushEventCallbackA cb_func_a, void* user_arg);
+s32 registerExtdPushEventCallbackA(s32 user_ctx_id, s32 filter_id,
+                                   OrbisNpWebApiExtdPushEventCallbackA cb_func, void* user_arg);
+s32 unregisterExtdPushEventCallback(s32 title_user_ctx_id, s32 callback_id);
 
-s32 getHttpStatusCodeInternal(s64 requestId, s32* out_status_code);
+s32 getHttpStatusCodeInternal(s64 request_id, s32* out_status_code);
 s32 getHttpRequestIdFromRequest(OrbisNpWebApiRequest* request);
-s32 readDataInternal(s64 requestId, void* pData, u64 size);
+s32 readDataInternal(s64 request_id, void* data, u64 size);
 void setRequestEndTime(OrbisNpWebApiRequest* request);
 void clearRequestEndTime(OrbisNpWebApiRequest* req);
 bool hasRequestTimedOut(OrbisNpWebApiRequest* request);

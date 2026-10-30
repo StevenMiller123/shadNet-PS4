@@ -600,14 +600,14 @@ void ShadNetClient::DispatchPacket(PacketType type, u16 cmd_raw, u64 pkt_id,
             HandleServerFeaturesReply(payload);
             break;
         default: {
-            if (onAsyncReply) {
+            if (on_async_reply) {
                 ErrorType err =
                     payload.empty() ? ErrorType::Malformed : static_cast<ErrorType>(payload[0]);
                 std::vector<u8> body;
                 if (payload.size() > 1) {
                     body.assign(payload.begin() + 1, payload.end());
                 }
-                onAsyncReply(static_cast<CommandType>(cmd_raw), pkt_id, err, body);
+                on_async_reply(static_cast<CommandType>(cmd_raw), pkt_id, err, body);
             } else {
                 LOG_WARNING(shadNet, "Unhandled reply cmd={} pkt_id={}", cmd_raw, pkt_id);
             }
@@ -640,8 +640,8 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
             shadnet::LoginReply pb;
             const std::string blob = ExtractBlob(payload, 1);
             if (!blob.empty() && pb.ParseFromString(blob)) {
-                res.avatarUrl = pb.avatar_url();
-                res.userId = pb.user_id();
+                res.avatar_url = pb.avatar_url();
+                res.user_id = pb.user_id();
                 for (const auto& f : pb.friends()) {
                     FriendEntry fe;
                     fe.npid = f.npid();
@@ -649,20 +649,20 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
                     res.friends.push_back(std::move(fe));
                 }
                 for (const auto& n : pb.friend_requests_sent())
-                    res.requestsSent.push_back(n);
+                    res.requests_sent.push_back(n);
                 for (const auto& n : pb.friend_requests_received())
-                    res.requestsReceived.push_back(n);
+                    res.requests_received.push_back(n);
                 for (const auto& n : pb.blocked())
                     res.blocked.push_back(n);
 
-                m_avatar_url = res.avatarUrl;
-                m_user_id = res.userId;
+                m_avatar_url = res.avatar_url;
+                m_user_id = res.user_id;
                 {
                     std::lock_guard lock(m_mutex_friends);
                     m_friends = res.friends;
                 }
                 m_authenticated = true;
-                LOG_INFO(shadNet, "{} logged in, userId={} friends={}", m_npid, m_user_id,
+                LOG_INFO(shadNet, "{} logged in, user_id={} friends={}", m_npid, m_user_id,
                          m_friends.size());
 
                 const u64 pkt_id = m_pkt_counter.fetch_add(1);
@@ -704,8 +704,8 @@ void ShadNetClient::HandleLoginReply(const std::vector<u8>& payload) {
         }
     }
 
-    if (onLoginResult) {
-        onLoginResult(res);
+    if (on_login_result) {
+        on_login_result(res);
     }
 }
 
@@ -780,9 +780,9 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
             break;
         }
         NotifyFriendQuery n;
-        n.fromNpid = pb.from_npid();
-        if (onFriendQuery) {
-            onFriendQuery(n);
+        n.from_npid = pb.from_npid();
+        if (on_friend_query) {
+            on_friend_query(n);
         }
         break;
     }
@@ -794,8 +794,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         NotifyFriendNew n;
         n.npid = pb.npid();
         n.online = pb.online();
-        if (onFriendNew) {
-            onFriendNew(n);
+        if (on_friend_new) {
+            on_friend_new(n);
         }
         break;
     }
@@ -806,8 +806,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         }
         NotifyFriendLost n;
         n.npid = pb.npid();
-        if (onFriendLost) {
-            onFriendLost(n);
+        if (on_friend_lost) {
+            on_friend_lost(n);
         }
         break;
     }
@@ -820,8 +820,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         n.npid = pb.npid();
         n.online = pb.online();
         n.timestamp = pb.timestamp();
-        if (onFriendStatus) {
-            onFriendStatus(n);
+        if (on_friend_status) {
+            on_friend_status(n);
         }
         break;
     }
@@ -870,8 +870,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
             ba.data.assign(a.data().begin(), a.data().end());
             n.bin_attrs.push_back(std::move(ba));
         }
-        if (onRoomEvent) {
-            onRoomEvent(n);
+        if (on_room_event) {
+            on_room_event(n);
         }
         break;
     }
@@ -893,28 +893,28 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         n.src_account_id = pb.src_account_id();
         n.src_platform = pb.src_platform();
         n.msg.assign(pb.msg().begin(), pb.msg().end());
-        if (onRoomMessage) {
-            onRoomMessage(n);
+        if (on_room_message) {
+            on_room_message(n);
         }
         break;
     }
     case NotificationType::WebApiPushEvent: {
         NotifyWebApiPushEvent n;
         s32 off = 0;
-        n.npServiceName = ExtractBlob(payload, off);
-        off += 4 + static_cast<s32>(n.npServiceName.size());
+        n.np_service_name = ExtractBlob(payload, off);
+        off += 4 + static_cast<s32>(n.np_service_name.size());
         if (off + 4 <= static_cast<s32>(payload.size())) {
-            n.npServiceLabel = GetLE32(payload.data() + off);
+            n.np_service_label = GetLE32(payload.data() + off);
             off += 4;
         }
-        n.dataType = ExtractBlob(payload, off);
-        off += 4 + static_cast<s32>(n.dataType.size());
+        n.data_type = ExtractBlob(payload, off);
+        off += 4 + static_cast<s32>(n.data_type.size());
         n.data = ExtractBlob(payload, off);
         off += 4 + static_cast<s32>(n.data.size());
-        n.fromNpid = ExtractBlob(payload, off);
-        off += 4 + static_cast<s32>(n.fromNpid.size());
-        n.toNpid = ExtractBlob(payload, off);
-        off += 4 + static_cast<s32>(n.toNpid.size());
+        n.from_npid = ExtractBlob(payload, off);
+        off += 4 + static_cast<s32>(n.from_npid.size());
+        n.to_npid = ExtractBlob(payload, off);
+        off += 4 + static_cast<s32>(n.to_npid.size());
         if (off + 4 <= static_cast<s32>(payload.size())) {
             const u32 count = GetLE32(payload.data() + off);
             off += 4;
@@ -932,19 +932,19 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
                 }
                 std::string val = ExtractBlob(payload, off);
                 off += 4 + static_cast<s32>(val.size());
-                n.extdData.emplace_back(std::move(key), std::move(val));
+                n.extd_data.emplace_back(std::move(key), std::move(val));
             }
             if (extd_complete && off + 16 <= static_cast<s32>(payload.size())) {
-                n.fromAccountId = GetLE64(payload.data() + off);
-                n.toAccountId = GetLE64(payload.data() + off + 8);
+                n.from_account_id = GetLE64(payload.data() + off);
+                n.to_account_id = GetLE64(payload.data() + off + 8);
             }
         }
         LOG_INFO(shadNet,
                  "WebApiPushEvent svc='{}' type='{}' from='{}'({}) to='{}'({}) bytes={} extd={}",
-                 n.npServiceName, n.dataType, n.fromNpid, n.fromAccountId, n.toNpid, n.toAccountId,
-                 n.data.size(), n.extdData.size());
-        if (onWebApiPushEvent) {
-            onWebApiPushEvent(n);
+                 n.np_service_name, n.data_type, n.from_npid, n.from_account_id, n.to_npid,
+                 n.to_account_id, n.data.size(), n.extd_data.size());
+        if (on_web_api_push_event) {
+            on_web_api_push_event(n);
         }
         break;
     }
@@ -956,12 +956,12 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         NotifyServiceUnavailable n;
         n.service = pb.service();
         n.reason = pb.reason();
-        n.inUse = pb.in_use();
+        n.in_use = pb.in_use();
         n.limit = pb.limit();
         LOG_INFO(shadNet, "ServiceUnavailable service={} reason={} in_use={} limit={}", n.service,
-                 n.reason, n.inUse, n.limit);
-        if (onServiceUnavailable) {
-            onServiceUnavailable(n);
+                 n.reason, n.in_use, n.limit);
+        if (on_service_unavailable) {
+            on_service_unavailable(n);
         }
         break;
     }
@@ -976,8 +976,8 @@ void ShadNetClient::HandleNotification(u16 cmd_raw, const std::vector<u8>& paylo
         n.version = pb.version();
         LOG_ERROR(shadNet, "Server rejected this client (reason={}, version='{}'): {}", n.reason,
                   n.version, n.message);
-        if (onClientRejected) {
-            onClientRejected(n);
+        if (on_client_rejected) {
+            on_client_rejected(n);
         }
         break;
     }

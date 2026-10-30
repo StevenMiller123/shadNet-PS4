@@ -11,6 +11,8 @@
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_score/np_score_ctx.h"
+#include "core/libraries/np/np_tus/np_tus.h"
+#include "core/libraries/np/np_tus/np_tus_ctx.h"
 #include "core/libraries/np/np_types.h"
 #include "shadnet/client.h"
 
@@ -65,58 +67,149 @@ public:
     s32 GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const;
 
     // NpScore Requests
-    s32 RecordScore(s32 user_id, s32 service_label, u32 boardId, s32 pcId, s64 score,
-                    const char* comment, u64 commentLen, const u8* gameInfoData, u64 gameInfoSize,
-                    std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 RecordGameData(s32 user_id, s32 service_label, u32 boardId, s32 pcId, s64 score,
+    s32 RecordScore(s32 user_id, s32 service_label, u32 board_id, s32 pc_id, s64 score,
+                    const char* comment, u64 comment_len, const u8* game_info_data,
+                    u64 game_info_size, std::shared_ptr<NpScore::ScoreRequestCtx> req);
+    s32 RecordGameData(s32 user_id, s32 service_label, u32 board_id, s32 pc_id, s64 score,
                        const u8* data, u64 size, std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetGameData(s32 user_id, s32 service_label, u32 boardId, const std::string& npId, s32 pcId,
-                    void* dataOut, u64 recvSize, u64* totalSizeOut,
+    s32 GetGameData(s32 user_id, s32 service_label, u32 board_id, const std::string& np_id,
+                    s32 pc_id, void* data_out, u64 recv_size, u64* total_size_out,
                     std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetGameDataByAccountId(s32 user_id, s32 service_label, u32 boardId, u64 accountId, s32 pcId,
-                               void* dataOut, u64 recvSize, u64* totalSizeOut,
+    s32 GetGameDataByAccountId(s32 user_id, s32 service_label, u32 board_id, u64 account_id,
+                               s32 pc_id, void* data_out, u64 recv_size, u64* total_size_out,
                                std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetBoardInfo(s32 user_id, s32 service_label, u32 boardId,
-                     NpScore::OrbisNpScoreBoardInfo* boardInfo,
+    s32 GetBoardInfo(s32 user_id, s32 service_label, u32 board_id,
+                     NpScore::OrbisNpScoreBoardInfo* board_info,
                      std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetRankingByNpId(s32 user_id, s32 service_label, u32 boardId,
-                         const std::vector<std::string>& npIds, const std::vector<s32>& pcIds,
-                         NpScore::OrbisNpScorePlayerRankData* rankArray,
-                         NpScore::OrbisNpScoreComment* commentArray,
-                         NpScore::OrbisNpScoreGameInfo* infoArray,
-                         Libraries::Rtc::OrbisRtcTick* lastSortDate, u32* totalRecord,
+    s32 GetRankingByNpId(s32 user_id, s32 service_label, u32 board_id,
+                         const std::vector<std::string>& np_ids, const std::vector<s32>& pc_ids,
+                         NpScore::OrbisNpScorePlayerRankData* rank_array,
+                         NpScore::OrbisNpScoreComment* comment_array,
+                         NpScore::OrbisNpScoreGameInfo* info_array,
+                         Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                          std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetRankingByRange(s32 user_id, s32 service_label, u32 boardId, u32 startSerialRank,
-                          u32 arrayNum, NpScore::OrbisNpScoreRankData* rankArray,
-                          NpScore::OrbisNpScoreComment* commentArray,
-                          NpScore::OrbisNpScoreGameInfo* infoArray,
-                          Libraries::Rtc::OrbisRtcTick* lastSortDate, u32* totalRecord,
+    s32 GetRankingByRange(s32 user_id, s32 service_label, u32 board_id, u32 start_serial_rank,
+                          u32 array_num, NpScore::OrbisNpScoreRankData* rank_array,
+                          NpScore::OrbisNpScoreComment* comment_array,
+                          NpScore::OrbisNpScoreGameInfo* info_array,
+                          Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                           std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetRankingByRangeA(s32 user_id, s32 service_label, u32 boardId, u32 startSerialRank,
-                           u32 arrayNum, NpScore::OrbisNpScoreRankDataA* rankArray,
-                           NpScore::OrbisNpScoreComment* commentArray,
-                           NpScore::OrbisNpScoreGameInfo* infoArray,
-                           Libraries::Rtc::OrbisRtcTick* lastSortDate, u32* totalRecord,
+    s32 GetRankingByRangeA(s32 user_id, s32 service_label, u32 board_id, u32 start_serial_rank,
+                           u32 array_num, NpScore::OrbisNpScoreRankDataA* rank_array,
+                           NpScore::OrbisNpScoreComment* comment_array,
+                           NpScore::OrbisNpScoreGameInfo* info_array,
+                           Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                            std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetRankingByAccountId(s32 user_id, s32 service_label, u32 boardId,
-                              const std::vector<u64>& accountIds, const std::vector<s32>& pcIds,
-                              NpScore::OrbisNpScorePlayerRankDataA* rankArray,
-                              NpScore::OrbisNpScoreComment* commentArray,
-                              NpScore::OrbisNpScoreGameInfo* infoArray,
-                              Libraries::Rtc::OrbisRtcTick* lastSortDate, u32* totalRecord,
+    s32 GetRankingByAccountId(s32 user_id, s32 service_label, u32 board_id,
+                              const std::vector<u64>& account_ids, const std::vector<s32>& pc_ids,
+                              NpScore::OrbisNpScorePlayerRankDataA* rank_array,
+                              NpScore::OrbisNpScoreComment* comment_array,
+                              NpScore::OrbisNpScoreGameInfo* info_array,
+                              Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                               std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetFriendsRanking(s32 user_id, s32 service_label, u32 boardId, bool includeSelf,
-                          u32 arrayNum, NpScore::OrbisNpScoreRankData* rankArray,
-                          NpScore::OrbisNpScoreComment* commentArray,
-                          NpScore::OrbisNpScoreGameInfo* infoArray,
-                          Libraries::Rtc::OrbisRtcTick* lastSortDate, u32* totalRecord,
+    s32 GetFriendsRanking(s32 user_id, s32 service_label, u32 board_id, bool include_self,
+                          u32 array_num, NpScore::OrbisNpScoreRankData* rank_array,
+                          NpScore::OrbisNpScoreComment* comment_array,
+                          NpScore::OrbisNpScoreGameInfo* info_array,
+                          Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                           std::shared_ptr<NpScore::ScoreRequestCtx> req);
-    s32 GetFriendsRankingA(s32 user_id, s32 service_label, u32 boardId, bool includeSelf,
-                           u32 arrayNum, NpScore::OrbisNpScoreRankDataA* rankArray,
-                           NpScore::OrbisNpScoreComment* commentArray,
-                           NpScore::OrbisNpScoreGameInfo* infoArray,
-                           Libraries::Rtc::OrbisRtcTick* lastSortDate, u32* totalRecord,
+    s32 GetFriendsRankingA(s32 user_id, s32 service_label, u32 board_id, bool include_self,
+                           u32 array_num, NpScore::OrbisNpScoreRankDataA* rank_array,
+                           NpScore::OrbisNpScoreComment* comment_array,
+                           NpScore::OrbisNpScoreGameInfo* info_array,
+                           Rtc::OrbisRtcTick* last_sort_date, u32* total_record,
                            std::shared_ptr<NpScore::ScoreRequestCtx> req);
+
+    // NpTus Requests
+    s32 TusGetMultiSlotVariable(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                                const std::string& virtual_user, const std::vector<s32>& slot_ids,
+                                NpTus::OrbisNpTusVariable* variables_out, u64 array_num,
+                                std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                                NpTus::OrbisNpTusVariableA* variables_a_out = nullptr,
+                                s64 owner_account_id = 0,
+                                NpTus::OrbisNpTusVariableForCrossSave* variables_cs_out = nullptr);
+    s32 TusSetMultiSlotVariable(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                                const std::string& virtual_user, const std::vector<s32>& slot_ids,
+                                const std::vector<s64>& values,
+                                std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                                s64 owner_account_id = 0);
+    s32 TssGetData(s32 user_id, s32 service_label, s32 slot_id, bool has_offset, u64 offset,
+                   bool has_last_byte, u64 last_byte, bool has_if_param, s32 if_type,
+                   u64 if_last_modified, NpTus::OrbisNpTssDataStatus* status_out, void* data_out,
+                   u64 data_cap, std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                   u64* content_length_out = nullptr);
+    s32 TusGetData(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                   const std::string& virtual_user, s64 owner_account_id, s32 slot_id,
+                   NpTus::OrbisNpTusDataStatusA* status_a_out, u64 status_cap, void* data_out,
+                   u64 data_cap, u64 data_offset, std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                   NpTus::OrbisNpTusDataStatus* status_out = nullptr,
+                   NpTus::OrbisNpTusDataStatusForCrossSave* status_cs_out = nullptr);
+    s32 TusDeleteMultiSlotData(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                               const std::string& virtual_user, s64 owner_account_id,
+                               const std::vector<s32>& slot_ids,
+                               std::shared_ptr<NpTus::TusRequestCtx> ctx);
+    s32 TusDeleteMultiSlotVariable(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                                   const std::string& virtual_user, s64 owner_account_id,
+                                   const std::vector<s32>& slot_ids,
+                                   std::shared_ptr<NpTus::TusRequestCtx> ctx);
+    s32 TusGetMultiUserDataStatus(s32 user_id, s32 service_label, s32 slot_id,
+                                  const std::vector<std::string>& owner_np_ids,
+                                  const std::vector<std::string>& virtual_users,
+                                  const std::vector<s64>& owner_account_ids,
+                                  NpTus::OrbisNpTusDataStatus* status_out,
+                                  NpTus::OrbisNpTusDataStatusA* status_a_out, u64 array_num,
+                                  std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                                  NpTus::OrbisNpTusDataStatusForCrossSave* status_cs_out = nullptr);
+    s32 TusGetMultiUserVariable(s32 user_id, s32 service_label, s32 slot_id,
+                                const std::vector<std::string>& owner_np_ids,
+                                const std::vector<std::string>& virtual_users,
+                                const std::vector<s64>& owner_account_ids,
+                                NpTus::OrbisNpTusVariable* variables_out,
+                                NpTus::OrbisNpTusVariableA* variables_a_out, u64 array_num,
+                                std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                                NpTus::OrbisNpTusVariableForCrossSave* variables_cs_out = nullptr);
+    s32 TusTryAndSetVariable(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                             const std::string& virtual_user, s64 owner_account_id, s32 slot_id,
+                             s32 ope_type, s64 value, bool has_compare, s64 compare_value,
+                             bool has_author_check, s64 is_last_changed_author,
+                             const std::string& is_last_changed_author_np_id, bool has_date_check,
+                             u64 is_last_changed_date, NpTus::OrbisNpTusVariable* variable_out,
+                             NpTus::OrbisNpTusVariableA* variable_a_out,
+                             std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                             NpTus::OrbisNpTusVariableForCrossSave* variable_cs_out = nullptr);
+    s32 TusAddAndGetVariable(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                             const std::string& virtual_user, s64 owner_account_id, s32 slot_id,
+                             s64 in_variable, bool has_author_check, s64 is_last_changed_author,
+                             const std::string& is_last_changed_author_np_id, bool has_date_check,
+                             u64 is_last_changed_date, NpTus::OrbisNpTusVariable* variable_out,
+                             NpTus::OrbisNpTusVariableA* variable_a_out,
+                             std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                             NpTus::OrbisNpTusVariableForCrossSave* variable_cs_out = nullptr);
+    s32 TusGetFriendsDataStatus(s32 user_id, s32 service_label, s32 slot_id, bool include_self,
+                                s32 sort_type, u32 max, NpTus::OrbisNpTusDataStatus* status_out,
+                                NpTus::OrbisNpTusDataStatusA* status_a_out, u64 array_num,
+                                std::shared_ptr<NpTus::TusRequestCtx> ctx, u32 start_offset = 0,
+                                u32* hits_out = nullptr,
+                                NpTus::OrbisNpTusDataStatusForCrossSave* status_cs_out = nullptr);
+    s32 TusGetFriendsVariable(s32 user_id, s32 service_label, s32 slot_id, bool include_self,
+                              s32 sort_type, u32 max, NpTus::OrbisNpTusVariable* variables_out,
+                              NpTus::OrbisNpTusVariableA* variables_a_out, u64 array_num,
+                              std::shared_ptr<NpTus::TusRequestCtx> ctx, u32 start_offset = 0,
+                              u32* hits_out = nullptr,
+                              NpTus::OrbisNpTusVariableForCrossSave* variables_cs_out = nullptr);
+    s32 TusGetMultiSlotDataStatus(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                                  const std::string& virtual_user, s64 owner_account_id,
+                                  const std::vector<s32>& slot_ids,
+                                  NpTus::OrbisNpTusDataStatus* status_out,
+                                  NpTus::OrbisNpTusDataStatusA* status_a_out, u64 array_num,
+                                  std::shared_ptr<NpTus::TusRequestCtx> ctx,
+                                  NpTus::OrbisNpTusDataStatusForCrossSave* status_cs_out = nullptr);
+    s32 TusSetData(s32 user_id, s32 service_label, const std::string& owner_np_id,
+                   const std::string& virtual_user, s64 owner_account_id, s32 slot_id,
+                   const std::vector<u8>& blob, const std::vector<u8>& info, bool has_author_check,
+                   s64 is_last_changed_author, const std::string& is_last_changed_author_np_id,
+                   bool has_date_check, u64 is_last_changed_date,
+                   std::shared_ptr<NpTus::TusRequestCtx> ctx);
 
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
@@ -167,6 +260,8 @@ private:
                       const std::vector<u8>& body);
     void OnScoreReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
                       const std::vector<u8>& body);
+    void OnTusReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
+                    const std::vector<u8>& body);
     void OnServiceUnavailable(s32 user_id, const ShadNet::NotifyServiceUnavailable& n);
     void OnClientRejected(s32 user_id, const ShadNet::NotifyClientRejected& n);
     void OnLoginResult(s32 user_id, const ShadNet::LoginResult& res);
@@ -223,12 +318,35 @@ private:
         void* data_out = nullptr;
         u64 recv_size = 0;
         u64* total_size_out = nullptr;
-        Libraries::Rtc::OrbisRtcTick* last_sort_date = nullptr;
+        Rtc::OrbisRtcTick* last_sort_date = nullptr;
         u32* total_record = nullptr;
         u64 array_num = 0;
     };
     mutable std::mutex m_mutex_pending_score;
     std::map<u64, PendingScoreRequest> m_pending_score;
+
+    // TUS state
+    struct PendingTusRequest {
+        std::shared_ptr<NpTus::TusRequestCtx> req;
+        ShadNet::CommandType cmd;
+        s32 user_id = -1;
+        NpTus::OrbisNpTusVariable* variable_array = nullptr;
+        NpTus::OrbisNpTusVariableA* variable_array_a = nullptr;
+        NpTus::OrbisNpTusVariableForCrossSave* variable_array_cs = nullptr;
+        NpTus::OrbisNpTusDataStatus* status_array = nullptr;
+        NpTus::OrbisNpTusDataStatusA* status_array_a = nullptr;
+        NpTus::OrbisNpTusDataStatusForCrossSave* status_array_cs = nullptr;
+        void* data_out = nullptr;
+        u64 data_cap = 0;
+        u64 data_offset = 0;
+        u64 status_cap = 0;
+        NpTus::OrbisNpTssDataStatus* tss_status_out = nullptr;
+        u64* tss_content_length_out = nullptr;
+        u32* total_out = nullptr;
+        u64 array_num = 0;
+    };
+    mutable std::mutex m_mutex_pending_tus;
+    std::map<u64, PendingTusRequest> m_pending_tus;
 
     // Invitations
     struct PendingInvitation {
@@ -236,7 +354,7 @@ private:
         std::string invitation_id;
         std::string from_npid;
         std::string to_npid;
-        int64_t valid_until = 0;
+        s64 valid_until = 0;
     };
     mutable std::mutex m_mutex_pending_invites;
     std::map<s32, std::vector<PendingInvitation>> m_pending_invites;

@@ -14,11 +14,11 @@ struct OrbisUserServiceInitializeParams {
 };
 
 struct OrbisUserServiceLoginUserIdList {
-    OrbisUserServiceUserId userId[4];
+    OrbisUserServiceUserId user_id[4];
 };
 
 struct OrbisUserServiceRegisteredUserIdList {
-    OrbisUserServiceUserId userId[16];
+    OrbisUserServiceUserId user_id[16];
 };
 
 enum class OrbisUserServiceUserColor {
@@ -35,7 +35,7 @@ enum class OrbisUserServiceEventType {
 
 struct OrbisUserServiceEvent {
     OrbisUserServiceEventType event;
-    OrbisUserServiceUserId userId;
+    OrbisUserServiceUserId user_id;
 };
 
 s32 sceUserServiceInitialize(const OrbisUserServiceInitializeParams* params);

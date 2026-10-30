@@ -42,24 +42,25 @@ static std::map<s32, std::string> request_urls{};
 static std::map<s32, std::string> connection_urls{};
 static std::map<s32, std::string> connection_servers{};
 
-s32 sceHttpCreateConnection(s32 tmplId, const char* serverName, const char* scheme, u16 port,
-                            s32 isEnableKeepalive) {
-    LOG_INFO(Lib_Http, "called, serverName={}, scheme={}, port={}, isEnableKeepalive={}",
-             serverName ? serverName : "(null)", scheme ? scheme : "(null)", port,
-             isEnableKeepalive);
-    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmplId, serverName, scheme, port,
-                                        isEnableKeepalive);
+s32 sceHttpCreateConnection(s32 tmpl_id, const char* server_name, const char* scheme, u16 port,
+                            s32 is_enable_keepalive) {
+    LOG_INFO(Lib_Http, "called, server_name={}, scheme={}, port={}, is_enable_keepalive={}",
+             server_name ? server_name : "(null)", scheme ? scheme : "(null)", port,
+             is_enable_keepalive);
+    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, server_name, scheme, port,
+                                        is_enable_keepalive);
     if (conn_id > 0) {
         std::scoped_lock lk{urls_mutex};
-        connection_servers[conn_id] = serverName;
+        connection_servers[conn_id] = server_name;
     }
     return conn_id;
 }
 
-s32 sceHttpCreateConnectionWithURL(s32 tmplId, const char* url, bool enableKeepalive) {
-    LOG_INFO(Lib_Http, "called, url={}, enableKeepalive={}", url ? url : "(null)", enableKeepalive);
+s32 sceHttpCreateConnectionWithURL(s32 tmpl_id, const char* url, bool enable_keepalive) {
+    LOG_INFO(Lib_Http, "called, url={}, enable_keepalive={}", url ? url : "(null)",
+             enable_keepalive);
     s32 conn_id =
-        SHADNET_HOOK_CONTINUE(sceHttpCreateConnectionWithURL, tmplId, url, enableKeepalive);
+        SHADNET_HOOK_CONTINUE(sceHttpCreateConnectionWithURL, tmpl_id, url, enable_keepalive);
     if (conn_id > 0) {
         std::scoped_lock lk{urls_mutex};
         connection_urls[conn_id] = url;
@@ -67,39 +68,40 @@ s32 sceHttpCreateConnectionWithURL(s32 tmplId, const char* url, bool enableKeepa
     return conn_id;
 }
 
-s32 sceHttpCreateRequest(s32 connId, s32 method, const char* path, u64 contentLength) {
+s32 sceHttpCreateRequest(s32 conn_id, s32 method, const char* path, u64 content_length) {
     OrbisHttpMethod enum_method = OrbisHttpMethod(method);
-    LOG_INFO(Lib_Http, "called, method={}, path={}, contentLength={}",
-             magic_enum::enum_name(enum_method), path ? path : "(null)", contentLength);
-    s32 req_id = SHADNET_HOOK_CONTINUE(sceHttpCreateRequest, connId, method, path, contentLength);
+    LOG_INFO(Lib_Http, "called, method={}, path={}, content_length={}",
+             magic_enum::enum_name(enum_method), path ? path : "(null)", content_length);
+    s32 req_id = SHADNET_HOOK_CONTINUE(sceHttpCreateRequest, conn_id, method, path, content_length);
     if (req_id > 0) {
         std::scoped_lock lk{urls_mutex};
-        if (connection_servers.contains(connId)) {
-            request_urls[req_id] = connection_servers[connId] + path;
+        if (connection_servers.contains(conn_id)) {
+            request_urls[req_id] = connection_servers[conn_id] + path;
         }
     }
     return req_id;
 }
 
-s32 sceHttpCreateRequest2(s32 connId, const char* method, const char* path, u64 contentLength) {
-    LOG_INFO(Lib_Http, "called, method={}, path={}, contentLength={}", method ? method : "(null)",
-             path ? path : "(null)", contentLength);
-    s32 req_id = SHADNET_HOOK_CONTINUE(sceHttpCreateRequest2, connId, method, path, contentLength);
-    if (req_id > 0) {
-        std::scoped_lock lk{urls_mutex};
-        if (connection_servers.contains(connId)) {
-            request_urls[req_id] = connection_servers[connId] + path;
-        }
-    }
-    return req_id;
-}
-
-s32 sceHttpCreateRequestWithURL(s32 connId, s32 method, const char* url, u64 contentLength) {
-    OrbisHttpMethod enum_method = OrbisHttpMethod(method);
-    LOG_INFO(Lib_Http, "called, method={}, url={}, contentLength={}",
-             magic_enum::enum_name(enum_method), url ? url : "(null)", contentLength);
+s32 sceHttpCreateRequest2(s32 conn_id, const char* method, const char* path, u64 content_length) {
+    LOG_INFO(Lib_Http, "called, method={}, path={}, content_length={}", method ? method : "(null)",
+             path ? path : "(null)", content_length);
     s32 req_id =
-        SHADNET_HOOK_CONTINUE(sceHttpCreateRequestWithURL, connId, method, url, contentLength);
+        SHADNET_HOOK_CONTINUE(sceHttpCreateRequest2, conn_id, method, path, content_length);
+    if (req_id > 0) {
+        std::scoped_lock lk{urls_mutex};
+        if (connection_servers.contains(conn_id)) {
+            request_urls[req_id] = connection_servers[conn_id] + path;
+        }
+    }
+    return req_id;
+}
+
+s32 sceHttpCreateRequestWithURL(s32 conn_id, s32 method, const char* url, u64 content_length) {
+    OrbisHttpMethod enum_method = OrbisHttpMethod(method);
+    LOG_INFO(Lib_Http, "called, method={}, url={}, content_length={}",
+             magic_enum::enum_name(enum_method), url ? url : "(null)", content_length);
+    s32 req_id =
+        SHADNET_HOOK_CONTINUE(sceHttpCreateRequestWithURL, conn_id, method, url, content_length);
     if (req_id > 0) {
         std::scoped_lock lk{urls_mutex};
         request_urls[req_id] = url;
@@ -107,12 +109,12 @@ s32 sceHttpCreateRequestWithURL(s32 connId, s32 method, const char* url, u64 con
     return req_id;
 }
 
-s32 sceHttpCreateRequestWithURL2(s32 connId, const char* method, const char* url,
-                                 u64 contentLength) {
-    LOG_INFO(Lib_Http, "called, method={}, url={}, contentLength={}", method ? method : "(null)",
-             url ? url : "(null)", contentLength);
+s32 sceHttpCreateRequestWithURL2(s32 conn_id, const char* method, const char* url,
+                                 u64 content_length) {
+    LOG_INFO(Lib_Http, "called, method={}, url={}, content_length={}", method ? method : "(null)",
+             url ? url : "(null)", content_length);
     s32 req_id =
-        SHADNET_HOOK_CONTINUE(sceHttpCreateRequestWithURL2, connId, method, url, contentLength);
+        SHADNET_HOOK_CONTINUE(sceHttpCreateRequestWithURL2, conn_id, method, url, content_length);
     if (req_id > 0) {
         std::scoped_lock lk{urls_mutex};
         request_urls[req_id] = url;
@@ -120,45 +122,46 @@ s32 sceHttpCreateRequestWithURL2(s32 connId, const char* method, const char* url
     return req_id;
 }
 
-s32 sceHttpCreateTemplate(s32 libhttpCtxId, const char* userAgent, s32 httpVer,
-                          s32 isAutoProxyConf) {
-    LOG_INFO(Lib_Http, "called, userAgent={}, httpVer={}, isAutoProxyConf={}",
-             userAgent ? userAgent : "(null)", httpVer, isAutoProxyConf);
-    return SHADNET_HOOK_CONTINUE(sceHttpCreateTemplate, libhttpCtxId, userAgent, httpVer,
-                                 isAutoProxyConf);
+s32 sceHttpCreateTemplate(s32 libhttp_ctx_id, const char* user_agent, s32 http_ver,
+                          s32 is_auto_proxy_conf) {
+    LOG_INFO(Lib_Http, "called, user_agent={}, http_ver={}, is_auto_proxy_conf={}",
+             user_agent ? user_agent : "(null)", http_ver, is_auto_proxy_conf);
+    return SHADNET_HOOK_CONTINUE(sceHttpCreateTemplate, libhttp_ctx_id, user_agent, http_ver,
+                                 is_auto_proxy_conf);
 }
 
-s32 sceHttpDeleteConnection(s32 connId) {
-    s32 ret = SHADNET_HOOK_CONTINUE(sceHttpDeleteConnection, connId);
+s32 sceHttpDeleteConnection(s32 conn_id) {
+    s32 ret = SHADNET_HOOK_CONTINUE(sceHttpDeleteConnection, conn_id);
     if (ret == 0) {
         std::scoped_lock lk{urls_mutex};
-        if (connection_urls.contains(connId)) {
-            connection_urls.erase(connId);
+        if (connection_urls.contains(conn_id)) {
+            connection_urls.erase(conn_id);
         }
-        if (connection_servers.contains(connId)) {
-            connection_servers.erase(connId);
-        }
-    }
-    return ret;
-}
-
-s32 sceHttpDeleteRequest(s32 reqId) {
-    s32 ret = SHADNET_HOOK_CONTINUE(sceHttpDeleteRequest, reqId);
-    if (ret == 0) {
-        std::scoped_lock lk{urls_mutex};
-        if (request_urls.contains(reqId)) {
-            request_urls.erase(reqId);
+        if (connection_servers.contains(conn_id)) {
+            connection_servers.erase(conn_id);
         }
     }
     return ret;
 }
 
-s32 sceHttpGetStatusCode(s32 reqId, s32* statusCode) {
-    s32 ret = SHADNET_HOOK_CONTINUE(sceHttpGetStatusCode, reqId, statusCode);
+s32 sceHttpDeleteRequest(s32 req_id) {
+    s32 ret = SHADNET_HOOK_CONTINUE(sceHttpDeleteRequest, req_id);
     if (ret == 0) {
         std::scoped_lock lk{urls_mutex};
-        if (request_urls.contains(reqId)) {
-            LOG_INFO(Lib_Http, "called, url={}, statusCode={}", request_urls[reqId], *statusCode);
+        if (request_urls.contains(req_id)) {
+            request_urls.erase(req_id);
+        }
+    }
+    return ret;
+}
+
+s32 sceHttpGetStatusCode(s32 req_id, s32* status_code) {
+    s32 ret = SHADNET_HOOK_CONTINUE(sceHttpGetStatusCode, req_id, status_code);
+    if (ret == 0) {
+        std::scoped_lock lk{urls_mutex};
+        if (request_urls.contains(req_id)) {
+            LOG_INFO(Lib_Http, "called, url={}, status_code={}", request_urls[req_id],
+                     *status_code);
         }
     }
     return ret;

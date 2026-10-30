@@ -149,7 +149,7 @@ s32 sceNpGetOnlineId(s32 user_id, OrbisNpOnlineId* online_id) {
 
 s32 sceNpGetAccountId(OrbisNpOnlineId* online_id, OrbisNpAccountId* account_id) {
     if (!online_id || !account_id) {
-        LOG_ERROR(Lib_NpManager, "null arguments");
+        LOG_ERROR(Lib_NpManager, "invalid argument");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
     s32 user_id = NpHandler::Instance().GetUserIdByOnlineId(*online_id);
@@ -168,7 +168,7 @@ s32 sceNpGetAccountId(OrbisNpOnlineId* online_id, OrbisNpAccountId* account_id) 
 
 s32 sceNpGetAccountIdA(s32 user_id, OrbisNpAccountId* account_id) {
     if (!account_id || user_id == -1) {
-        LOG_ERROR(Lib_NpManager, "invalid arguments");
+        LOG_ERROR(Lib_NpManager, "invalid argument");
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
     if (!NpHandler::Instance().IsSignedIn(user_id)) {

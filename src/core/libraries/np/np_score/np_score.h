@@ -45,21 +45,21 @@ constexpr s32 ORBIS_NP_SCORE_BINDMODE_RDWR =
 constexpr s32 ORBIS_NP_SCORE_BINDMODE_DEFAULT = ORBIS_NP_SCORE_BINDMODE_RDWR;
 
 struct OrbisNpScoreBoardInfo {
-    u32 rankLimit;
-    u32 updateMode;
-    u32 sortMode;
-    OrbisNpScoreRankNumber uploadNumLimit;
-    u64 uploadSizeLimit;
+    u32 rank_limit;
+    u32 update_mode;
+    u32 sort_mode;
+    OrbisNpScoreRankNumber upload_num_limit;
+    u64 upload_size_limit;
 };
 static_assert(sizeof(OrbisNpScoreBoardInfo) == 24, "OrbisNpScoreBoardInfo must be 24 bytes");
 
 struct OrbisNpScoreComment {
-    char utf8Comment[ORBIS_NP_SCORE_COMMENT_MAXLEN + 1];
+    char utf8_comment[ORBIS_NP_SCORE_COMMENT_MAXLEN + 1];
 };
 static_assert(sizeof(OrbisNpScoreComment) == 64, "OrbisNpScoreComment must be 64 bytes");
 
 struct OrbisNpScoreGameInfo {
-    u64 infoSize;
+    u64 info_size;
     u8 data[ORBIS_NP_SCORE_GAMEINFO_MAXSIZE];
     u8 pad2[3];
 };
@@ -67,302 +67,302 @@ static_assert(sizeof(OrbisNpScoreGameInfo) == 200, "OrbisNpScoreGameInfo must be
 
 struct OrbisNpScoreGetFriendRankingOptParam {
     u64 size;
-    u32* startSerialRank;
+    u32* start_serial_rank;
     u32* hits;
 };
 
 struct OrbisNpScoreAccountIdPcId {
-    OrbisNpAccountId accountId;
-    OrbisNpScorePcId pcId;
+    OrbisNpAccountId account_id;
+    OrbisNpScorePcId pc_id;
     u8 pad[4];
 };
 
 struct OrbisNpScoreNpIdPcId {
-    OrbisNpId npId;
-    OrbisNpScorePcId pcId;
+    OrbisNpId np_id;
+    OrbisNpScorePcId pc_id;
     u8 pad[4];
 };
 
 struct OrbisNpScoreRankData {
-    OrbisNpId npId;
+    OrbisNpId np_id;
     u8 reserved[49];
     u8 pad0[3];
-    OrbisNpScorePcId pcId;
-    OrbisNpScoreRankNumber serialRank;
+    OrbisNpScorePcId pc_id;
+    OrbisNpScoreRankNumber serial_rank;
     OrbisNpScoreRankNumber rank;
-    OrbisNpScoreRankNumber highestRank;
-    s32 hasGameData;
+    OrbisNpScoreRankNumber highest_rank;
+    s32 has_game_data;
     u8 pad1[4];
-    OrbisNpScoreValue scoreValue;
-    Rtc::OrbisRtcTick recordDate;
+    OrbisNpScoreValue score_value;
+    Rtc::OrbisRtcTick record_date;
 };
 static_assert(sizeof(OrbisNpScoreRankData) == 0x80, "OrbisNpScoreRankData must be 128 bytes");
 
 struct OrbisNpScoreRankDataA {
-    OrbisNpOnlineId onlineId;
+    OrbisNpOnlineId online_id;
     u8 reserved0[16];
     u8 reserved[49];
     u8 pad0[3];
-    OrbisNpScorePcId pcId;
-    OrbisNpScoreRankNumber serialRank;
+    OrbisNpScorePcId pc_id;
+    OrbisNpScoreRankNumber serial_rank;
     OrbisNpScoreRankNumber rank;
-    OrbisNpScoreRankNumber highestRank;
-    s32 hasGameData;
+    OrbisNpScoreRankNumber highest_rank;
+    s32 has_game_data;
     u8 pad1[4];
-    OrbisNpScoreValue scoreValue;
-    Rtc::OrbisRtcTick recordDate;
-    OrbisNpAccountId accountId;
+    OrbisNpScoreValue score_value;
+    Rtc::OrbisRtcTick record_date;
+    OrbisNpAccountId account_id;
     u8 pad2[8];
 };
 static_assert(sizeof(OrbisNpScoreRankDataA) == 0x90, "OrbisNpScoreRankDataA must be 144 bytes");
 
 struct OrbisNpScorePlayerRankData {
-    s32 hasData;
+    s32 has_data;
     u8 pad0[4];
-    OrbisNpScoreRankData rankData;
+    OrbisNpScoreRankData rank_data;
 };
 static_assert(sizeof(OrbisNpScorePlayerRankData) == 0x88,
               "OrbisNpScorePlayerRankData must be 136 bytes");
 
 struct OrbisNpScorePlayerRankDataA {
-    s32 hasData;
+    s32 has_data;
     u8 pad0[4];
-    OrbisNpScoreRankDataA rankData;
+    OrbisNpScoreRankDataA rank_data;
 };
 static_assert(sizeof(OrbisNpScorePlayerRankDataA) == 0x98,
               "OrbisNpScorePlayerRankDataA must be 152 bytes");
 
 struct OrbisNpScoreRankDataForCrossSave {
-    OrbisNpId npId;
+    OrbisNpId np_id;
     u8 reserved[49];
     u8 pad0[3];
-    OrbisNpScorePcId pcId;
-    OrbisNpScoreRankNumber serialRank;
+    OrbisNpScorePcId pc_id;
+    OrbisNpScoreRankNumber serial_rank;
     OrbisNpScoreRankNumber rank;
-    OrbisNpScoreRankNumber highestRank;
-    s32 hasGameData;
+    OrbisNpScoreRankNumber highest_rank;
+    s32 has_game_data;
     u8 pad1[4];
-    OrbisNpScoreValue scoreValue;
-    Rtc::OrbisRtcTick recordDate;
-    OrbisNpAccountId accountId;
+    OrbisNpScoreValue score_value;
+    Rtc::OrbisRtcTick record_date;
+    OrbisNpAccountId account_id;
     u8 pad2[8];
 };
 
 struct OrbisNpScorePlayerRankDataForCrossSave {
-    s32 hasData;
+    s32 has_data;
     u8 pad0[4];
-    OrbisNpScoreRankDataForCrossSave rankData;
+    OrbisNpScoreRankDataForCrossSave rank_data;
 };
 
-s32 sceNpScoreCreateNpTitleCtx(OrbisNpServiceLabel serviceLabel, const OrbisNpId* selfNpId);
-s32 sceNpScoreCreateNpTitleCtxA(OrbisNpServiceLabel npServiceLabel,
-                                UserService::OrbisUserServiceUserId selfId);
-s32 sceNpScoreDeleteNpTitleCtx(s32 titleCtxId);
-s32 sceNpScoreCreateRequest(s32 titleCtxId);
-s32 sceNpScoreDeleteRequest(s32 reqId);
-s32 sceNpScoreAbortRequest(s32 reqId);
-s32 sceNpScorePollAsync(s32 reqId, s32* result);
-s32 sceNpScoreWaitAsync(s32 reqId, s32* result);
-s32 sceNpScoreRecordScore(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreValue score,
-                          const OrbisNpScoreComment* scoreComment,
-                          const OrbisNpScoreGameInfo* gameInfo, OrbisNpScoreRankNumber* tmpRank,
-                          const Rtc::OrbisRtcTick* compareDate, void* option);
-s32 sceNpScoreRecordScoreAsync(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreValue score,
-                               const OrbisNpScoreComment* scoreComment,
-                               const OrbisNpScoreGameInfo* gameInfo,
-                               OrbisNpScoreRankNumber* tmpRank,
-                               const Rtc::OrbisRtcTick* compareDate, void* option);
-s32 sceNpScoreGetRankingByRange(s32 reqId, OrbisNpScoreBoardId boardId,
-                                OrbisNpScoreRankNumber startSerialRank,
-                                OrbisNpScoreRankData* rankArray, u64 rankArraySize,
-                                OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
-                                Rtc::OrbisRtcTick* lastSortDate,
-                                OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByRangeAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                     OrbisNpScoreRankNumber startSerialRank,
-                                     OrbisNpScoreRankData* rankArray, u64 rankArraySize,
-                                     OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                     OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                     u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                     OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByRangeA(s32 reqId, OrbisNpScoreBoardId boardId,
-                                 OrbisNpScoreRankNumber startSerialRank,
-                                 OrbisNpScoreRankDataA* rankArray, u64 rankArraySize,
-                                 OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                 OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
-                                 Rtc::OrbisRtcTick* lastSortDate,
-                                 OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByRangeAAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                      OrbisNpScoreRankNumber startSerialRank,
-                                      OrbisNpScoreRankDataA* rankArray, u64 rankArraySize,
-                                      OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                      OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                      u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                      OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByNpId(s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpId* npIdArray,
-                               u64 npIdArraySize, OrbisNpScorePlayerRankData* rankArray,
-                               u64 rankArraySize, OrbisNpScoreComment* commentArray,
-                               u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-                               u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                               OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByNpIdAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                    const OrbisNpId* npIdArray, u64 npIdArraySize,
-                                    OrbisNpScorePlayerRankData* rankArray, u64 rankArraySize,
-                                    OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                    OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                    u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                    OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetFriendsRanking(s32 reqId, OrbisNpScoreBoardId boardId, s32 includeSelf,
-                                OrbisNpScoreRankData* rankArray, u64 rankArraySize,
-                                OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
-                                Rtc::OrbisRtcTick* lastSortDate,
-                                OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetFriendsRankingAsync(s32 reqId, OrbisNpScoreBoardId boardId, s32 includeSelf,
-                                     OrbisNpScoreRankData* rankArray, u64 rankArraySize,
-                                     OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                     OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                     u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                     OrbisNpScoreRankNumber* totalRecord,
+s32 sceNpScoreCreateNpTitleCtx(OrbisNpServiceLabel service_label, const OrbisNpId* self_np_id);
+s32 sceNpScoreCreateNpTitleCtxA(OrbisNpServiceLabel np_service_label,
+                                UserService::OrbisUserServiceUserId self_id);
+s32 sceNpScoreDeleteNpTitleCtx(s32 title_ctx_id);
+s32 sceNpScoreCreateRequest(s32 title_ctx_id);
+s32 sceNpScoreDeleteRequest(s32 req_id);
+s32 sceNpScoreAbortRequest(s32 req_id);
+s32 sceNpScorePollAsync(s32 req_id, s32* result);
+s32 sceNpScoreWaitAsync(s32 req_id, s32* result);
+s32 sceNpScoreRecordScore(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScoreValue score,
+                          const OrbisNpScoreComment* score_comment,
+                          const OrbisNpScoreGameInfo* game_info, OrbisNpScoreRankNumber* tmp_rank,
+                          const Rtc::OrbisRtcTick* compare_date, void* option);
+s32 sceNpScoreRecordScoreAsync(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScoreValue score,
+                               const OrbisNpScoreComment* score_comment,
+                               const OrbisNpScoreGameInfo* game_info,
+                               OrbisNpScoreRankNumber* tmp_rank,
+                               const Rtc::OrbisRtcTick* compare_date, void* option);
+s32 sceNpScoreGetRankingByRange(s32 req_id, OrbisNpScoreBoardId board_id,
+                                OrbisNpScoreRankNumber start_serial_rank,
+                                OrbisNpScoreRankData* rank_array, u64 rank_array_size,
+                                OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByRangeAsync(s32 req_id, OrbisNpScoreBoardId board_id,
+                                     OrbisNpScoreRankNumber start_serial_rank,
+                                     OrbisNpScoreRankData* rank_array, u64 rank_array_size,
+                                     OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                     OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                     u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                     OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByRangeA(s32 req_id, OrbisNpScoreBoardId board_id,
+                                 OrbisNpScoreRankNumber start_serial_rank,
+                                 OrbisNpScoreRankDataA* rank_array, u64 rank_array_size,
+                                 OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                 OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                 u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                 OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByRangeAAsync(s32 req_id, OrbisNpScoreBoardId board_id,
+                                      OrbisNpScoreRankNumber start_serial_rank,
+                                      OrbisNpScoreRankDataA* rank_array, u64 rank_array_size,
+                                      OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                      OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                      u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                      OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByNpId(s32 req_id, OrbisNpScoreBoardId board_id,
+                               const OrbisNpId* np_id_array, u64 np_id_array_size,
+                               OrbisNpScorePlayerRankData* rank_array, u64 rank_array_size,
+                               OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                               OrbisNpScoreGameInfo* info_array, u64 info_array_size, u64 array_num,
+                               Rtc::OrbisRtcTick* last_sort_date,
+                               OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByNpIdAsync(s32 req_id, OrbisNpScoreBoardId board_id,
+                                    const OrbisNpId* np_id_array, u64 np_id_array_size,
+                                    OrbisNpScorePlayerRankData* rank_array, u64 rank_array_size,
+                                    OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                    OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                    u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                    OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetFriendsRanking(s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
+                                OrbisNpScoreRankData* rank_array, u64 rank_array_size,
+                                OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetFriendsRankingAsync(s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
+                                     OrbisNpScoreRankData* rank_array, u64 rank_array_size,
+                                     OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                     OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                     u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                     OrbisNpScoreRankNumber* total_record,
                                      OrbisNpScoreGetFriendRankingOptParam* option);
-s32 sceNpScoreGetFriendsRankingA(s32 reqId, OrbisNpScoreBoardId boardId, s32 includeSelf,
-                                 OrbisNpScoreRankDataA* rankArray, u64 rankArraySize,
-                                 OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                 OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
-                                 Rtc::OrbisRtcTick* lastSortDate,
-                                 OrbisNpScoreRankNumber* totalRecord,
+s32 sceNpScoreGetFriendsRankingA(s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
+                                 OrbisNpScoreRankDataA* rank_array, u64 rank_array_size,
+                                 OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                 OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                 u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                 OrbisNpScoreRankNumber* total_record,
                                  OrbisNpScoreGetFriendRankingOptParam* option);
-s32 sceNpScoreGetFriendsRankingAAsync(s32 reqId, OrbisNpScoreBoardId boardId, s32 includeSelf,
-                                      OrbisNpScoreRankDataA* rankArray, u64 rankArraySize,
-                                      OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                      OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                      u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                      OrbisNpScoreRankNumber* totalRecord,
+s32 sceNpScoreGetFriendsRankingAAsync(s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
+                                      OrbisNpScoreRankDataA* rank_array, u64 rank_array_size,
+                                      OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                      OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                      u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                      OrbisNpScoreRankNumber* total_record,
                                       OrbisNpScoreGetFriendRankingOptParam* option);
-s32 sceNpScoreGetRankingByNpIdPcId(s32 reqId, OrbisNpScoreBoardId boardId,
-                                   const OrbisNpScoreNpIdPcId* idArray, u64 idArraySize,
-                                   OrbisNpScorePlayerRankData* rankArray, u64 rankArraySize,
-                                   OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                   OrbisNpScoreGameInfo* infoArray, u64 infoArraySize, u64 arrayNum,
-                                   Rtc::OrbisRtcTick* lastSortDate,
-                                   OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByNpIdPcIdAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                        const OrbisNpScoreNpIdPcId* idArray, u64 idArraySize,
-                                        OrbisNpScorePlayerRankData* rankArray, u64 rankArraySize,
-                                        OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                        OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                        u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                        OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByAccountId(s32 reqId, OrbisNpScoreBoardId boardId,
-                                    const OrbisNpAccountId* accountIdArray, u64 accountIdArraySize,
-                                    OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
-                                    OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                    OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                    u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                    OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByAccountIdAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                         const OrbisNpAccountId* accountIdArray,
-                                         u64 accountIdArraySize,
-                                         OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
-                                         OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                         OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                         u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                         OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByAccountIdPcId(s32 reqId, OrbisNpScoreBoardId boardId,
-                                        const OrbisNpScoreAccountIdPcId* idArray, u64 idArraySize,
-                                        OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
-                                        OrbisNpScoreComment* commentArray, u64 commentArraySize,
-                                        OrbisNpScoreGameInfo* infoArray, u64 infoArraySize,
-                                        u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-                                        OrbisNpScoreRankNumber* totalRecord, void* option);
+s32 sceNpScoreGetRankingByNpIdPcId(s32 req_id, OrbisNpScoreBoardId board_id,
+                                   const OrbisNpScoreNpIdPcId* id_array, u64 id_array_size,
+                                   OrbisNpScorePlayerRankData* rank_array, u64 rank_array_size,
+                                   OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                   OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                   u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                   OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByNpIdPcIdAsync(s32 req_id, OrbisNpScoreBoardId board_id,
+                                        const OrbisNpScoreNpIdPcId* id_array, u64 id_array_size,
+                                        OrbisNpScorePlayerRankData* rank_array, u64 rank_array_size,
+                                        OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                        OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                        u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                        OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByAccountId(s32 req_id, OrbisNpScoreBoardId board_id,
+                                    const OrbisNpAccountId* account_id_array,
+                                    u64 account_id_array_size,
+                                    OrbisNpScorePlayerRankDataA* rank_array, u64 rank_array_size,
+                                    OrbisNpScoreComment* comment_array, u64 comment_array_size,
+                                    OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                    u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                    OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByAccountIdAsync(
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpAccountId* account_id_array,
+    u64 account_id_array_size, OrbisNpScorePlayerRankDataA* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByAccountIdPcId(s32 req_id, OrbisNpScoreBoardId board_id,
+                                        const OrbisNpScoreAccountIdPcId* id_array,
+                                        u64 id_array_size, OrbisNpScorePlayerRankDataA* rank_array,
+                                        u64 rank_array_size, OrbisNpScoreComment* comment_array,
+                                        u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+                                        u64 info_array_size, u64 array_num,
+                                        Rtc::OrbisRtcTick* last_sort_date,
+                                        OrbisNpScoreRankNumber* total_record, void* option);
 s32 sceNpScoreGetRankingByAccountIdPcIdAsync(
-    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
-    u64 idArraySize, OrbisNpScorePlayerRankDataA* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetBoardInfo(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreBoardInfo* boardInfo,
-                           void* option);
-s32 sceNpScoreGetBoardInfoAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                OrbisNpScoreBoardInfo* boardInfo, void* option);
-s32 sceNpScoreGetGameData(s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpId* npId,
-                          u64* totalSize, u64 recvSize, void* data, void* option);
-s32 sceNpScoreGetGameDataAsync(s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpId* npId,
-                               u64* totalSize, u64 recvSize, void* data, void* option);
-s32 sceNpScoreGetGameDataByAccountId(s32 reqId, OrbisNpScoreBoardId boardId,
-                                     OrbisNpAccountId accountId, u64* totalSize, u64 recvSize,
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpScoreAccountIdPcId* id_array,
+    u64 id_array_size, OrbisNpScorePlayerRankDataA* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetBoardInfo(s32 req_id, OrbisNpScoreBoardId board_id,
+                           OrbisNpScoreBoardInfo* board_info, void* option);
+s32 sceNpScoreGetBoardInfoAsync(s32 req_id, OrbisNpScoreBoardId board_id,
+                                OrbisNpScoreBoardInfo* board_info, void* option);
+s32 sceNpScoreGetGameData(s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpId* np_id,
+                          u64* total_size, u64 recv_size, void* data, void* option);
+s32 sceNpScoreGetGameDataAsync(s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpId* np_id,
+                               u64* total_size, u64 recv_size, void* data, void* option);
+s32 sceNpScoreGetGameDataByAccountId(s32 req_id, OrbisNpScoreBoardId board_id,
+                                     OrbisNpAccountId account_id, u64* total_size, u64 recv_size,
                                      void* data, void* option);
-s32 sceNpScoreGetGameDataByAccountIdAsync(s32 reqId, OrbisNpScoreBoardId boardId,
-                                          OrbisNpAccountId accountId, u64* totalSize, u64 recvSize,
-                                          void* data, void* option);
-s32 sceNpScoreRecordGameData(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreValue score,
-                             u64 totalSize, u64 sendSize, const void* data, void* option);
-s32 sceNpScoreRecordGameDataAsync(s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreValue score,
-                                  u64 totalSize, u64 sendSize, const void* data, void* option);
-s32 sceNpScoreCensorComment(s32 reqId, const char* comment, void* option);
-s32 sceNpScoreCensorCommentAsync(s32 reqId, const char* comment, void* option);
+s32 sceNpScoreGetGameDataByAccountIdAsync(s32 req_id, OrbisNpScoreBoardId board_id,
+                                          OrbisNpAccountId account_id, u64* total_size,
+                                          u64 recv_size, void* data, void* option);
+s32 sceNpScoreRecordGameData(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScoreValue score,
+                             u64 total_size, u64 send_size, const void* data, void* option);
+s32 sceNpScoreRecordGameDataAsync(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScoreValue score,
+                                  u64 total_size, u64 send_size, const void* data, void* option);
+s32 sceNpScoreCensorComment(s32 req_id, const char* comment, void* option);
+s32 sceNpScoreCensorCommentAsync(s32 req_id, const char* comment, void* option);
 
-s32 sceNpScoreSanitizeComment(s32 reqId, const char* comment, char* sanitizedComment, void* option);
-s32 sceNpScoreSanitizeCommentAsync(s32 reqId, const char* comment, char* sanitizedComment,
+s32 sceNpScoreSanitizeComment(s32 req_id, const char* comment, char* sanitized_comment,
+                              void* option);
+s32 sceNpScoreSanitizeCommentAsync(s32 req_id, const char* comment, char* sanitized_comment,
                                    void* option);
-s32 sceNpScoreSetPlayerCharacterId(s32 ctxId, OrbisNpScorePcId pcId);
+s32 sceNpScoreSetPlayerCharacterId(s32 ctx_id, OrbisNpScorePcId pc_id);
 s32 sceNpScoreChangeModeForOtherSaveDataOwners();
 s32 sceNpScoreCreateTitleCtx();
-s32 sceNpScoreGetFriendsRankingForCrossSave(s32 reqId, OrbisNpScoreBoardId boardId, s32 includeSelf,
-                                            OrbisNpScoreRankDataForCrossSave* rankArray,
-                                            u64 rankArraySize, OrbisNpScoreComment* commentArray,
-                                            u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-                                            u64 infoArraySize, u64 arrayNum,
-                                            Rtc::OrbisRtcTick* lastSortDate,
-                                            OrbisNpScoreRankNumber* totalRecord,
-                                            OrbisNpScoreGetFriendRankingOptParam* option);
+s32 sceNpScoreGetFriendsRankingForCrossSave(
+    s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
+    OrbisNpScoreRankDataForCrossSave* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, OrbisNpScoreGetFriendRankingOptParam* option);
 s32 sceNpScoreGetFriendsRankingForCrossSaveAsync(
-    s32 reqId, OrbisNpScoreBoardId boardId, s32 includeSelf,
-    OrbisNpScoreRankDataForCrossSave* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, OrbisNpScoreGetFriendRankingOptParam* option);
+    s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
+    OrbisNpScoreRankDataForCrossSave* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, OrbisNpScoreGetFriendRankingOptParam* option);
 s32 sceNpScoreGetRankingByAccountIdForCrossSave(
-    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpAccountId* accountIdArray,
-    u64 accountIdArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, void* option);
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpAccountId* account_id_array,
+    u64 account_id_array_size, OrbisNpScorePlayerRankDataForCrossSave* rank_array,
+    u64 rank_array_size, OrbisNpScoreComment* comment_array, u64 comment_array_size,
+    OrbisNpScoreGameInfo* info_array, u64 info_array_size, u64 array_num,
+    Rtc::OrbisRtcTick* last_sort_date, OrbisNpScoreRankNumber* total_record, void* option);
 s32 sceNpScoreGetRankingByAccountIdForCrossSaveAsync(
-    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpAccountId* accountIdArray,
-    u64 accountIdArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, void* option);
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpAccountId* account_id_array,
+    u64 account_id_array_size, OrbisNpScorePlayerRankDataForCrossSave* rank_array,
+    u64 rank_array_size, OrbisNpScoreComment* comment_array, u64 comment_array_size,
+    OrbisNpScoreGameInfo* info_array, u64 info_array_size, u64 array_num,
+    Rtc::OrbisRtcTick* last_sort_date, OrbisNpScoreRankNumber* total_record, void* option);
 s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSave(
-    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
-    u64 idArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, void* option);
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpScoreAccountIdPcId* id_array,
+    u64 id_array_size, OrbisNpScorePlayerRankDataForCrossSave* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, void* option);
 s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync(
-    s32 reqId, OrbisNpScoreBoardId boardId, const OrbisNpScoreAccountIdPcId* idArray,
-    u64 idArraySize, OrbisNpScorePlayerRankDataForCrossSave* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreGetRankingByRangeForCrossSave(s32 reqId, OrbisNpScoreBoardId boardId,
-                                            OrbisNpScoreRankNumber startSerialRank,
-                                            OrbisNpScoreRankDataForCrossSave* rankArray,
-                                            u64 rankArraySize, OrbisNpScoreComment* commentArray,
-                                            u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-                                            u64 infoArraySize, u64 arrayNum,
-                                            Rtc::OrbisRtcTick* lastSortDate,
-                                            OrbisNpScoreRankNumber* totalRecord, void* option);
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpScoreAccountIdPcId* id_array,
+    u64 id_array_size, OrbisNpScorePlayerRankDataForCrossSave* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreGetRankingByRangeForCrossSave(s32 req_id, OrbisNpScoreBoardId board_id,
+                                            OrbisNpScoreRankNumber start_serial_rank,
+                                            OrbisNpScoreRankDataForCrossSave* rank_array,
+                                            u64 rank_array_size, OrbisNpScoreComment* comment_array,
+                                            u64 comment_array_size,
+                                            OrbisNpScoreGameInfo* info_array, u64 info_array_size,
+                                            u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+                                            OrbisNpScoreRankNumber* total_record, void* option);
 s32 sceNpScoreGetRankingByRangeForCrossSaveAsync(
-    s32 reqId, OrbisNpScoreBoardId boardId, OrbisNpScoreRankNumber startSerialRank,
-    OrbisNpScoreRankDataForCrossSave* rankArray, u64 rankArraySize,
-    OrbisNpScoreComment* commentArray, u64 commentArraySize, OrbisNpScoreGameInfo* infoArray,
-    u64 infoArraySize, u64 arrayNum, Rtc::OrbisRtcTick* lastSortDate,
-    OrbisNpScoreRankNumber* totalRecord, void* option);
-s32 sceNpScoreSetThreadParam(s32 threadPriority, u64 cpuAffinityMask);
-s32 sceNpScoreSetTimeout(s32 id, s32 resolveRetry, s32 resolveTimeout, s32 connTimeout,
-                         s32 sendTimeout, s32 recvTimeout);
+    s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScoreRankNumber start_serial_rank,
+    OrbisNpScoreRankDataForCrossSave* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, void* option);
+s32 sceNpScoreSetThreadParam(s32 thread_priority, u64 cpu_affinity_mask);
+s32 sceNpScoreSetTimeout(s32 id, s32 resolve_retry, s32 resolve_timeout, s32 conn_timeout,
+                         s32 send_timeout, s32 recv_timeout);
 void RegisterHooks();
 } // namespace Libraries::Np::NpScore

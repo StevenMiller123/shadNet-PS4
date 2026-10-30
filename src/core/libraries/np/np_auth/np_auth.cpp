@@ -82,7 +82,7 @@ static std::map<s32, NpAuthRequest> g_auth_requests;
 s32 CreateNpAuthRequest(bool async) {
     std::scoped_lock lk{g_auth_request_mutex};
     if (g_auth_requests.size() == ORBIS_NP_AUTH_REQUEST_LIMIT) {
-        LOG_ERROR(Lib_NpAuth, "request limit reached, cannot create new request");
+        LOG_ERROR(Lib_NpAuth, "too many requests");
         return ORBIS_NP_AUTH_ERROR_REQUEST_MAX;
     }
 
@@ -101,11 +101,11 @@ s32 sceNpAuthCreateRequest() {
 
 s32 sceNpAuthCreateAsyncRequest(const OrbisNpAuthCreateAsyncRequestParameter* param) {
     if (param == nullptr) {
-        LOG_ERROR(Lib_NpAuth, "called with null parameter");
+        LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
     if (param->size != sizeof(OrbisNpAuthCreateAsyncRequestParameter)) {
-        LOG_ERROR(Lib_NpAuth, "called with invalid parameter size: {}", param->size);
+        LOG_ERROR(Lib_NpAuth, "invalid size {}", param->size);
         return ORBIS_NP_AUTH_ERROR_INVALID_SIZE;
     }
 
@@ -114,12 +114,12 @@ s32 sceNpAuthCreateAsyncRequest(const OrbisNpAuthCreateAsyncRequestParameter* pa
 
 static s32 FindRequest(s32 req_id, NpAuthRequest** request) {
     if (req_id <= 0) {
-        LOG_ERROR(Lib_NpAuth, "called with invalid request id: {}", req_id);
+        LOG_ERROR(Lib_NpAuth, "invalid request id {}", req_id);
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
     const auto it = g_auth_requests.find(req_id);
     if (it == g_auth_requests.end()) {
-        LOG_ERROR(Lib_NpAuth, "request not found: {}", req_id);
+        LOG_ERROR(Lib_NpAuth, "invalid request id {}", req_id);
         return ORBIS_NP_AUTH_ERROR_REQUEST_NOT_FOUND;
     }
     *request = &it->second;
@@ -133,11 +133,11 @@ static s32 StartRequest(s32 req_id, bool* async, std::shared_ptr<AuthRequestCtx>
         return error;
     }
     if (request->ctx) {
-        LOG_ERROR(Lib_NpAuth, "request already started: {}", req_id);
+        LOG_ERROR(Lib_NpAuth, "request {} already started", req_id);
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
     if (request->aborted) {
-        LOG_ERROR(Lib_NpAuth, "request already aborted: {}", req_id);
+        LOG_ERROR(Lib_NpAuth, "request {} already aborted", req_id);
         return ORBIS_NP_AUTH_ERROR_ABORTED;
     }
     request->ctx = std::make_shared<AuthRequestCtx>();
@@ -153,15 +153,15 @@ static s32 FinishStartedRequest(bool async, const std::shared_ptr<AuthRequestCtx
 s32 GetAuthorizationCode(s32 req_id, const OrbisNpAuthGetAuthorizationCodeParameterA* param,
                          s32 flag, OrbisNpAuthorizationCode* auth_code, s32* issuer_id) {
     if (param == nullptr || auth_code == nullptr) {
-        LOG_ERROR(Lib_NpAuth, "called with null parameter");
+        LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
     if (param->size != sizeof(OrbisNpAuthGetAuthorizationCodeParameterA)) {
-        LOG_ERROR(Lib_NpAuth, "called with invalid parameter size: {}", param->size);
+        LOG_ERROR(Lib_NpAuth, "invalid size {}", param->size);
         return ORBIS_NP_AUTH_ERROR_INVALID_SIZE;
     }
     if (param->client_id == nullptr || param->scope == nullptr) {
-        LOG_ERROR(Lib_NpAuth, "called with null parameter");
+        LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
 
@@ -179,7 +179,7 @@ s32 GetAuthorizationCode(s32 req_id, const OrbisNpAuthGetAuthorizationCodeParame
             }
         }
         if (!user_found) {
-            LOG_ERROR(Lib_NpAuth, "could not find user for user id {}", param->user_id);
+            LOG_ERROR(Lib_NpAuth, "invalid user id {}", param->user_id);
             return ORBIS_NP_ERROR_USER_NOT_FOUND;
         }
     }
@@ -201,8 +201,8 @@ s32 GetAuthorizationCode(s32 req_id, const OrbisNpAuthGetAuthorizationCodeParame
     LOG_INFO(Lib_NpAuth, "req_id = {:#x}, async = {}, client_id = '{}', scope = '{}'", req_id,
              async, client_id, scope);
 
-    ctx->authCode = auth_code;
-    ctx->issuerId = issuer_id;
+    ctx->auth_code = auth_code;
+    ctx->issuer_id = issuer_id;
     const s32 submit =
         NpHandler::GetInstance().RequestAuthorizationCode(param->user_id, client_id, scope, ctx);
     if (submit < 0) {
@@ -214,19 +214,19 @@ s32 GetAuthorizationCode(s32 req_id, const OrbisNpAuthGetAuthorizationCodeParame
 s32 sceNpAuthGetAuthorizationCode(s32 req_id, const OrbisNpAuthGetAuthorizationCodeParameter* param,
                                   OrbisNpAuthorizationCode* auth_code, s32* issuer_id) {
     if (param == nullptr || auth_code == nullptr) {
-        LOG_ERROR(Lib_NpAuth, "called with null parameter");
+        LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
     if (param->size != sizeof(OrbisNpAuthGetAuthorizationCodeParameter)) {
-        LOG_ERROR(Lib_NpAuth, "called with invalid parameter size: {}", param->size);
+        LOG_ERROR(Lib_NpAuth, "invalid size {}", param->size);
         return ORBIS_NP_AUTH_ERROR_INVALID_SIZE;
     }
     if (param->online_id == nullptr || param->client_id == nullptr || param->scope == nullptr) {
-        LOG_ERROR(Lib_NpAuth, "called with null parameter");
+        LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
     if (!g_shadnet_enabled) {
-        LOG_ERROR(Lib_NpAuth, "shadnet is not enabled , user not found");
+        LOG_ERROR(Lib_NpAuth, "shadnet not enabled");
         return ORBIS_NP_ERROR_USER_NOT_FOUND;
     }
 
@@ -328,7 +328,7 @@ s32 sceNpAuthWaitAsync(s32 req_id, s32* result) {
 
 s32 sceNpAuthPollAsync(s32 req_id, s32* result) {
     if (result == nullptr) {
-        LOG_ERROR(Lib_NpAuth, "called with null result pointer");
+        LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
 
