@@ -76,7 +76,7 @@ s32 P2PTransport::BindSocket(u16 udp_port) {
     if (ret != 0) {
         LOG_ERROR(Lib_Net, "failed to get cred, error = {:#x}", ret);
     }
-    
+
     // Hardcoded cred values come from libjbc's jbc_jailbreak_cred call.
     // jbc_jailbreak_cred also changes the process's root directory, we do not want that.
     jbc_cred orig_cred = jb_cred;
