@@ -207,6 +207,10 @@ set(PLUGIN_LIBS
     -lc
     -lc++
     -lSceAppContent
+    -lSceCommonDialog
+    -lSceImeDialog
+    -lSceMsgDialog
+    -lScePad
     -lSceSysmodule
     -lSceNet
     -lSceNetBwe
@@ -282,6 +286,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_context.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_internal.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_push_event.cpp
+                 src/core/libraries/pad/pad.cpp
                  src/core/libraries/user_service/user_service.cpp
 )
 
@@ -292,6 +297,7 @@ set(NETWORKING_SOURCES src/core/net_util/net_p2p.cpp
 set(SHADNET_SOURCES src/shadnet/client.cpp
                     src/shadnet/config.cpp
                     src/shadnet/server_probe.cpp
+                    src/shadnet/settings_menu.cpp
                     ${SHADNET_PROTO_OUT}/shadnet.pb.cc
 )
 

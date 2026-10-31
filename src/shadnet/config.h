@@ -62,6 +62,7 @@ public:
     Settings& operator=(const Settings&) = delete;
 
     void Initialize();
+    bool Save(s32 user_id, const UserSettings& user, const ServerSettings& server);
 
     bool IsUpnpEnabled() {
         return m_server.shadnet_enable_upnp.get();
@@ -95,6 +96,19 @@ public:
         return m_user[user_id].shadnet_password.get();
     };
 
+    bool IsFirstRun() {
+        return m_first_run;
+    }
+
+    UserSettings GetUserSettings(s32 user_id) {
+        auto it = m_user.find(user_id);
+        return it != m_user.end() ? it->second : UserSettings{};
+    }
+
+    ServerSettings GetServerSettings() {
+        return m_server;
+    }
+
 private:
     Settings() = default;
     ~Settings() = default;
@@ -103,6 +117,7 @@ private:
 
     ServerSettings m_server{};
     std::map<s32, UserSettings> m_user{};
+    bool m_first_run{};
 };
 
 } // namespace ShadNet

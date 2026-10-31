@@ -28,6 +28,7 @@
 #include "core/libraries/np/np_utility/np_utility.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/np/np_web_api2/np_web_api2.h"
+#include "core/libraries/pad/pad.h"
 #include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
 
@@ -43,6 +44,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API2);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP2);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_COMMON_DIALOG);
+    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_PAD);
 
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_AUTH);
@@ -51,6 +54,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_UTILITY);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TUS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_APP_CONTENT);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_MESSAGE_DIALOG);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_IME_DIALOG);
 
     // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
@@ -60,6 +65,7 @@ extern "C" s32 client_start() {
     Libraries::Network::NetCtl::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
     Libraries::Network::Http2::RegisterHooks();
+    Libraries::Pad::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
