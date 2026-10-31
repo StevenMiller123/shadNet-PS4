@@ -254,6 +254,7 @@ s32 createUserContext(s32 lib_ctx_id, UserService::OrbisUserServiceUserId user_i
         // Failed to initialize user_ctx, destroy it.
         lib_ctx->RemoveUserContext(user_ctx_id);
         delete user_ctx;
+        return result;
     }
 
     lib_ctx->RemoveUser();

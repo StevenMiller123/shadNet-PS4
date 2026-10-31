@@ -38,7 +38,7 @@ s32 sceAppContentAppParamGetInt(OrbisAppContentAppParamId param_id, s32* out_val
 
 s32 sceAppContentGetGameTrialsFlag(OrbisAppContentGameTrialsFlag* game_trials_flag) {
     s32 ret = SHADNET_HOOK_CONTINUE(sceAppContentGetGameTrialsFlag, game_trials_flag);
-    if (ret == 0) {
+    if (ret == 0 && !has_logged) {
         LOG_INFO(Lib_AppContent, "game_trials_flag = {}", *game_trials_flag);
         has_logged = true;
     }

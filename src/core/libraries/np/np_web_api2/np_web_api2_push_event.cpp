@@ -25,7 +25,6 @@ s32 PushEventFilter::Initialize(PushEventHandle* handle,
         return ORBIS_NP_WEBAPI2_ERROR_ABORTED;
     }
 
-    std::vector<std::vector<OrbisNpWebApi2PushEventExtdDataKey>> copy_storage{};
     for (u64 i = 0; i < filter_param_num; i++) {
         OrbisNpWebApi2PushEventFilterParameter new_param{};
         memcpy(&new_param, &filter_param[i], sizeof(OrbisNpWebApi2PushEventFilterParameter));
@@ -37,8 +36,8 @@ s32 PushEventFilter::Initialize(PushEventHandle* handle,
                        sizeof(OrbisNpWebApi2PushEventExtdDataKey));
                 data_keys.emplace_back(new_key);
             }
-            new_param.extd_data_key = data_keys.data();
-            copy_storage.emplace_back(data_keys);
+            new_param.extd_data_key =
+                data_key_copy_storage.emplace_back(std::move(data_keys)).data();
         }
         this->filter_params.emplace_back(new_param);
     }

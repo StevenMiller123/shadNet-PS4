@@ -502,7 +502,6 @@ s32 Request::CreateHttpRequest(s32 http_template_id, const char* url) {
 
     // This would go on to add several other PSN-specific headers.
     // As shadNet does not appear to use them, the logic is skipped for now.
-
     for (HttpRequestHeader* header : this->http_headers) {
         s32 result = sceHttp2AddRequestHeader(http_request_id, header->field_name.data(),
                                               header->field_value.data(), 0);
