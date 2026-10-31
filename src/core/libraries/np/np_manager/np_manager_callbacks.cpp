@@ -4,6 +4,7 @@
 #include <deque>
 #include <mutex>
 
+#include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
@@ -280,8 +281,34 @@ s32 sceNpUnregisterPlusEventCallback() {
     return ORBIS_OK;
 }
 
-s32 sceNpNotifyPlusFeature(void* param) {
-    LOG_ERROR(Lib_NpManager, "(STUBBED) called");
+s32 sceNpNotifyPlusFeature(OrbisNpNotifyPlusFeatureParameter* param) {
+    if (!param) {
+        LOG_ERROR(Lib_NpManager, "Invalid parameter");
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+    if (param->size != sizeof(*param)) {
+        LOG_ERROR(Lib_NpManager, "Invalid parameter size");
+        return ORBIS_NP_ERROR_INVALID_SIZE;
+    }
+    if (param->user_id == -1) {
+        LOG_ERROR(Lib_NpManager, "Invalid user_id");
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+    s32 sdk_ver{};
+    sceKernelGetCompiledSdkVersion(&sdk_ver);
+    if (param->features >= 4 || param->features == 0 ||
+        (sdk_ver >= Common::ElfInfo::FW_350 && param->features != 1)) {
+        LOG_ERROR(Lib_NpManager, "Invalid features");
+        return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+    }
+    for (u64 i = 0; i < sizeof(param->reserved); i++) {
+        if (param->reserved[i] != 0) {
+            LOG_ERROR(Lib_NpManager, "Invalid parameter");
+            return ORBIS_NP_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    // We don't really care about PS Plus, so there's nothing to actually notify here.
     return ORBIS_OK;
 }
 

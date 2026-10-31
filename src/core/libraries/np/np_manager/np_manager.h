@@ -76,6 +76,14 @@ struct OrbisNpCheckPlusParameter {
     u8 reserved[32];
 };
 
+struct OrbisNpNotifyPlusFeatureParameter {
+    u64 size;
+    UserService::OrbisUserServiceUserId user_id;
+    u8 padding[4];
+    u64 features;
+    u8 reserved[32];
+};
+
 struct OrbisNpCheckPlusResult {
     bool authorized;
     u8 reserved[32];
@@ -105,7 +113,7 @@ s32 sceNpRegisterGamePresenceCallbackA(OrbisNpGamePresenceCallback callback, voi
 s32 sceNpUnregisterGamePresenceCallbackA(s32 callback_id);
 s32 sceNpRegisterPlusEventCallback(OrbisNpPlusEventCallback callback, void* userdata);
 s32 sceNpUnregisterPlusEventCallback();
-s32 sceNpNotifyPlusFeature(void* param);
+s32 sceNpNotifyPlusFeature(OrbisNpNotifyPlusFeatureParameter* param);
 void RegisterNpCallback(std::string key, std::function<void()> cb);
 
 // State
