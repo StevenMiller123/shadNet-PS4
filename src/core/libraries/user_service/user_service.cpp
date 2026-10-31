@@ -76,18 +76,20 @@ s32 sceUserServiceGetUserName(s32 user_id, char* user_name, u64 name_len) {
         return ORBIS_USER_SERVICE_ERROR_INVALID_ARGUMENT;
     }
 
+    std::memset(user_name, 0x0, name_len);
     if (Np::NpHandler::Instance().IsSignedIn(user_id)) {
         // If we're signed into shadNet, supply the npid instead.
         // Still need to reverse this and figure out remaining error cases.
         const Np::OrbisNpId& np_id = Np::NpHandler::Instance().GetNpId(user_id);
         u64 copy_len = std::min<u64>(name_len, sizeof(np_id.handle.data));
-        std::memset(user_name, 0x0, name_len);
         std::strncpy(user_name, np_id.handle.data, copy_len);
         return ORBIS_OK;
     }
-    // Fallback to the real function instead.
-    LOG_INFO(Lib_UserService, "called, returning host user_name");
-    return SHADNET_HOOK_CONTINUE(sceUserServiceGetUserName, user_id, user_name, name_len);
+
+    // We can't run HOOK_CONTINUE on this function, so return a placeholder instead.
+    LOG_INFO(Lib_UserService, "called, returning \"User\"");
+    std::strncpy(user_name, "User", 5);
+    return ORBIS_OK;
 }
 
 s32 sceUserServiceGetEvent(OrbisUserServiceEvent* event) {
