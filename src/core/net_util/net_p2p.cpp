@@ -69,37 +69,41 @@ s32 P2PTransport::BindSocket(u16 udp_port) {
         return sock;
     }
 
-    // Binding vports above 0x7fff isn't allowed for typical processes.
-    // to work around this, jailbreak the process while binding.
-    jbc_cred jb_cred{};
-    s32 ret = jbc_get_cred(&jb_cred);
-    if (ret != 0) {
-        LOG_ERROR(Lib_Net, "failed to get cred, error = {:#x}", ret);
-    }
-
-    // Hardcoded cred values come from libjbc's jbc_jailbreak_cred call.
-    // jbc_jailbreak_cred also changes the process's root directory, we do not want that.
-    jbc_cred orig_cred = jb_cred;
-    jb_cred.sceProcCap = 0xffffffffffffffff;
-    jb_cred.sceProcType = 0x3801000000000013;
-    jb_cred.sonyCred = 0xffffffffffffffff;
-    ret = jbc_set_cred(&jb_cred);
-    if (ret != 0) {
-        LOG_ERROR(Lib_Net, "failed to JB cred, error = {:#x}", ret);
-    }
-
     OrbisNetSockaddrIn sa = MakeSockaddr(0, sceNetHtons(udp_port));
-    const s32 rc = sceNetBind(sock, reinterpret_cast<const OrbisNetSockaddr*>(&sa), sizeof(sa));
+    s32 rc = sceNetBind(sock, reinterpret_cast<const OrbisNetSockaddr*>(&sa), sizeof(sa));
     if (rc < 0) {
-        LOG_ERROR(Lib_Net, "sceNetBind on UDP port {} vport {:#x} failed with error {:#x}",
-                  udp_port, SignalingVport, static_cast<u32>(rc));
-        sceNetSocketClose(sock);
-    }
+        // Binding vports above 0x7fff isn't allowed for typical processes.
+        // to work around this, jailbreak the process while binding.
+        jbc_cred jb_cred{};
+        s32 ret = jbc_get_cred(&jb_cred);
+        if (ret != 0) {
+            LOG_ERROR(Lib_Net, "failed to get cred, error = {:#x}", ret);
+        }
 
-    // Done doing what we need to do, un-jailbreak before returning.
-    ret = jbc_set_cred(&orig_cred);
-    if (ret != 0) {
-        LOG_ERROR(Lib_Net, "failed to restore cred, error = {:#x}", ret);
+        // Hardcoded cred values come from libjbc's jbc_jailbreak_cred call.
+        // jbc_jailbreak_cred also changes the process's root directory, we do not want that.
+        jbc_cred orig_cred = jb_cred;
+        jb_cred.sceProcCap = 0xffffffffffffffff;
+        jb_cred.sceProcType = 0x3801000000000013;
+        jb_cred.sonyCred = 0xffffffffffffffff;
+        ret = jbc_set_cred(&jb_cred);
+        if (ret != 0) {
+            LOG_ERROR(Lib_Net, "failed to JB cred, error = {:#x}", ret);
+        }
+
+        rc = sceNetBind(sock, reinterpret_cast<const OrbisNetSockaddr*>(&sa), sizeof(sa));
+        if (rc < 0) {
+            // bind shouldn't fail at this point, and there's nothing more we can do.
+            LOG_ERROR(Lib_Net, "sceNetBind on UDP port {} vport {:#x} failed with error {:#x}",
+                      udp_port, SignalingVport, static_cast<u32>(rc));
+            sceNetSocketClose(sock);
+        }
+
+        // We're done doing what we need to do, un-jailbreak before returning.
+        ret = jbc_set_cred(&orig_cred);
+        if (ret != 0) {
+            LOG_ERROR(Lib_Net, "failed to restore cred, error = {:#x}", ret);
+        }
     }
 
     return rc >= 0 ? sock : rc;
