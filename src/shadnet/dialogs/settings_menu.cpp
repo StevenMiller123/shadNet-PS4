@@ -81,6 +81,10 @@ void SettingsMenu::MenuThread(s32 user_id) {
         return;
     }
 
+    Choice test_choice = m_dialog.ShowMulti("Multi-selection test", "^: Choice 0", "<: Choice 1",
+                                            ">: Choice 2", "V: Choice 3");
+    LOG_NOTIFICATION(Settings, "Choice: {}", std::to_underlying(test_choice));
+
     std::vector<Field> user_fields = {
         {"shadNet", FieldType::Bool, &m_user.shadnet_enabled},
         {"NPID", FieldType::Text, &m_user.shadnet_npid},

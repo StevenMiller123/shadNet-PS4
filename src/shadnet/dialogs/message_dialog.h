@@ -15,6 +15,8 @@ public:
     enum class Choice {
         Button1,
         Button2,
+        Button3,
+        Button4,
         Canceled,
         Failed,
     };
@@ -24,6 +26,9 @@ public:
 
     Choice Show(const std::string& msg, s32 button_type, const char* button1 = nullptr,
                 const char* button2 = nullptr);
+    Choice ShowMulti(const std::string& msg, const char* choice1 = nullptr,
+                     const char* choice2 = nullptr, const char* choice3 = nullptr,
+                     const char* choice4 = nullptr);
     void Abort();
 
 private:
