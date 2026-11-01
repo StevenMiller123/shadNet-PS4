@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <map>
+
 #include "common/singleton.h"
 #include "common/types.h"
 #include "core/libraries/np/np_auth/np_auth_ctx.h"
@@ -214,6 +215,39 @@ public:
                    bool has_date_check, u64 is_last_changed_date,
                    std::shared_ptr<NpTus::TusRequestCtx> ctx);
 
+    // Friends
+    struct FriendInfo {
+        std::string npid;
+        bool online = false;
+    };
+    struct FriendListSnapshot {
+        std::vector<FriendInfo> friends;
+        std::vector<std::string> requests_received;
+        std::vector<std::string> requests_sent;
+        std::vector<std::string> blocked;
+    };
+    FriendListSnapshot GetFriendList(s32 user_id) const;
+
+    // Session invitations
+    struct PendingInvitation {
+        std::string session_id;
+        std::string invitation_id;
+        std::string from_npid;
+        std::string to_npid;
+        s64 valid_until = 0;
+        OrbisNpAccountId from_account_id = 0;
+    };
+    bool SendSessionInvitation(s32 user_id, const std::string& session_id,
+                               const std::vector<std::string>& to, const std::string& message);
+    void PostSessionInvitationEvent(s32 user_id, const std::string& session_id,
+                                    const std::string& invitation_id,
+                                    const std::string& accepter_online_id,
+                                    const std::string& inviter_online_id,
+                                    OrbisNpAccountId inviter_account_id);
+    std::vector<PendingInvitation> GetPendingInvitations(s32 user_id) const;
+    bool AcceptSessionInvitation(s32 user_id, const std::string& invitation_id);
+    void DeclineSessionInvitation(s32 user_id, const std::string& invitation_id);
+
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
     s32 RegisterStateCallback(StateCallback cb, void* userdata);
@@ -292,16 +326,6 @@ private:
     void FireStateCallback(s32 user_id, OrbisNpState state);
 
     // Friend state
-    struct FriendInfo {
-        std::string npid;
-        bool online = false;
-    };
-    struct FriendListSnapshot {
-        std::vector<FriendInfo> friends;
-        std::vector<std::string> requests_received;
-        std::vector<std::string> requests_sent;
-        std::vector<std::string> blocked;
-    };
     mutable std::mutex m_mutex_friend_state;
     std::map<s32, FriendListSnapshot> m_friend_states;
 
@@ -352,13 +376,6 @@ private:
     std::map<u64, PendingTusRequest> m_pending_tus;
 
     // Invitations
-    struct PendingInvitation {
-        std::string session_id;
-        std::string invitation_id;
-        std::string from_npid;
-        std::string to_npid;
-        s64 valid_until = 0;
-    };
     mutable std::mutex m_mutex_pending_invites;
     std::map<s32, std::vector<PendingInvitation>> m_pending_invites;
 };

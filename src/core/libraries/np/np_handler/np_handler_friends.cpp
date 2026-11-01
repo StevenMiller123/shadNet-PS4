@@ -85,4 +85,10 @@ void NpHandler::OnLoginResult(s32 user_id, const ShadNet::LoginResult& res) {
     }
 }
 
+NpHandler::FriendListSnapshot NpHandler::GetFriendList(s32 user_id) const {
+    std::lock_guard lock(m_mutex_friend_state);
+    const auto it = m_friend_states.find(user_id);
+    return it == m_friend_states.end() ? FriendListSnapshot{} : it->second;
+}
+
 }; // namespace Libraries::Np

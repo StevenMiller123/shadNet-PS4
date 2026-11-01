@@ -5,6 +5,7 @@
 #include "common/logging/log.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
+#include "shadnet/dialogs/invitation_prompt.h"
 
 namespace Libraries::Np {
 
@@ -71,10 +72,13 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
                                            return p.invitation_id == invitation_id;
                                        }),
                         v.end());
-                v.push_back({session_id, invitation_id, n.from_npid, n.to_npid, valid_until});
+                PendingInvitation inv{session_id, invitation_id, n.from_npid, n.to_npid,
+                                      valid_until};
+                inv.from_account_id = ev.from_account_id;
+                v.push_back(std::move(inv));
             }
-            // TODO: Rework this to be a popup message dialog or something
-            // ImGui::InvitationPrompt::Push(user_id, invitation_id, session_id, n.from_npid);
+            ShadNet::InvitationPrompt::GetInstance().Push(user_id, invitation_id, session_id,
+                                                          n.from_npid);
         }
     }
 }

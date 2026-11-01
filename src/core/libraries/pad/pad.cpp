@@ -8,7 +8,8 @@
 #include "common/logging/log.h"
 #include "common/shadnet_hook.h"
 #include "core/libraries/pad/pad.h"
-#include "shadnet/settings_menu.h"
+#include "shadnet/dialogs/invitation_prompt.h"
+#include "shadnet/dialogs/settings_menu.h"
 
 SHADNET_HOOK_DECLARE(Libraries::Pad, scePadRead);
 SHADNET_HOOK_DECLARE(Libraries::Pad, scePadReadState);
@@ -55,7 +56,8 @@ static void ClearPadData(OrbisPadData* data) {
 
 static void ProcessPadData(s32 handle, OrbisPadData* data, s32 num) {
     auto& menu = ShadNet::SettingsMenu::GetInstance();
-    if (!menu.IsOpen()) {
+    auto& prompt = ShadNet::InvitationPrompt::GetInstance();
+    if (!menu.IsOpen() && !prompt.IsOpen()) {
         const OrbisPadData& latest = data[num - 1];
         if (latest.connected) {
             s32 user_id = GetHandleUser(handle);
@@ -65,7 +67,7 @@ static void ProcessPadData(s32 handle, OrbisPadData* data, s32 num) {
         }
     }
 
-    if (menu.IsOpen()) {
+    if (menu.IsOpen() || prompt.IsOpen()) {
         for (s32 i = 0; i < num; i++) {
             ClearPadData(&data[i]);
         }

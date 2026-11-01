@@ -209,8 +209,10 @@ set(PLUGIN_LIBS
     -lSceAppContent
     -lSceCommonDialog
     -lSceImeDialog
+    -lSceInvitationDialog
     -lSceMsgDialog
     -lScePad
+    -lSceSsl
     -lSceSysmodule
     -lSceNet
     -lSceNetBwe
@@ -231,6 +233,7 @@ set(PLUGIN_LIBS
     -lSceNpWebApi
     -lSceNpWebApi2
     -lSceSysUtil
+    -lSceSystemService
     -lSceUserService
     -lSceHttp
     -lSceHttp2
@@ -252,6 +255,8 @@ set(COMMON_SOURCES src/common/libjbc/jailbreak.c
 set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/file_format/psf.cpp
                  src/core/libraries/app_content/app_content.cpp
+                 src/core/libraries/invitation_dialog/invitation_dialog_ui.cpp
+                 src/core/libraries/invitation_dialog/invitation_dialog.cpp
                  src/core/libraries/kernel/kernel.cpp
                  src/core/libraries/network/http/http.cpp
                  src/core/libraries/network/http2/http2.cpp
@@ -261,6 +266,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
+                 src/core/libraries/np/np_handler/np_handler_invitation.cpp
                  src/core/libraries/np/np_handler/np_handler_score.cpp
                  src/core/libraries/np/np_handler/np_handler_tus.cpp
                  src/core/libraries/np/np_handler/np_handler_web_api.cpp
@@ -287,6 +293,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_internal.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_push_event.cpp
                  src/core/libraries/pad/pad.cpp
+                 src/core/libraries/system_service/system_service.cpp
                  src/core/libraries/user_service/user_service.cpp
 )
 
@@ -294,10 +301,12 @@ set(NETWORKING_SOURCES src/core/net_util/net_p2p.cpp
                        src/core/net_util/net_util.cpp
 )
 
-set(SHADNET_SOURCES src/shadnet/client.cpp
+set(SHADNET_SOURCES src/shadnet/dialogs/invitation_prompt.cpp
+                    src/shadnet/dialogs/message_dialog.cpp
+                    src/shadnet/dialogs/settings_menu.cpp
+                    src/shadnet/client.cpp
                     src/shadnet/config.cpp
                     src/shadnet/server_probe.cpp
-                    src/shadnet/settings_menu.cpp
                     ${SHADNET_PROTO_OUT}/shadnet.pb.cc
 )
 

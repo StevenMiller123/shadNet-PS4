@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "common/types.h"
+#include "core/libraries/user_service/user_service.h"
 
 // For structs and constants shared between multiple Np libraries.
 namespace Libraries::Np {
@@ -107,6 +108,35 @@ struct OrbisNpPeerAddressA {
     OrbisNpAccountId account_id;
     OrbisNpPlatformType platform;
     char padding[4];
+};
+
+constexpr s32 ORBIS_NP_SESSION_ID_MAX_SIZE = 45;
+
+struct OrbisNpSessionId {
+    char data[ORBIS_NP_SESSION_ID_MAX_SIZE];
+    u8 term;
+    u8 padding[2];
+};
+
+constexpr s32 ORBIS_NP_INVITATION_ID_SIZE = 60;
+
+struct OrbisNpInvitationId {
+    char data[ORBIS_NP_INVITATION_ID_SIZE];
+    u8 term;
+};
+
+using OrbisNpSessionInvitationEventFlag = s32;
+constexpr OrbisNpSessionInvitationEventFlag ORBIS_NP_SESSION_INVITATION_EVENT_FLAG_INVITATION = 1;
+
+struct OrbisNpSessionInvitationEventParam {
+    OrbisNpSessionId session_id;
+    OrbisNpInvitationId invitation_id;
+    OrbisNpSessionInvitationEventFlag flag;
+    u8 padding[4];
+    Np::OrbisNpOnlineId online_id;
+    UserService::OrbisUserServiceUserId user_id;
+    Np::OrbisNpOnlineId referral_online_id;
+    Np::OrbisNpAccountId referral_account_id;
 };
 
 }; // namespace Libraries::Np

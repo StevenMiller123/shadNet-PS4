@@ -13,6 +13,7 @@
 #include "core/file_format/npbind.h"
 #include "core/file_format/psf.h"
 #include "core/libraries/app_content/app_content.h"
+#include "core/libraries/invitation_dialog/invitation_dialog.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/http/http.h"
 #include "core/libraries/network/http2/http2.h"
@@ -29,6 +30,7 @@
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/np/np_web_api2/np_web_api2.h"
 #include "core/libraries/pad/pad.h"
+#include "core/libraries/system_service/system_service.h"
 #include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
 
@@ -57,6 +59,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_APP_CONTENT);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_MESSAGE_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_IME_DIALOG);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_INVITATION_DIALOG);
 
     // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
@@ -67,6 +70,7 @@ extern "C" s32 client_start() {
     Libraries::Network::Http::RegisterHooks();
     Libraries::Network::Http2::RegisterHooks();
     Libraries::Pad::RegisterHooks();
+    Libraries::SystemService::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
@@ -192,5 +196,6 @@ extern "C" s32 client_start() {
     Libraries::Np::NpMatching2::RegisterHooks();
     Libraries::Np::NpUtility::RegisterHooks();
     Libraries::Np::NpTus::RegisterHooks();
+    Libraries::InvitationDialog::RegisterHooks();
     return 0;
 }

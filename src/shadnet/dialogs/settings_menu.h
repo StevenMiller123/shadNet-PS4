@@ -14,6 +14,7 @@
 
 #include "common/types.h"
 #include "shadnet/config.h"
+#include "shadnet/dialogs/message_dialog.h"
 
 namespace ShadNet {
 
@@ -33,12 +34,7 @@ public:
     }
 
 private:
-    enum class Choice {
-        Button1,
-        Button2,
-        Canceled,
-        Failed,
-    };
+    using Choice = MessageDialog::Choice;
 
     enum class FieldType {
         Bool,
@@ -63,11 +59,6 @@ private:
     ~SettingsMenu() = default;
 
     void MenuThread(s32 user_id);
-    bool BeginDialogs();
-    void EndDialogs();
-
-    Choice ShowMessage(const std::string& msg, s32 button_type, const char* button1 = nullptr,
-                       const char* button2 = nullptr);
     std::optional<std::string> ShowKeyboard(const char* title, const std::string& value,
                                             FieldType type);
 
@@ -79,7 +70,7 @@ private:
     std::atomic<bool> m_open{false};
     std::thread m_thread;
     s32 m_user_id{-1};
-    bool m_owns_msg_dialog{};
+    MessageDialog m_dialog;
     bool m_dirty{};
 
     UserSettings m_user{};
