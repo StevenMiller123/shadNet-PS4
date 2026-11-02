@@ -6,12 +6,14 @@
 
 #include "common/logging/log.h"
 #include "core/libraries/invitation_dialog/invitation_dialog_ui.h"
+#include "core/libraries/pad/pad.h"
 
 namespace Libraries::InvitationDialog {
 
 using CommonDialog::OrbisCommonDialogResult;
 using CommonDialog::OrbisCommonDialogStatus;
 using Choice = ShadNet::MessageDialog::Choice;
+using Button = Libraries::Pad::Button;
 
 static constexpr u64 MAX_DISPLAYED_MESSAGE_LENGTH = 256;
 
@@ -129,7 +131,20 @@ void InvitationDialogUi::RunSend() {
     }
 
     std::vector<bool> selected(friends.size());
+    const u64 page_count = friends.size() + 1;
     u64 index = 0;
+    auto navigate = [&](Choice choice) {
+        if (choice == Choice::L1) {
+            index = (index + page_count - 1) % page_count;
+            return true;
+        }
+        if (choice == Choice::R1) {
+            index = (index + 1) % page_count;
+            return true;
+        }
+        return false;
+    };
+
     while (true) {
         std::vector<std::string> names;
         for (u64 i = 0; i < friends.size(); i++) {
@@ -141,11 +156,16 @@ void InvitationDialogUi::RunSend() {
         if (index < friends.size()) {
             const auto& friend_info = friends[index];
             const std::string msg =
-                fmt::format("Send Invitation\n\n{} ({})\n\n({}/{})\nSelected: {}/{}",
+                fmt::format("Send Invitation\n\n{} ({})\n\n({}/{})\nSelected: {}/{}\n"
+                            "Press L1 or R1 to navigate",
                             friend_info.npid, friend_info.online ? "online" : "offline", index + 1,
                             friends.size(), names.size(), m_state->max_recipients);
-            Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Next",
-                                          selected[index] ? "Remove" : "Add");
+            Choice choice =
+                m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Next",
+                              selected[index] ? "Remove" : "Add", Button::L1 | Button::R1);
+            if (navigate(choice)) {
+                continue;
+            }
             if (choice == Choice::Button1) {
                 index++;
             } else if (choice == Choice::Button2) {
@@ -164,8 +184,13 @@ void InvitationDialogUi::RunSend() {
         }
 
         if (names.empty()) {
-            if (m_dialog.Show("Send Invitation\n\nNo players selected.",
-                              ORBIS_MSG_DIALOG_BUTTON_TYPE_OK) != Choice::Button1) {
+            Choice choice = m_dialog.Show("Send Invitation\n\nNo players selected.",
+                                          ORBIS_MSG_DIALOG_BUTTON_TYPE_OK, nullptr, nullptr,
+                                          Button::L1 | Button::R1);
+            if (navigate(choice)) {
+                continue;
+            }
+            if (choice != Choice::Button1) {
                 finish(OrbisCommonDialogResult::ORBIS_COMMON_DIALOG_RESULT_USER_CANCELED);
                 return;
             }
@@ -174,7 +199,11 @@ void InvitationDialogUi::RunSend() {
         }
         const std::string msg = fmt::format("Send Invitation\n\nSend an invitation to:\n{}{}",
                                             JoinNames(names), FormatUserMessage(m_state->message));
-        Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Send", "Back");
+        Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Send", "Back",
+                                      Button::L1 | Button::R1);
+        if (navigate(choice)) {
+            continue;
+        }
         if (choice == Choice::Button1) {
             SendInvitation(std::move(names));
             return;
@@ -214,14 +243,24 @@ void InvitationDialogUi::RunRecv() {
                       ORBIS_MSG_DIALOG_BUTTON_TYPE_OK);
     }
 
+    u64 index = 0;
     while (!invitations.empty()) {
-        const auto invitation = invitations.front();
-        const std::string msg = fmt::format(
-            "Invitations\n\n{} invited you to a game session.\n\n(1/{})",
-            invitation.from_npid.empty() ? "(unknown)" : invitation.from_npid, invitations.size());
-        Choice choice =
-            m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Accept", "Decline");
-        if (choice == Choice::Button1) {
+        index = std::min<u64>(index, invitations.size() - 1);
+        const auto invitation = invitations[index];
+        const std::string msg =
+            fmt::format("Invitations\n\n{} invited you to a game session.\n\n({}/{})\n"
+                        "Press L1 or R1 to navigate",
+                        invitation.from_npid.empty() ? "(unknown)" : invitation.from_npid,
+                        index + 1, invitations.size());
+        Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Accept",
+                                      "Decline", Button::L1 | Button::R1);
+        if (choice == Choice::L1) {
+            index = (index + invitations.size() - 1) % invitations.size();
+            continue;
+        } else if (choice == Choice::R1) {
+            index = (index + 1) % invitations.size();
+            continue;
+        } else if (choice == Choice::Button1) {
             if (np_handler.AcceptSessionInvitation(m_state->user_id, invitation.invitation_id)) {
                 m_dialog.End();
                 Finish(OrbisCommonDialogResult::ORBIS_COMMON_DIALOG_RESULT_OK);
@@ -234,7 +273,7 @@ void InvitationDialogUi::RunRecv() {
         } else {
             break;
         }
-        invitations.erase(invitations.begin());
+        invitations.erase(invitations.begin() + index);
     }
 
     m_dialog.End();

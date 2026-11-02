@@ -6,29 +6,46 @@
 #include <atomic>
 #include <string>
 
+#include "common/enum.h"
 #include "common/types.h"
+#include "core/libraries/pad/pad.h"
 
 namespace ShadNet {
 
 class MessageDialog {
 public:
     enum class Choice {
+        // Dialog returns
         Button1,
         Button2,
-        Button3,
-        Button4,
         Canceled,
         Failed,
+
+        // Possible pad inputs
+        Left,
+        Right,
+        Up,
+        Down,
+        Circle,
+        Cross,
+        Triangle,
+        Square,
+        L1,
+        L2,
+        L3,
+        R1,
+        R2,
+        R3,
+        Options,
+        TouchPad
     };
 
     bool Begin(s32 user_id);
     void End();
 
     Choice Show(const std::string& msg, s32 button_type, const char* button1 = nullptr,
-                const char* button2 = nullptr);
-    Choice ShowMulti(const std::string& msg, const char* choice1 = nullptr,
-                     const char* choice2 = nullptr, const char* choice3 = nullptr,
-                     const char* choice4 = nullptr);
+                const char* button2 = nullptr,
+                Libraries::Pad::Button buttons = Libraries::Pad::Button::None);
     void Abort();
 
 private:

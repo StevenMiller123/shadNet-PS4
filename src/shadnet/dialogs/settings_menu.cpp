@@ -5,7 +5,6 @@
 #include <cstring>
 #include <orbis/ImeDialog.h>
 #include <orbis/MsgDialog.h>
-#include <orbis/Pad.h>
 #include <orbis/libkernel.h>
 
 #include "common/logging/log.h"
@@ -17,6 +16,9 @@ static constexpr u32 MENU_COMBO = ORBIS_PAD_BUTTON_L3 | ORBIS_PAD_BUTTON_R3;
 static constexpr u64 MENU_COMBO_HOLD_TIME = 2000000;
 static constexpr u32 DIALOG_POLL_INTERVAL = 16000;
 static constexpr u32 MAX_TEXT_LENGTH = 128;
+
+using Choice = MessageDialog::Choice;
+using Button = Libraries::Pad::Button;
 
 SettingsMenu& SettingsMenu::GetInstance() {
     static SettingsMenu s_instance;
@@ -80,10 +82,6 @@ void SettingsMenu::MenuThread(s32 user_id) {
         m_open = false;
         return;
     }
-
-    Choice test_choice = m_dialog.ShowMulti("Multi-selection test", "^: Choice 0", "<: Choice 1",
-                                            ">: Choice 2", "V: Choice 3");
-    LOG_NOTIFICATION(Settings, "Choice: {}", std::to_underlying(test_choice));
 
     std::vector<Field> user_fields = {
         {"shadNet", FieldType::Bool, &m_user.shadnet_enabled},
@@ -211,19 +209,35 @@ std::string SettingsMenu::FormatSummary() {
 
 void SettingsMenu::EditFields(std::vector<Field> fields) {
     u64 index = 0;
-    while (index < fields.size()) {
+    while (true) {
         Field& field = fields[index];
-        std::string msg = fmt::format("{}: {}\n\n({}/{})", field.name, FormatValue(field),
-                                      index + 1, fields.size());
-        Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Next", "Change");
+        std::string msg = fmt::format("{}: {}\n\n({}/{})\nPress L1 or R1 to navigate", field.name,
+                                      FormatValue(field), index + 1, fields.size());
+        Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Change", "Reset",
+                                      Button::L1 | Button::R1);
         if (choice == Choice::Button1) {
-            index++;
-        } else if (choice == Choice::Button2) {
             EditField(field);
+        } else if (choice == Choice::Button2) {
+            ResetField(field);
+        } else if (choice == Choice::L1) {
+            index = (index + fields.size() - 1) % fields.size();
+        } else if (choice == Choice::R1) {
+            index = (index + 1) % fields.size();
         } else {
             return;
         }
     }
+}
+
+void SettingsMenu::ResetField(Field& field) {
+    std::visit(
+        [this](auto* setting) {
+            if (setting->get() != setting->default_value) {
+                setting->set(setting->default_value);
+                m_dirty = true;
+            }
+        },
+        field.value);
 }
 
 void SettingsMenu::EditField(Field& field) {

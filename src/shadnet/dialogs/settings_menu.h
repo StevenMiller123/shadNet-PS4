@@ -34,8 +34,6 @@ public:
     }
 
 private:
-    using Choice = MessageDialog::Choice;
-
     enum class FieldType {
         Bool,
         Text,
@@ -66,6 +64,7 @@ private:
     std::string FormatSummary();
     void EditFields(std::vector<Field> fields);
     void EditField(Field& field);
+    void ResetField(Field& field);
 
     std::atomic<bool> m_open{false};
     std::thread m_thread;
