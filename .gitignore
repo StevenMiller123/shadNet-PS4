@@ -9,3 +9,5 @@ build/
 src/common/git_ver.h
 config.json
 plugins.ini
+
+/diffs/
