@@ -33,7 +33,6 @@
                      BUILD_TYPE);                                                                  \
         final_printf("Built: %s\n", BUILD_DATE);                                                   \
         final_printf("GoldHEN SDK Ver: 0x%08x\n", GOLDHEN_SDK_VERSION);                            \
-        final_printf("GoldHEN System SDK Ver: 0x%08x\n", sys_sdk_version());                       \
     }
 
 #define print_proc_info()                                                                          \
@@ -50,6 +49,16 @@
 
 void NotifyStatic(const char* IconUri, const char* text);
 void Notify(const char* IconUri, const char* FMT, ...);
+
+#ifdef __cplusplus
+namespace Common {
+bool IsPs5();
+bool DebugFlagSet(const char* name);
+bool JailbreakViaDaemon();
+void RejailViaDaemon();
+} // namespace Common
+#endif
+
 // Takes hardcoded input string 2 to strlen against during compile time.
 // startsWith(input_1, "input 2");
 #define startsWith(str1, str2) (strncmp(str1, str2, __builtin_strlen(str2)) == 0)
