@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <thread>
+
 #include <orbis/Sysmodule.h>
 #include <orbis/UserService.h>
 #include <orbis/libkernel.h>
@@ -9,6 +11,7 @@
 #include "common/elf_info.h"
 #include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
+#include "common/plugin_common.h"
 #include "common/types.h"
 #include "core/file_format/npbind.h"
 #include "core/file_format/psf.h"
@@ -33,6 +36,25 @@
 #include "core/libraries/system_service/system_service.h"
 #include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
+
+static bool AnyUserEnabled() {
+    OrbisUserServiceLoginUserIdList user_list{};
+    if (sceUserServiceGetLoginUserIdList(&user_list) != 0) {
+        return true;
+    }
+    for (s32 i = 0; i < ORBIS_USER_SERVICE_MAX_LOGIN_USERS; i++) {
+        const s32 user_id = user_list.userId[i];
+        if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
+            break;
+        }
+        if (ShadNet::Settings::GetInstance().IsShadNetEnabled(user_id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static s32 FinishStartup();
 
 extern "C" s32 client_start() {
     LOG_INFO(shadNet, "Initializing shadNet Client");
@@ -69,12 +91,20 @@ extern "C" s32 client_start() {
     Libraries::Network::NetCtl::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
     Libraries::Network::Http2::RegisterHooks();
-    Libraries::Pad::RegisterHooks();
     Libraries::SystemService::RegisterHooks();
 
     // Init config backend
     ShadNet::Settings::GetInstance().Initialize();
+    Libraries::Pad::StartPolling();
 
+    if (Common::IsPs5()) {
+        std::thread(FinishStartup).detach();
+        return 0;
+    }
+    return FinishStartup();
+}
+
+static s32 FinishStartup() {
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
 
@@ -137,12 +167,23 @@ extern "C" s32 client_start() {
 
     // Sandbox doesn't contain our files, jailbreak this process and look in the correct places.
     if (!sandbox_psf || !sandbox_npbind) {
-        jbc_cred cred;
-        jbc_get_cred(&cred);
-        jbc_cred root_cred = cred;
-        jbc_jailbreak_cred(&root_cred);
-        root_cred.cdir = cred.rdir;
-        jbc_set_cred(&root_cred);
+        const bool use_libjbc = !Common::IsPs5();
+        const bool skip_daemon = !use_libjbc && Common::DebugFlagSet("no_jailbreak");
+        const bool use_daemon = !use_libjbc && !skip_daemon && Common::JailbreakViaDaemon();
+        if (skip_daemon) {
+            LOG_INFO(shadNet, "Daemon jailbreak skipped by the no_jailbreak flag");
+        } else if (!use_libjbc) {
+            LOG_INFO(shadNet, "PS5 jailbreak through the daemon {}",
+                     use_daemon ? "succeeded" : "failed");
+        }
+        jbc_cred cred{};
+        if (use_libjbc) {
+            jbc_get_cred(&cred);
+            jbc_cred root_cred = cred;
+            jbc_jailbreak_cred(&root_cred);
+            root_cred.cdir = cred.rdir;
+            jbc_set_cred(&root_cred);
+        }
 
         // Check files in appmeta
         std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
@@ -166,7 +207,11 @@ extern "C" s32 client_start() {
         }
 
         // Un-jailbreak the process by restoring the original cred.
-        jbc_set_cred(&cred);
+        if (use_libjbc) {
+            jbc_set_cred(&cred);
+        } else if (use_daemon) {
+            Common::RejailViaDaemon();
+        }
     }
 
     // Log the important info we retrieve
@@ -184,6 +229,16 @@ extern "C" s32 client_start() {
         }
     } else {
         LOG_WARNING(shadNet, "No NP Communication IDs loaded");
+    }
+
+    if (!AnyUserEnabled()) {
+        LOG_INFO(shadNet, "shadNet is disabled for every user, leaving the NP libraries alone");
+        return 0;
+    }
+
+    if (Common::DebugFlagSet("no_np_hooks")) {
+        LOG_INFO(shadNet, "NP hooks skipped by the no_np_hooks flag");
+        return 0;
     }
 
     // Init NP library hooks
