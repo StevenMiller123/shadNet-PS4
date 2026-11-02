@@ -30,8 +30,5 @@ enum class Button : u32 {
 };
 DECLARE_ENUM_FLAG_OPERATORS(Button)
 
-s32 scePadRead(s32 handle, OrbisPadData* data, s32 num);
-s32 scePadReadState(s32 handle, OrbisPadData* data);
-
-void RegisterHooks();
+void StartPolling();
 } // namespace Libraries::Pad

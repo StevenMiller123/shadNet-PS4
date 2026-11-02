@@ -1,96 +1,58 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <map>
 #include <mutex>
 #include <orbis/UserService.h>
+#include <orbis/libkernel.h>
+#include <thread>
 
 #include "common/logging/log.h"
-#include "common/shadnet_hook.h"
 #include "core/libraries/pad/pad.h"
 #include "shadnet/dialogs/invitation_prompt.h"
 #include "shadnet/dialogs/settings_menu.h"
 
-SHADNET_HOOK_DECLARE(Libraries::Pad, scePadRead);
-SHADNET_HOOK_DECLARE(Libraries::Pad, scePadReadState);
-
-static void RegisterPadHooks() {
-    SHADNET_HOOK16(Libraries::Pad, scePadRead);
-    SHADNET_HOOK16(Libraries::Pad, scePadReadState);
-}
-
 namespace Libraries::Pad {
 
-static std::mutex g_handle_mutex;
-static std::map<s32, s32> g_handle_users;
+static constexpr u32 POLL_INTERVAL = 16000;
+static constexpr u64 USER_REFRESH_INTERVAL = 1000000;
 
-static s32 GetHandleUser(s32 handle) {
-    std::scoped_lock lk{g_handle_mutex};
-    if (auto it = g_handle_users.find(handle); it != g_handle_users.end()) {
-        return it->second;
-    }
-
-    OrbisUserServiceLoginUserIdList user_list{};
-    if (sceUserServiceGetLoginUserIdList(&user_list) != 0) {
-        return -1;
-    }
-    for (s32 user_id : user_list.userId) {
-        if (user_id == -1) {
-            continue;
-        }
-        if (scePadGetHandle(user_id, 0, 0) == handle) {
-            g_handle_users[handle] = user_id;
-            return user_id;
-        }
-    }
-    return -1;
-}
-
-static void ClearPadData(OrbisPadData* data) {
-    data->buttons = 0;
-    data->leftStick = {0x80, 0x80};
-    data->rightStick = {0x80, 0x80};
-    data->analogButtons = {0, 0};
-    data->touch.fingers = 0;
-}
-
-static void ProcessPadData(s32 handle, OrbisPadData* data, s32 num) {
+static void PollPads() {
     auto& menu = ShadNet::SettingsMenu::GetInstance();
     auto& prompt = ShadNet::InvitationPrompt::GetInstance();
-    if (!menu.IsOpen() && !prompt.IsOpen()) {
-        const OrbisPadData& latest = data[num - 1];
-        if (latest.connected) {
-            s32 user_id = GetHandleUser(handle);
-            if (user_id != -1) {
-                menu.OnPadInput(user_id, latest.buttons);
+
+    OrbisUserServiceLoginUserIdList user_list{};
+    bool have_users = false;
+    u64 last_refresh = 0;
+
+    while (true) {
+        const u64 now = sceKernelGetProcessTime();
+
+        if (!menu.IsOpen() && !prompt.IsOpen()) {
+            if (!have_users || now - last_refresh >= USER_REFRESH_INTERVAL) {
+                have_users = sceUserServiceGetLoginUserIdList(&user_list) == 0;
+                last_refresh = now;
+            }
+            if (have_users) {
+                for (s32 user_id : user_list.userId) {
+                    if (user_id == ORBIS_USER_SERVICE_USER_ID_INVALID) {
+                        continue;
+                    }
+                    s32 handle = scePadGetHandle(user_id, 0, 0);
+                    if (handle < 0) {
+                        continue;
+                    }
+                    OrbisPadData data{};
+                    if (scePadReadState(handle, &data) == ORBIS_OK && data.connected) {
+                        menu.OnPadInput(user_id, data.buttons);
+                    }
+                }
             }
         }
-    }
-
-    if (menu.IsOpen() || prompt.IsOpen()) {
-        for (s32 i = 0; i < num; i++) {
-            ClearPadData(&data[i]);
-        }
+        sceKernelUsleep(POLL_INTERVAL);
     }
 }
 
-s32 scePadRead(s32 handle, OrbisPadData* data, s32 num) {
-    s32 result = SHADNET_HOOK_CONTINUE(scePadRead, handle, data, num);
-    if (result > 0 && data != nullptr) {
-        ProcessPadData(handle, data, result);
-    }
-    return result;
-}
-
-s32 scePadReadState(s32 handle, OrbisPadData* data) {
-    s32 result = SHADNET_HOOK_CONTINUE(scePadReadState, handle, data);
-    if (result == ORBIS_OK && data != nullptr) {
-        ProcessPadData(handle, data, 1);
-    }
-    return result;
-}
-
-void RegisterHooks() {
-    return RegisterPadHooks();
+void StartPolling() {
+    std::thread(PollPads).detach();
 }
 } // namespace Libraries::Pad
