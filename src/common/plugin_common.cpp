@@ -90,7 +90,8 @@ bool SendToDaemon(uint16_t port, const void* data, size_t size) {
 
     size_t sent = 0;
     while (sent < size) {
-        const ssize_t count = send(sock, reinterpret_cast<const char*>(data) + sent, size - sent, 0);
+        const ssize_t count =
+            send(sock, reinterpret_cast<const char*>(data) + sent, size - sent, 0);
         if (count <= 0) {
             break;
         }

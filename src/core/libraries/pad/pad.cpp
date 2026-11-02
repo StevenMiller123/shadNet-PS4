@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <mutex>
+#include <thread>
 #include <orbis/UserService.h>
 #include <orbis/libkernel.h>
-#include <thread>
 
 #include "common/logging/log.h"
 #include "core/libraries/pad/pad.h"
