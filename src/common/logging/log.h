@@ -49,7 +49,14 @@ void PrintLogN(char const* lib, char const* log_level, char const* file, unsigne
                char const* function, char const* format, Args const&... args) {
     PrintLog(lib, log_level, file, line_num, function, format, args...);
     std::string message = FormatLog(format, args...);
-    sceSysUtilSendSystemNotificationWithText(222, message.c_str());
+    OrbisNotificationRequest request{
+        .reqId = NotificationRequest,
+        .targetId = -1,
+    };
+
+    strncpy(request.message, message.c_str(), sizeof request.message);
+
+    sceKernelSendNotificationRequest(NotificationRequest, &request, sizeof(request), 0);
 }
 
 template <typename... Args>
