@@ -18,24 +18,30 @@
     do {                                                                                           \
         LOG_DEBUG(shadNet, "HOOK64() Create {}", #name);                                           \
         Detour_Construct((&(Detour_##name)), DetourMode_x64);                                      \
-        Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                                  \
-                              (void*)((decltype(&name_space::name))(name##_hook)));                \
+        if (!Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                             \
+                                   (void*)((decltype(&name_space::name))(name##_hook)))) {         \
+            LOG_ERROR(shadNet, "Failed to hook {}", #name);                                        \
+        }                                                                                          \
     } while (0)
 
 #define SHADNET_HOOK32(name_space, name)                                                           \
     do {                                                                                           \
         LOG_DEBUG(shadNet, "HOOK32() Create {}", #name);                                           \
         Detour_Construct((&(Detour_##name)), DetourMode_x32);                                      \
-        Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                                  \
-                              (void*)((decltype(&name_space::name))(name##_hook)));                \
+        if (!Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                             \
+                                   (void*)((decltype(&name_space::name))(name##_hook)))) {         \
+            LOG_ERROR(shadNet, "Failed to hook {}", #name);                                        \
+        }                                                                                          \
     } while (0)
 
 #define SHADNET_HOOK16(name_space, name)                                                           \
     do {                                                                                           \
         LOG_DEBUG(shadNet, "HOOK16() Create {}", #name);                                           \
         Detour_Construct((&(Detour_##name)), DetourMode_x16);                                      \
-        Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                                  \
-                              (void*)((decltype(&name_space::name))(name##_hook)));                \
+        if (!Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                             \
+                                   (void*)((decltype(&name_space::name))(name##_hook)))) {         \
+            LOG_ERROR(shadNet, "Failed to hook {}", #name);                                        \
+        }                                                                                          \
     } while (0)
 
 template <auto f>
@@ -44,6 +50,9 @@ struct HookContinueWrapperImpl;
 template <class ReturnType, class... Args, ReturnType (*func)(Args...)>
 struct HookContinueWrapperImpl<func> {
     static ReturnType wrap(Detour* detour, Args... args) {
+        if (!detour->StubPtr) {
+            return func(args...);
+        }
         return Detour_Stub(detour, ReturnType (*)(Args...), args...);
     }
 };
