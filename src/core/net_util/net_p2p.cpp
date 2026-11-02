@@ -6,6 +6,7 @@
 
 #include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
+#include "common/plugin_common.h"
 #include "core/libraries/network/net/net.h"
 #include "core/libraries/network/net/net_error.h"
 #include "core/net_util/net_p2p.h"
@@ -74,21 +75,27 @@ s32 P2PTransport::BindSocket(u16 udp_port) {
     if (rc < 0) {
         // Binding vports above 0x7fff isn't allowed for typical processes.
         // to work around this, jailbreak the process while binding.
-        jbc_cred jb_cred{};
-        s32 ret = jbc_get_cred(&jb_cred);
-        if (ret != 0) {
-            LOG_ERROR(Lib_Net, "failed to get cred, error = {:#x}", ret);
-        }
+        const bool use_libjbc = !Common::IsPs5();
+        const bool use_daemon = !use_libjbc && Common::JailbreakViaDaemon();
+        jbc_cred orig_cred{};
+        s32 ret = 0;
+        if (use_libjbc) {
+            jbc_cred jb_cred{};
+            ret = jbc_get_cred(&jb_cred);
+            if (ret != 0) {
+                LOG_ERROR(Lib_Net, "failed to get cred, error = {:#x}", ret);
+            }
 
-        // Hardcoded cred values come from libjbc's jbc_jailbreak_cred call.
-        // jbc_jailbreak_cred also changes the process's root directory, we do not want that.
-        jbc_cred orig_cred = jb_cred;
-        jb_cred.sceProcCap = 0xffffffffffffffff;
-        jb_cred.sceProcType = 0x3801000000000013;
-        jb_cred.sonyCred = 0xffffffffffffffff;
-        ret = jbc_set_cred(&jb_cred);
-        if (ret != 0) {
-            LOG_ERROR(Lib_Net, "failed to JB cred, error = {:#x}", ret);
+            // Hardcoded cred values come from libjbc's jbc_jailbreak_cred call.
+            // jbc_jailbreak_cred also changes the process's root directory, we do not want that.
+            orig_cred = jb_cred;
+            jb_cred.sceProcCap = 0xffffffffffffffff;
+            jb_cred.sceProcType = 0x3801000000000013;
+            jb_cred.sonyCred = 0xffffffffffffffff;
+            ret = jbc_set_cred(&jb_cred);
+            if (ret != 0) {
+                LOG_ERROR(Lib_Net, "failed to JB cred, error = {:#x}", ret);
+            }
         }
 
         rc = sceNetBind(sock, reinterpret_cast<const OrbisNetSockaddr*>(&sa), sizeof(sa));
@@ -100,9 +107,13 @@ s32 P2PTransport::BindSocket(u16 udp_port) {
         }
 
         // We're done doing what we need to do, un-jailbreak before returning.
-        ret = jbc_set_cred(&orig_cred);
-        if (ret != 0) {
-            LOG_ERROR(Lib_Net, "failed to restore cred, error = {:#x}", ret);
+        if (use_libjbc) {
+            ret = jbc_set_cred(&orig_cred);
+            if (ret != 0) {
+                LOG_ERROR(Lib_Net, "failed to restore cred, error = {:#x}", ret);
+            }
+        } else if (use_daemon) {
+            Common::RejailViaDaemon();
         }
     }
 
