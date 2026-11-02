@@ -416,6 +416,16 @@ s32 NpHandler::GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const {
             return uid;
         }
     }
+    if (m_np_ids.size() == 1) {
+        const s32 user_id = m_np_ids.begin()->first;
+        static std::once_flag logged;
+        std::call_once(logged, [user_id] {
+            LOG_WARNING(NpHandler,
+                        "Online id is not a shadNet user, using the only signed in user {:#x}",
+                        user_id);
+        });
+        return user_id;
+    }
     return -1;
 }
 
