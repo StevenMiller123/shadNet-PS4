@@ -17,6 +17,14 @@ typedef uint32_t uid_t;
 typedef uint32_t gid_t;
 typedef int32_t pid_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ssize_t read(int fd, void* dst, size_t sz);
 ssize_t write(int fd, const void* dst, size_t sz);
 int close(int fd);
+
+#ifdef __cplusplus
+}
+#endif
