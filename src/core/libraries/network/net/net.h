@@ -67,7 +67,10 @@ using OrbisNetInPort_t = u16;
 using OrbisNetSaFamily_t = u8;
 using OrbisNetSocklen_t = u32;
 
-constexpr u16 ORBIS_NET_ADHOC_PORT = 3658;
+static constexpr s32 ORBIS_NET_SOL_SOCKET = 0xffff;
+static constexpr s32 ORBIS_NET_SO_USECRYPTO = 0x20000;
+static constexpr s32 ORBIS_NET_SO_USESIGNATURE = 0x40000;
+static constexpr u16 ORBIS_NET_ADHOC_PORT = 3658;
 
 enum OrbisNetFlags : u32 {
     ORBIS_NET_MSG_PEEK = 0x00000002,

@@ -208,6 +208,8 @@ s32 sceNpMatching2CreateJoinRoom(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmCreateJoinRoom(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -234,6 +236,8 @@ s32 sceNpMatching2JoinRoom(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmJoinRoom(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -263,6 +267,8 @@ s32 sceNpMatching2CreateJoinRoomA(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmCreateJoinRoomA(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -358,6 +364,7 @@ s32 sceNpMatching2ContextStart(OrbisNpMatching2ContextId ctx_id, u64 timeout) {
         return rc;
     }
 
+    const DispatchHold dispatch_hold;
     MmContextStart(ctx_id);
     return ORBIS_OK;
 }
@@ -379,6 +386,7 @@ s32 sceNpMatching2ContextStop(OrbisNpMatching2ContextId ctx_id) {
         NpSignaling::StopMatching2(*ctx, ORBIS_NP_MATCHING2_SIGNALING_ERROR_TERMINATED_BY_MYSELF);
     }
 
+    const DispatchHold dispatch_hold;
     const s32 submit_rc = MmContextStop(ctx_id);
     if (submit_rc != ORBIS_OK) {
         GetContextManager()->CompleteStop(ctx_id, ctx);
@@ -388,8 +396,6 @@ s32 sceNpMatching2ContextStop(OrbisNpMatching2ContextId ctx_id) {
 }
 
 s32 sceNpMatching2Initialize(OrbisNpMatching2InitializeParameter* param) {
-    LOG_INFO(Lib_NpMatching2, "called");
-
     if (IsInitialized()) {
         LOG_ERROR(Lib_NpMatching2, "already initialized");
         return ORBIS_NP_MATCHING2_ERROR_ALREADY_INITIALIZED;
@@ -400,24 +406,13 @@ s32 sceNpMatching2Initialize(OrbisNpMatching2InitializeParameter* param) {
         return ORBIS_NP_MATCHING2_ERROR_INVALID_ARGUMENT;
     }
 
-    LOG_INFO(Lib_NpMatching2, "pool_size={:#x} stack_size={:#x} priority={} size={:#x}",
-             param->pool_size, param->stack_size, param->priority, param->size);
-    if (param->size == 0x30) {
-        LOG_INFO(Lib_NpMatching2, "ssl_pool_size={:#x}", param->ssl_pool_size);
-    }
-
     InitEventDispatcher();
-
     SetInitialized(true);
-
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2Terminate() {
-    LOG_INFO(Lib_NpMatching2, "called");
-
     if (!IsInitialized()) {
-        LOG_ERROR(Lib_NpMatching2, "not initialized");
         return ORBIS_NP_MATCHING2_ERROR_NOT_INITIALIZED;
     }
 
@@ -482,7 +477,6 @@ s32 sceNpMatching2GetServerId(OrbisNpMatching2ContextId ctx_id,
     }
 
     *server_id = 1;
-
     return ORBIS_OK;
 }
 
@@ -511,6 +505,8 @@ s32 sceNpMatching2GetWorldInfoList(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmGetWorldInfoList(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -539,6 +535,8 @@ s32 sceNpMatching2LeaveRoom(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmLeaveRoom(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -568,6 +566,8 @@ s32 sceNpMatching2SearchRoom(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmSearchRoom(ctx_id, req_id, *request, ctx->a_variant);
     return ORBIS_OK;
 }
@@ -597,6 +597,8 @@ s32 sceNpMatching2SetUserInfo(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmSetUserInfo(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -625,6 +627,8 @@ s32 sceNpMatching2SendRoomMessage(OrbisNpMatching2ContextId ctx_id, void* reques
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     return MmSendRoomMessage(ctx_id, req_id,
                              *static_cast<OrbisNpMatching2SendRoomMessageRequest*>(request));
 }
@@ -654,6 +658,8 @@ s32 sceNpMatching2SetRoomDataExternal(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmSetRoomDataExternal(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -683,6 +689,8 @@ s32 sceNpMatching2SetRoomDataInternal(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmSetRoomDataInternal(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -815,42 +823,42 @@ s32 sceNpMatching2RegisterRoomMessageCallback(OrbisNpMatching2ContextId ctx_id,
 }
 
 s32 sceNpMatching2GetMemoryInfo() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetSslMemoryInfo() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetRoomMemberIdListLocal() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetRoomPasswordLocal() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetSignalingOptParamLocal() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetLobbyInfoList() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetLobbyMemberDataInternal() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GetLobbyMemberDataInternalList() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
@@ -879,6 +887,8 @@ s32 sceNpMatching2GetRoomDataExternalList(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmGetRoomDataExternalList(ctx_id, req_id, *request, ctx->a_variant);
     return ORBIS_OK;
 }
@@ -954,6 +964,8 @@ s32 sceNpMatching2GetRoomMemberDataExternalList(
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmGetRoomMemberDataExternalList(ctx_id, req_id, *request, ctx->a_variant);
     return ORBIS_OK;
 }
@@ -1030,6 +1042,7 @@ s32 sceNpMatching2GetUserInfoListA(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+    const DispatchHold dispatch_hold;
     MmGetUserInfoList(ctx_id, req_id, *request, true);
     return ORBIS_OK;
 }
@@ -1059,19 +1072,21 @@ s32 sceNpMatching2GetUserInfoList(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmGetUserInfoList(ctx_id, req_id, *request, ctx->a_variant);
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2GrantRoomOwner(OrbisNpMatching2ContextId ctx_id, void* req_param, void* opt_param,
                                  s32* req_id) {
-    LOG_INFO(Lib_NpMatching2, "called, ctx_id = {}", ctx_id);
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called, ctx_id = {}", ctx_id);
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2JoinLobby(OrbisNpMatching2ContextId ctx_id, void* req_param, void* opt_param,
                             s32* req_id) {
-    LOG_INFO(Lib_NpMatching2, "called, ctx_id = {}", ctx_id);
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called, ctx_id = {}", ctx_id);
     return ORBIS_OK;
 }
 
@@ -1098,6 +1113,8 @@ s32 sceNpMatching2JoinRoomA(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmJoinRoomA(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
@@ -1127,28 +1144,30 @@ s32 sceNpMatching2KickoutRoomMember(OrbisNpMatching2ContextId ctx_id,
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmKickoutRoomMember(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2LeaveLobby() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2SendLobbyChatMessage() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2SendRoomChatMessage(OrbisNpMatching2ContextId ctx_id, void* req_param,
                                       void* opt_param, s32* req_id) {
-    LOG_INFO(Lib_NpMatching2, "called, ctx_id = {}", ctx_id);
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called, ctx_id = {}", ctx_id);
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2SetLobbyMemberDataInternal() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
@@ -1179,17 +1198,19 @@ s32 sceNpMatching2SetRoomMemberDataInternal(
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
+
+    const DispatchHold dispatch_hold;
     MmSetRoomMemberDataInternal(ctx_id, req_id, *request);
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2SetSignalingOptParam() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
 s32 sceNpMatching2SignalingGetPeerNetInfo() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
@@ -1247,8 +1268,6 @@ s32 sceNpMatching2SignalingGetConnectionInfoA(OrbisNpMatching2ContextId ctx_id,
                                               OrbisNpMatching2RoomId room_id,
                                               OrbisNpMatching2RoomMemberId member_id, u32 info_type,
                                               void* conn_info) {
-    LOG_INFO(Lib_NpMatching2, "called, ctx_id = {}, room_id = {}, member_id = {}", ctx_id, room_id,
-             member_id);
     if (!IsInitialized()) {
         LOG_ERROR(Lib_NpMatching2, "not initialized");
         return ORBIS_NP_MATCHING2_ERROR_NOT_INITIALIZED;
@@ -1266,8 +1285,6 @@ s32 sceNpMatching2SignalingGetConnectionInfo(OrbisNpMatching2ContextId ctx_id,
                                              OrbisNpMatching2RoomId room_id,
                                              OrbisNpMatching2RoomMemberId member_id, u32 info_type,
                                              void* conn_info) {
-    LOG_INFO(Lib_NpMatching2, "called, ctx_id = {}, room_id = {}, member_id = {}", ctx_id, room_id,
-             member_id);
     if (!IsInitialized()) {
         LOG_ERROR(Lib_NpMatching2, "not initialized");
         return ORBIS_NP_MATCHING2_ERROR_NOT_INITIALIZED;
@@ -1291,7 +1308,7 @@ s32 sceNpMatching2SignalingGetLocalNetInfo(void* info) {
 }
 
 s32 sceNpMatching2SignalingGetPeerNetInfoResult() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_ERROR(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 

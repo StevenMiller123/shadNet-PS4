@@ -1256,28 +1256,23 @@ void Stop() {
 
 void AddContextRef() {
     auto* state = GetState();
-    u32 refs = 0;
     {
         std::lock_guard lock(state->runtime_thread_mutex);
-        refs = ++state->context_refs;
+        ++state->context_refs;
     }
-    LOG_DEBUG(Lib_NpSignaling, "Signaling runtime ref added refs={}", refs);
     Start();
 }
 
 void ReleaseContextRef() {
     auto* state = GetState();
     bool should_stop = false;
-    u32 refs = 0;
     {
         std::lock_guard lock(state->runtime_thread_mutex);
         if (state->context_refs > 0) {
             --state->context_refs;
         }
-        refs = state->context_refs;
         should_stop = state->context_refs == 0;
     }
-    LOG_DEBUG(Lib_NpSignaling, "Signaling runtime ref released refs={}", refs);
     if (should_stop) {
         Stop();
     }

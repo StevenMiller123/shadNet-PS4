@@ -279,10 +279,6 @@ s32 FillMatching2ConnectionInfo(const ContextObject& ctx, OrbisNpMatching2RoomId
             return ORBIS_NP_MATCHING2_SIGNALING_ERROR_INVALID_ARGUMENT;
         }
     }
-
-    LOG_INFO(Lib_NpMatching2, "connection info{}: ctx={} room={} member={} type={} rtt={}",
-             a_variant ? "A" : "", ctx.ctx_id, room_id, member_id, info_type,
-             peer ? peer->ping_us : 0);
     return ORBIS_OK;
 }
 

@@ -1712,11 +1712,30 @@ void FireEvent(const PendingEvent& ev) {
     }
 }
 
+DispatchHold::DispatchHold() {
+    auto* state = GetState();
+    std::scoped_lock lk{state->queue_mutex};
+    state->dispatch_holds++;
+}
+
+DispatchHold::~DispatchHold() {
+    auto* state = GetState();
+    {
+        std::scoped_lock lk{state->queue_mutex};
+        state->dispatch_holds--;
+    }
+    state->queue_cv.notify_all();
+}
+
 void* EventDispatcherThreadMain(void*) {
     Common::SetCurrentThreadName("Matching2:Dispatch");
     auto* state = GetState();
     std::unique_lock lock(state->queue_mutex);
     while (state->dispatch_running.load()) {
+        if (state->dispatch_holds > 0) {
+            state->queue_cv.wait(lock);
+            continue;
+        }
         const auto now = std::chrono::steady_clock::now();
 
         std::vector<PendingEvent> ready;

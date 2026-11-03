@@ -7,5 +7,7 @@
 
 namespace Libraries::Kernel {
 
+s32 setsockopt(s32 s, s32 level, s32 optname, const void* optval, u32 optlen);
+
 void RegisterHooks();
 } // namespace Libraries::Kernel

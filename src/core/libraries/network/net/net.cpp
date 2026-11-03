@@ -9,7 +9,6 @@
 
 extern "C" void sceNetResolverConnect();
 
-SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetSocket);
 SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverStartNtoa);
 SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverStartNtoa6);
 SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverStartAton);
@@ -17,9 +16,9 @@ SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverStartAton6);
 SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverStartNtoaMultipleRecords);
 SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverStartNtoaMultipleRecordsEx);
 SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetResolverConnect);
+SHADNET_HOOK_DECLARE(Libraries::Network::Net, sceNetSocket);
 
 static void RegisterNetHooks() {
-    SHADNET_HOOK(Libraries::Network::Net, sceNetSocket);
     SHADNET_HOOK(Libraries::Network::Net, sceNetResolverStartNtoa);
     SHADNET_HOOK(Libraries::Network::Net, sceNetResolverStartNtoa6);
     SHADNET_HOOK(Libraries::Network::Net, sceNetResolverStartAton);
@@ -27,15 +26,10 @@ static void RegisterNetHooks() {
     SHADNET_HOOK(Libraries::Network::Net, sceNetResolverStartNtoaMultipleRecords);
     SHADNET_HOOK(Libraries::Network::Net, sceNetResolverStartNtoaMultipleRecordsEx);
     SHADNET_HOOK(Libraries::Network::Net, sceNetResolverConnect);
+    SHADNET_HOOK(Libraries::Network::Net, sceNetSocket);
 }
 
 namespace Libraries::Network::Net {
-
-s32 sceNetSocket(const char* name, s32 family, s32 type, s32 protocol) {
-    LOG_INFO(Lib_Net, "called, name = {}, family = {}, type = {}, protocol = {}",
-             name ? name : "(null)", family, type, protocol);
-    return SHADNET_HOOK_CONTINUE(sceNetSocket, name, family, type, protocol);
-}
 
 s32 sceNetResolverStartNtoa(s32 rid, const char* hostname, OrbisNetInAddr* addr, s32 timeout,
                             s32 retry, s32 flags) {
@@ -99,6 +93,12 @@ s32 sceNetResolverConnect(OrbisNetResolverConnectInfo* rcinfo, const char* hostn
              hostname ? hostname : "(null)", sceNetHtons(port), rcparam->connecttimeo,
              rcparam->timeout, rcparam->retry, rcparam->flags);
     return SHADNET_HOOK_CONTINUE(sceNetResolverConnect, rcinfo, hostname, port, rcparam);
+}
+
+s32 sceNetSocket(const char* name, s32 family, s32 type, s32 protocol) {
+    LOG_INFO(Lib_Net, "called, name = {}, family = {}, type = {}, protocol = {}",
+             name ? name : "(null)", family, type, protocol);
+    return SHADNET_HOOK_CONTINUE(sceNetSocket, name, family, type, protocol);
 }
 
 void RegisterHooks() {
