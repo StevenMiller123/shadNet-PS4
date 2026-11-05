@@ -251,6 +251,7 @@ static s32 FinishStartup() {
     Libraries::Np::NpMatching2::RegisterHooks();
     Libraries::Np::NpUtility::RegisterHooks();
     Libraries::Np::NpTus::RegisterHooks();
+    Libraries::Np::NpPartner::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
     return 0;
 }

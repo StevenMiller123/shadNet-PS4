@@ -226,9 +226,12 @@ set(PLUGIN_LIBS
     -lSceNpManager
     -lSceNpManagerForToolkit
     -lSceNpMatching2
+    -lSceNpPartner001
+    -lSceNpPartnerSubscription
     -lSceNpScore
     -lSceNpSignaling
     -lSceNpTus
+    -lSceNpUbisoftPlus
     -lSceNpUtility
     -lSceNpWebApi
     -lSceNpWebApi2
@@ -278,6 +281,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_matching2/np_matching2_mm.cpp
                  src/core/libraries/np/np_matching2/np_matching2_signaling.cpp
                  src/core/libraries/np/np_matching2/np_matching2.cpp
+                 src/core/libraries/np/np_partner/np_partner.cpp
                  src/core/libraries/np/np_score/np_score.cpp
                  src/core/libraries/np/np_signaling/np_signaling_handler.cpp
                  src/core/libraries/np/np_signaling/np_signaling_helpers.cpp
