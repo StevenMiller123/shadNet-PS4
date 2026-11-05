@@ -26,6 +26,7 @@
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_matching2/np_matching2.h"
+#include "core/libraries/np/np_partner/np_partner.h
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_signaling/np_signaling.h"
 #include "core/libraries/np/np_tus/np_tus.h"
