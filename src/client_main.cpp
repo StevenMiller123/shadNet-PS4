@@ -29,6 +29,7 @@
 #include "core/libraries/np/np_partner/np_partner.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_signaling/np_signaling.h"
+#include "core/libraries/np/np_trophy/np_trophy.h"
 #include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_utility/np_utility.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
@@ -85,6 +86,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_INVITATION_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TROPHY);
 
     // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
@@ -147,7 +149,7 @@ static s32 FinishStartup() {
         if (!npbind.Load(path)) {
             return false;
         }
-        game_info.npCommIds = npbind.GetNpCommIds();
+        game_info.np_comm_ids = npbind.GetNpCommIds();
         return true;
     };
 
@@ -225,10 +227,10 @@ static s32 FinishStartup() {
         LOG_INFO(shadNet, "Currently running {} v{}", game_info.game_serial, game_info.app_ver);
     }
 
-    if (game_info.npCommIds.size() > 0) {
+    if (game_info.np_comm_ids.size() > 0) {
         LOG_INFO(shadNet, "NP Communication IDs:");
-        for (s32 i = 0; i < game_info.npCommIds.size(); i++) {
-            LOG_INFO(shadNet, "{}: {}", i, game_info.npCommIds[i]);
+        for (s32 i = 0; i < game_info.np_comm_ids.size(); i++) {
+            LOG_INFO(shadNet, "{}: {}", i, game_info.np_comm_ids[i]);
         }
     } else {
         LOG_WARNING(shadNet, "No NP Communication IDs loaded");
@@ -255,6 +257,7 @@ static s32 FinishStartup() {
     Libraries::Np::NpUtility::RegisterHooks();
     Libraries::Np::NpTus::RegisterHooks();
     Libraries::Np::NpPartner::RegisterHooks();
+    Libraries::Np::NpTrophy::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
     return 0;
 }

@@ -133,10 +133,10 @@ struct OrbisNpSessionInvitationEventParam {
     OrbisNpInvitationId invitation_id;
     OrbisNpSessionInvitationEventFlag flag;
     u8 padding[4];
-    Np::OrbisNpOnlineId online_id;
+    OrbisNpOnlineId online_id;
     UserService::OrbisUserServiceUserId user_id;
-    Np::OrbisNpOnlineId referral_online_id;
-    Np::OrbisNpAccountId referral_account_id;
+    OrbisNpOnlineId referral_online_id;
+    OrbisNpAccountId referral_account_id;
 };
 
 }; // namespace Libraries::Np

@@ -67,6 +67,12 @@ public:
     s32 GetUserIdByAccountId(u64 account_id) const;
     s32 GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const;
 
+    // NpTrophy Requests
+    void ReportTrophyUnlock(s32 user_id, s32 service_label, s32 trophy_id, u64 timestamp);
+    void SyncTrophies(s32 user_id, s32 service_label,
+                      const std::vector<std::pair<s32, u64>>& local_trophies,
+                      std::function<void(const std::vector<std::pair<s32, u64>>&)> on_merged);
+
     // NpScore Requests
     s32 RecordScore(s32 user_id, s32 service_label, u32 board_id, s32 pc_id, s64 score,
                     const char* comment, u64 comment_len, const u8* game_info_data,
@@ -351,6 +357,12 @@ private:
     };
     mutable std::mutex m_mutex_pending_score;
     std::map<u64, PendingScoreRequest> m_pending_score;
+
+    // Trophies
+    std::mutex m_mutex_pending_trophy;
+    std::map<u64, std::function<void(const std::vector<std::pair<s32, u64>>&)>> m_pending_trophy;
+    void OnTrophyReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
+                       const std::vector<u8>& body);
 
     // TUS state
     struct PendingTusRequest {

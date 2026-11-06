@@ -73,7 +73,7 @@ public:
 
     std::vector<u8> splash_data{};
     std::filesystem::path game_folder{};
-    std::vector<std::string> npCommIds{};
+    std::vector<std::string> np_comm_ids{};
     std::map<s32, std::string> trophy_index_map{};
 
     static constexpr u32 FW_100 = 0x1000000;
@@ -142,7 +142,7 @@ public:
     }
 
     [[nodiscard]] const std::vector<std::string>& GetNpCommIds() const {
-        return npCommIds;
+        return np_comm_ids;
     }
 };
 

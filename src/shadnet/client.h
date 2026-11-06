@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 #include <arpa/inet.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -314,10 +313,15 @@ public:
     u32 GetAddrServer() const;
     bool IsMatching2Enabled() const;
     static bool OnReaderThread();
-    u32 GetNumFriends() const;
-    std::optional<std::string> GetFriendNpid(u32 index) const;
+    bool IsTrophiesEnabled() const;
     u64 ReportClientVersion();
     static std::string BuildVersionString();
+
+    u64 UnlockTrophy(const std::string& com_id, s32 trophy_id, u64 timestamp);
+    u64 SyncTrophies(const std::string& com_id,
+                     const std::vector<std::pair<s32, u64>>& local_trophies);
+    u32 GetNumFriends() const;
+    std::optional<std::string> GetFriendNpid(u32 index) const;
 
     std::string GetBearerToken() const;
 
@@ -336,8 +340,6 @@ public:
         on_async_reply;
 
     u64 SubmitRequest(CommandType cmd, const std::vector<u8>& payload);
-
-    // Friend / block commands.
     u64 AddFriend(const std::string& npid);
     u64 RemoveFriend(const std::string& npid);
     u64 AddBlock(const std::string& npid);
@@ -406,6 +408,7 @@ private:
     std::atomic<u32> m_addr_server{0};
     std::atomic<u32> m_server_protocol_version{0};
     std::atomic<bool> m_matching2_enabled{false};
+    std::atomic<bool> m_trophies_enabled{false};
     std::atomic<bool> m_server_features_received{false};
 
     mutable std::mutex m_mutex_friends;
