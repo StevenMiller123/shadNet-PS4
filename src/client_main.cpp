@@ -83,6 +83,8 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_MESSAGE_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_IME_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_INVITATION_DIALOG);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
 
     // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
