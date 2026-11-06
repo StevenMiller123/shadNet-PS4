@@ -4,7 +4,6 @@
 #include <map>
 #include <mutex>
 #include <orbis/NpTrophy.h>
-#include <orbis/Rtc.h>
 
 #include "common/shadnet_hook.h"
 #include "core/libraries/np/np_handler/np_handler.h"
