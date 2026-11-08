@@ -46,6 +46,10 @@ inline void SetNpOnlineId(OrbisNpOnlineId& dst, std::string_view src) {
     dst.term = 0;
 }
 
+inline std::string_view ViewNpOnlineId(const OrbisNpOnlineId& id) {
+    return std::string_view(id.data, strnlen(id.data, ORBIS_NP_ONLINEID_MAX_LENGTH));
+}
+
 inline void SetNpId(OrbisNpId& dst, std::string_view online_id) {
     dst = {};
     SetNpOnlineId(dst.handle, online_id);

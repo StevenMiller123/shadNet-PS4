@@ -275,7 +275,6 @@ void NpHandler::FailPendingRequests(s32 user_id, s32 error_code) {
             }
         }
     }
-    /* - libSceNpLookup is not implemented yet
     {
         std::lock_guard lock(m_mutex_pending_lookup);
         for (auto it = m_pending_lookup.begin(); it != m_pending_lookup.end();) {
@@ -290,7 +289,6 @@ void NpHandler::FailPendingRequests(s32 user_id, s32 error_code) {
             }
         }
     }
-    */
     if (failed > 0) {
         LOG_WARNING(NpHandler, "user_id={} failed {} pending request(s) with {:#x}", user_id,
                     failed, static_cast<u32>(error_code));
@@ -490,15 +488,11 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
         OnTrophyReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd == ShadNet::CommandType::GetAuthorizationCode) {
         OnAuthReply(user_id, cmd, pkt_id, error, body);
+    } else if (cmd == ShadNet::CommandType::LookupOnlineId) {
+        OnLookupReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd != ShadNet::CommandType::SetClientVersion) {
         LOG_INFO(NpHandler, "Unsupported async command {} received", magic_enum::enum_name(cmd));
     }
-
-    /*
-    if (cmd == ShadNet::CommandType::LookupOnlineId) {
-        OnLookupReply(user_id, cmd, pkt_id, error, body);
-    }
-    */
 }
 
 void NpHandler::OnClientRejected(s32 user_id, const ShadNet::NotifyClientRejected& n) {

@@ -272,6 +272,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
                  src/core/libraries/np/np_handler/np_handler_invitation.cpp
+                 src/core/libraries/np/np_handler/np_handler_lookup.cpp
                  src/core/libraries/np/np_handler/np_handler_score.cpp
                  src/core/libraries/np/np_handler/np_handler_trophy.cpp
                  src/core/libraries/np/np_handler/np_handler_tus.cpp
@@ -293,6 +294,8 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_signaling/np_signaling.cpp
                  src/core/libraries/np/np_trophy/np_trophy.cpp
                  src/core/libraries/np/np_tus/np_tus.cpp
+                 src/core/libraries/np/np_utility/np_utility_lookup.cpp
+                 src/core/libraries/np/np_utility/np_utility_word_filter.cpp
                  src/core/libraries/np/np_utility/np_utility.cpp
                  src/core/libraries/np/np_web_api/np_web_api.cpp
                  src/core/libraries/np/np_web_api/np_web_api_internal.cpp
