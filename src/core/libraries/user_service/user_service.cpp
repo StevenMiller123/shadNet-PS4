@@ -26,7 +26,8 @@ void RegisterUserServiceHooks() {
     if (ret != 0) {
         LOG_INFO(Lib_UserService, "sceUserServiceInitialize returned {:#x}", ret);
     }
-    if (ret == 0 || ret == ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED) {
+    if (ret == ORBIS_USER_SERVICE_ERROR_ALREADY_INITIALIZED) {
+        // Game already initialized user service
         Libraries::UserService::g_lib_init = true;
     }
     SHADNET_HOOK16(Libraries::UserService, sceUserServiceInitialize);
