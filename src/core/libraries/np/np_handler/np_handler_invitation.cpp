@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <chrono>
-#include <cstring>
 #include <nlohmann/json.hpp>
 #include <orbis/Http.h>
 #include <orbis/Net.h>

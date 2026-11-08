@@ -6,7 +6,6 @@
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
-#include "core/libraries/np/np_types.h"
 #include "shadnet.pb.h"
 
 namespace Libraries::Np {
