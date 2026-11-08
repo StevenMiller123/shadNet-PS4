@@ -239,6 +239,7 @@ set(PLUGIN_LIBS
     -lSceSysUtil
     -lSceSystemService
     -lSceUserService
+    -lSceSigninDialog
     -lSceHttp
     -lSceHttp2
 )
@@ -300,6 +301,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_internal.cpp
                  src/core/libraries/np/np_web_api2/np_web_api2_push_event.cpp
                  src/core/libraries/pad/pad.cpp
+                 src/core/libraries/signin_dialog/signin_dialog.cpp
                  src/core/libraries/system_service/system_service.cpp
                  src/core/libraries/user_service/user_service.cpp
 )

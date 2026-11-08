@@ -35,6 +35,7 @@
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/libraries/np/np_web_api2/np_web_api2.h"
 #include "core/libraries/pad/pad.h"
+#include "core/libraries/signin_dialog/signin_dialog.h"
 #include "core/libraries/system_service/system_service.h"
 #include "core/libraries/user_service/user_service.h"
 #include "shadnet/config.h"
@@ -87,6 +88,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TROPHY);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_SIGNIN_DIALOG);
 
     // Init system and network library hooks
     Libraries::Kernel::RegisterHooks();
@@ -259,5 +261,6 @@ static s32 FinishStartup() {
     Libraries::Np::NpPartner::RegisterHooks();
     Libraries::Np::NpTrophy::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
+    Libraries::SigninDialog::RegisterHooks();
     return 0;
 }
