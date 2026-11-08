@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "common/plugin_common.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
