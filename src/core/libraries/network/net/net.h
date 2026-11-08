@@ -72,6 +72,9 @@ static constexpr s32 ORBIS_NET_SO_USECRYPTO = 0x20000;
 static constexpr s32 ORBIS_NET_SO_USESIGNATURE = 0x40000;
 static constexpr u16 ORBIS_NET_ADHOC_PORT = 3658;
 
+static constexpr s32 ORBIS_NET_SOCK_DGRAM_P2P = 6;
+static constexpr s32 ORBIS_NET_SOCK_STREAM_P2P = 10;
+
 enum OrbisNetFlags : u32 {
     ORBIS_NET_MSG_PEEK = 0x00000002,
     ORBIS_NET_MSG_WAITALL = 0x00000040,
