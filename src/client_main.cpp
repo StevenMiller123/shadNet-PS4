@@ -104,14 +104,6 @@ extern "C" s32 client_start() {
     ShadNet::Settings::GetInstance().Initialize();
     Libraries::Pad::StartPolling();
 
-    if (Common::IsPs5()) {
-        std::thread(FinishStartup).detach();
-        return 0;
-    }
-    return FinishStartup();
-}
-
-static s32 FinishStartup() {
     // Initialize elfinfo
     auto& game_info = Common::ElfInfo::Instance();
 
