@@ -57,8 +57,6 @@ static bool AnyUserEnabled() {
     return false;
 }
 
-static s32 FinishStartup();
-
 extern "C" s32 client_start() {
     LOG_INFO(shadNet, "Initializing shadNet Client");
     // Preload modules used by the plugin
