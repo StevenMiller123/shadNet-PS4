@@ -20,6 +20,7 @@ void sceNpUnregisterStateCallbackForToolkit();
 void sceNpSetGamePresenceOnline();
 void sceNpUnregisterGamePresenceCallbackA();
 void sceNpIsPlusMember();
+void sceNpInGameMessageGetMemoryPoolStatistics();
 }
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetState);
@@ -73,6 +74,16 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpGetUserIdByOnlineId);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpHasSignedUp);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpSetContentRestriction);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpSetNpTitleId);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageInitialize);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageTerminate);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageCreateHandle);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageDeleteHandle);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageAbortHandle);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessagePrepare);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessagePrepareA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageSendData);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageSendDataA);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpManager, sceNpInGameMessageGetMemoryPoolStatistics);
 
 static void RegisterNpManagerHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpGetState);
@@ -126,6 +137,16 @@ static void RegisterNpManagerHooks() {
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpHasSignedUp);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpSetContentRestriction);
     SHADNET_HOOK(Libraries::Np::NpManager, sceNpSetNpTitleId);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageInitialize);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageTerminate);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageCreateHandle);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageDeleteHandle);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageAbortHandle);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessagePrepare);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessagePrepareA);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageSendData);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageSendDataA);
+    SHADNET_HOOK(Libraries::Np::NpManager, sceNpInGameMessageGetMemoryPoolStatistics);
 }
 
 namespace Libraries::Np::NpManager {

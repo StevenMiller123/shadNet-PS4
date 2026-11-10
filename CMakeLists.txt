@@ -279,6 +279,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_handler/np_handler_web_api.cpp
                  src/core/libraries/np/np_handler/np_handler.cpp
                  src/core/libraries/np/np_manager/np_manager_callbacks.cpp
+                 src/core/libraries/np/np_manager/np_manager_in_game_message.cpp
                  src/core/libraries/np/np_manager/np_manager_requests.cpp
                  src/core/libraries/np/np_manager/np_manager.cpp
                  src/core/libraries/np/np_matching2/np_matching2_internal.cpp

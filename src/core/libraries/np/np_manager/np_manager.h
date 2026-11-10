@@ -96,6 +96,33 @@ struct OrbisNpCreateAsyncRequestParameter {
     u8 padding[4];
 };
 
+constexpr s32 ORBIS_NP_IN_GAME_MESSAGE_DATA_SIZE_MAX_LEGACY = 0x80;
+constexpr s32 ORBIS_NP_IN_GAME_MESSAGE_DATA_SIZE_MAX = 0x200;
+
+struct OrbisNpInGameMessageData {
+    char data[ORBIS_NP_IN_GAME_MESSAGE_DATA_SIZE_MAX];
+    u64 data_size;
+};
+
+struct OrbisNpInGameMessageMemoryPoolStatistics {
+    u64 pool_size;
+    u64 max_inuse_size;
+    u64 current_inuse_size;
+    s32 reserved;
+};
+
+using OrbisNpInGameMessageEventCallback = void (*)(s32 lib_ctx_id, const OrbisNpPeerAddress* to,
+                                                   const OrbisNpPeerAddress* from,
+                                                   const OrbisNpInGameMessageData* message,
+                                                   void* userdata);
+
+using OrbisNpInGameMessageEventCallbackA = void (*)(s32 lib_ctx_id, const OrbisNpPeerAddressA* to,
+                                                    const OrbisNpOnlineId* to_online_id,
+                                                    const OrbisNpPeerAddressA* from,
+                                                    const OrbisNpOnlineId* from_online_id,
+                                                    const OrbisNpInGameMessageData* message,
+                                                    void* userdata);
+
 // Callbacks
 s32 sceNpRegisterNpReachabilityStateCallback(OrbisNpReachabilityStateCallback callback,
                                              void* userdata);
@@ -166,6 +193,25 @@ s32 sceNpIsPlusMember(s32 user_id, bool* result);
 // Setters
 s32 sceNpSetContentRestriction(const OrbisNpContentRestriction* restriction);
 s32 sceNpSetNpTitleId(const OrbisNpTitleId* title_id, const OrbisNpTitleSecret* title_secret);
+
+// InGameMessage
+s32 sceNpInGameMessageInitialize(u64 pool_size, void* option);
+s32 sceNpInGameMessageTerminate(s32 lib_ctx_id);
+s32 sceNpInGameMessageCreateHandle(s32 lib_ctx_id);
+s32 sceNpInGameMessageDeleteHandle(s32 lib_ctx_id, s32 handle_id);
+s32 sceNpInGameMessageAbortHandle(s32 lib_ctx_id, s32 handle_id);
+s32 sceNpInGameMessagePrepare(s32 lib_ctx_id, s32 handle_id, const void* reserved,
+                              OrbisNpInGameMessageEventCallback cb_func, void* user_arg);
+s32 sceNpInGameMessagePrepareA(s32 lib_ctx_id, s32 handle_id, const void* reserved,
+                               OrbisNpInGameMessageEventCallbackA cb_func, void* user_arg);
+s32 sceNpInGameMessageSendData(s32 lib_ctx_id, const OrbisNpPeerAddress* to,
+                               const OrbisNpPeerAddress* from,
+                               const OrbisNpInGameMessageData* message);
+s32 sceNpInGameMessageSendDataA(s32 lib_ctx_id, const OrbisNpPeerAddressA* to,
+                                const OrbisNpPeerAddressA* from,
+                                const OrbisNpInGameMessageData* message);
+s32 sceNpInGameMessageGetMemoryPoolStatistics(s32 lib_ctx_id,
+                                              OrbisNpInGameMessageMemoryPoolStatistics* mem_stats);
 
 s32 GetFirmwareVersion();
 void RegisterHooks();
