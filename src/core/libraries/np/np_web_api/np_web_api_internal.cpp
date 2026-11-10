@@ -1701,7 +1701,7 @@ s32 unregisterExtdPushEventCallback(s32 title_user_ctx_id, s32 callback_id) {
     return ORBIS_OK;
 }
 
-s32 PS4_SYSV_ABI getHttpRequestIdFromRequest(OrbisNpWebApiRequest* request) {
+s32 getHttpRequestIdFromRequest(OrbisNpWebApiRequest* request) {
     return request->http_request_id;
 }
 
@@ -1849,7 +1849,7 @@ s32 getHttpResponseHeaderValueInternal(s64 request_id, const char* field_name, c
     return result;
 }
 
-s32 PS4_SYSV_ABI getHttpStatusCodeInternal(s64 request_id, s32* out_status_code) {
+s32 getHttpStatusCodeInternal(s64 request_id, s32* out_status_code) {
     s32 status_code;
     OrbisNpWebApiContext* context = findAndValidateContext(request_id >> 0x30);
     if (context == nullptr) {
@@ -1886,7 +1886,7 @@ s32 PS4_SYSV_ABI getHttpStatusCodeInternal(s64 request_id, s32* out_status_code)
     }
 }
 
-void PS4_SYSV_ABI setRequestEndTime(OrbisNpWebApiRequest* request) {
+void setRequestEndTime(OrbisNpWebApiRequest* request) {
     u64 time;
     if ((request->request_timeout != 0) && (request->request_end_time == 0)) {
         time = sceKernelGetProcessTime();
@@ -1894,24 +1894,24 @@ void PS4_SYSV_ABI setRequestEndTime(OrbisNpWebApiRequest* request) {
     }
 }
 
-void PS4_SYSV_ABI clearRequestEndTime(OrbisNpWebApiRequest* req) {
+void clearRequestEndTime(OrbisNpWebApiRequest* req) {
     req->request_end_time = 0;
     return;
 }
 
-bool PS4_SYSV_ABI hasRequestTimedOut(OrbisNpWebApiRequest* request) {
+bool hasRequestTimedOut(OrbisNpWebApiRequest* request) {
     return request->timed_out;
 }
 
-bool PS4_SYSV_ABI isRequestAborted(OrbisNpWebApiRequest* request) {
+bool isRequestAborted(OrbisNpWebApiRequest* request) {
     return request->aborted;
 }
 
-void PS4_SYSV_ABI setRequestState(OrbisNpWebApiRequest* request, u8 state) {
+void setRequestState(OrbisNpWebApiRequest* request, u8 state) {
     request->request_state = state;
 }
 
-u64 PS4_SYSV_ABI copyRequestData(OrbisNpWebApiRequest* request, void* data, u64 size) {
+u64 copyRequestData(OrbisNpWebApiRequest* request, void* data, u64 size) {
     u64 read_size = 0;
     if (request->remaining_data != 0) {
         u64 remaining_size = request->remaining_data - request->read_offset;
@@ -1927,7 +1927,7 @@ u64 PS4_SYSV_ABI copyRequestData(OrbisNpWebApiRequest* request, void* data, u64 
     return read_size;
 }
 
-s32 PS4_SYSV_ABI readDataInternal(s64 request_id, void* data, u64 size) {
+s32 readDataInternal(s64 request_id, void* data, u64 size) {
     u32 offset;
     s32 result;
     u64 remaining_size;

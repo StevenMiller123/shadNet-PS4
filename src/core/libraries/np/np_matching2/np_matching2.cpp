@@ -695,11 +695,10 @@ s32 sceNpMatching2SetRoomDataInternal(OrbisNpMatching2ContextId ctx_id,
     return ORBIS_OK;
 }
 
-s32 PS4_SYSV_ABI sceNpMatching2SignalingGetConnectionStatus(OrbisNpMatching2ContextId ctx_id,
-                                                            OrbisNpMatching2RoomId room_id,
-                                                            OrbisNpMatching2RoomMemberId member_id,
-                                                            s32* conn_status, void* peer_addr,
-                                                            u16* peer_port) {
+s32 sceNpMatching2SignalingGetConnectionStatus(OrbisNpMatching2ContextId ctx_id,
+                                               OrbisNpMatching2RoomId room_id,
+                                               OrbisNpMatching2RoomMemberId member_id,
+                                               s32* conn_status, void* peer_addr, u16* peer_port) {
     LOG_INFO(Lib_NpMatching2, "called, ctx_id = {}, room_id = {}, member_id = {}", ctx_id, room_id,
              member_id);
 

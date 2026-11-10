@@ -131,9 +131,9 @@ using OrbisNpWebApiExtdPushEventCallbackA =
              u64 extd_data_num, void* user_arg);
 
 // Needs reversing
-using OrbisNpWebApiInternalServicePushEventCallback = PS4_SYSV_ABI void (*)();
-using OrbisNpWebApiInternalServicePushEventCallbackA = PS4_SYSV_ABI void (*)();
-using OrbisNpWebApiNotificationCallback = PS4_SYSV_ABI void (*)();
+using OrbisNpWebApiInternalServicePushEventCallback = void (*)();
+using OrbisNpWebApiInternalServicePushEventCallbackA = void (*)();
+using OrbisNpWebApiNotificationCallback = void (*)();
 
 struct PushEventInput {
     s32 target_user_id = 0;
