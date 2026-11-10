@@ -3,11 +3,8 @@
 
 #pragma once
 
-#include <string>
-#include <utility>
-#include <vector>
-
 #include "common/types.h"
+#include "core/libraries/np/np_handler/np_handler.h"
 
 namespace Libraries::Np::NpWebApi {
 
@@ -135,21 +132,6 @@ using OrbisNpWebApiInternalServicePushEventCallback = void (*)();
 using OrbisNpWebApiInternalServicePushEventCallbackA = void (*)();
 using OrbisNpWebApiNotificationCallback = void (*)();
 
-struct PushEventInput {
-    s32 target_user_id = 0;
-    std::string np_service_name;
-    u32 np_service_label = 0;
-    std::string data_type;
-    std::string data;
-    OrbisNpOnlineId from_online_id{};
-    bool has_from = false;
-    OrbisNpOnlineId to_online_id{};
-    bool has_to = false;
-    u64 from_account_id = 0;
-    u64 to_account_id = 0;
-    std::vector<std::pair<std::string, std::string>> extd_data;
-};
-
 s32 sceNpWebApiCreateContext(s32 lib_ctx_id, OrbisNpOnlineId* online_id);
 s32 sceNpWebApiCreatePushEventFilter(s32 lib_ctx_id,
                                      const OrbisNpWebApiPushEventFilterParameter* filter_param,
@@ -246,6 +228,6 @@ s32 sceNpWebApiTerminate(s32 lib_ctx_id);
 s32 sceNpWebApiUnregisterExtdPushEventCallback(s32 title_user_ctx_id, s32 callback_id);
 s32 sceNpWebApiVshInitialize(s32 lib_http_ctx_id, u64 pool_size);
 
-void EnqueuePushEvent(const PushEventInput& ev);
+void EnqueuePushEvent(const NpHandler::WebApiPushEventInput& ev);
 void RegisterHooks();
 } // namespace Libraries::Np::NpWebApi

@@ -105,6 +105,17 @@ public:
         return id;
     }
 
+    OrbisNpServiceLabel GetServiceLabel() {
+        return np_service_label;
+    }
+
+    const std::string& GetServiceName() {
+        return np_service_name;
+    }
+
+    const OrbisNpWebApi2PushEventFilterParameter* GetMatchingParameter(
+        const std::string& service_name, const std::string& data_type);
+
 private:
     s32 id{};
     OrbisNpServiceLabel np_service_label{};
@@ -144,6 +155,10 @@ public:
         started = true;
     }
 
+    bool IsStarted() {
+        return started;
+    }
+
     void SetState(s32 new_state) {
         state = new_state;
     }
@@ -168,6 +183,18 @@ struct PushEventPushContextCallback {
     OrbisNpWebApi2PushEventPushContextCallback cb_func;
     void* user_arg;
     bool is_busy;
+};
+
+struct PushEventDelivery {
+    s32 user_ctx_id;
+    s32 callback_id;
+    OrbisNpWebApi2PushEventCallback cb_func;
+    OrbisNpWebApi2PushEventPushContextCallback push_ctx_cb_func;
+    OrbisNpWebApi2PushEventPushContextId push_ctx_id;
+    void* user_arg;
+    std::string np_service_name;
+    OrbisNpServiceLabel np_service_label;
+    std::vector<OrbisNpWebApi2PushEventExtdData> extd_data;
 };
 
 }; // namespace Libraries::Np::NpWebApi2

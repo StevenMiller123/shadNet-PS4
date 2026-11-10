@@ -1,12 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <algorithm>
-#include <cctype>
-#include <cstdio>
-#include <cstring>
 #include <deque>
-#include <string>
 #include <string_view>
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/Http.h>
@@ -16,7 +11,6 @@
 #include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "core/libraries/np/np_error.h"
-#include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_types.h"
 #include "core/libraries/np/np_web_api/np_web_api_internal.h"
 #include "shadnet/config.h"
@@ -2009,7 +2003,7 @@ s32 readDataInternal(s64 request_id, void* data, u64 size) {
 }
 
 std::mutex g_push_mutex;
-std::deque<PushEventInput> g_push_queue;
+std::deque<NpHandler::WebApiPushEventInput> g_push_queue;
 
 template <typename Filter>
 bool filterMatches(const Filter* flt, const std::string& ev_service_name, bool ev_has_service_name,
@@ -2031,14 +2025,14 @@ bool filterMatches(const Filter* flt, const std::string& ev_service_name, bool e
 }
 
 // Network-thread hand-off only,the event is dispatched later from DrainPushEvents.
-void EnqueuePushEvent(const PushEventInput& ev) {
+void EnqueuePushEvent(const NpHandler::WebApiPushEventInput& ev) {
     std::scoped_lock lk{g_push_mutex};
     g_push_queue.push_back(ev);
 }
 
 // Runs on the game thread from sceNpCheckCallback
 void DrainPushEvents() {
-    std::deque<PushEventInput> local;
+    std::deque<NpHandler::WebApiPushEventInput> local;
     {
         std::scoped_lock lk{g_push_mutex};
         if (g_push_queue.empty()) {
@@ -2047,7 +2041,7 @@ void DrainPushEvents() {
         local.swap(g_push_queue);
     }
 
-    for (const PushEventInput& ev : local) {
+    for (const NpHandler::WebApiPushEventInput& ev : local) {
         const bool ev_has_service = !ev.np_service_name.empty();
         OrbisNpWebApiPushEventDataType dt{};
         std::snprintf(dt.val, sizeof(dt.val), "%s", ev.data_type.c_str());

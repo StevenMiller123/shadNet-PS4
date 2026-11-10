@@ -5,7 +5,6 @@
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "common/recursive_mutex.h"

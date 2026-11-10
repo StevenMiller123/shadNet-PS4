@@ -4,6 +4,7 @@
 #include "common/logging/log.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
+#include "core/libraries/np/np_web_api2/np_web_api2.h"
 #include "shadnet/dialogs/invitation_prompt.h"
 
 namespace Libraries::Np {
@@ -11,7 +12,7 @@ namespace Libraries::Np {
 void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEvent& n) {
     LOG_INFO(NpHandler, "svc='{}' type='{}' bytes={}", n.np_service_name, n.data_type,
              n.data.size());
-    NpWebApi::PushEventInput ev;
+    WebApiPushEventInput ev;
     ev.target_user_id = user_id;
     ev.np_service_name = n.np_service_name;
     ev.np_service_label = n.np_service_label;
@@ -49,6 +50,7 @@ void NpHandler::OnWebApiPushEvent(s32 user_id, const ShadNet::NotifyWebApiPushEv
         }
     }
     NpWebApi::EnqueuePushEvent(ev);
+    NpWebApi2::EnqueuePushEvent(ev);
 
     if (n.np_service_name == "sessionInvitation") {
         std::string session_id, invitation_id;

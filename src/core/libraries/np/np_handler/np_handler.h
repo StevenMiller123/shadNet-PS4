@@ -263,6 +263,22 @@ public:
     s32 RegisterStateCallback(StateCallback cb, void* userdata);
     void UnregisterStateCallback(s32 handle);
 
+    // WebApi Push Events
+    struct WebApiPushEventInput {
+        s32 target_user_id = 0;
+        std::string np_service_name;
+        u32 np_service_label = 0;
+        std::string data_type;
+        std::string data;
+        OrbisNpOnlineId from_online_id{};
+        bool has_from = false;
+        OrbisNpOnlineId to_online_id{};
+        bool has_to = false;
+        u64 from_account_id = 0;
+        u64 to_account_id = 0;
+        std::vector<std::pair<std::string, std::string>> extd_data;
+    };
+
 private:
     // User management
     bool ConnectUser(s32 user_id, const std::string& host, u16 port, const std::string& npid,

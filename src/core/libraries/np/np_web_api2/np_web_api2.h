@@ -4,6 +4,7 @@
 #pragma once
 
 #include "common/types.h"
+#include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_types.h"
 #include "core/libraries/user_service/user_service.h"
 
@@ -152,5 +153,6 @@ s32 sceNpWebApi2SetMultipartContentType();
 s32 sceNpWebApi2SetRequestTimeout(s64 request_id, u32 timeout);
 s32 sceNpWebApi2Terminate(s32 lib_ctx_id);
 
+void EnqueuePushEvent(const NpHandler::WebApiPushEventInput& ev);
 void RegisterHooks();
 } // namespace Libraries::Np::NpWebApi2
