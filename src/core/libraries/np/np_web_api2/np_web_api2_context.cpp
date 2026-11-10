@@ -98,6 +98,7 @@ s32 LibraryContext::DeletePushEventHandle(PushEventHandle* handle) {
     }
     delete handle;
 
+    this->Unlock();
     return ORBIS_OK;
 }
 
