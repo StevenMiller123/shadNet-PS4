@@ -314,9 +314,11 @@ set(NETWORKING_SOURCES src/core/net_util/net_p2p.cpp
                        src/core/net_util/net_util.cpp
 )
 
-set(SHADNET_SOURCES src/shadnet/dialogs/invitation_prompt.cpp
+set(SHADNET_SOURCES src/shadnet/dialogs/friends_page.cpp
+                    src/shadnet/dialogs/invitation_prompt.cpp
                     src/shadnet/dialogs/message_dialog.cpp
-                    src/shadnet/dialogs/settings_menu.cpp
+                    src/shadnet/dialogs/plugin_menu.cpp
+                    src/shadnet/dialogs/settings_page.cpp
                     src/shadnet/client.cpp
                     src/shadnet/config.cpp
                     src/shadnet/server_probe.cpp

@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+
 #include "common/logging/log.h"
+#include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 
 namespace Libraries::Np {
@@ -35,12 +38,13 @@ void NpHandler::OnFriendNew(s32 user_id, const ShadNet::NotifyFriendNew& n) {
 }
 
 void NpHandler::OnFriendLost(s32 user_id, const ShadNet::NotifyFriendLost& n) {
-    LOG_NOTIFICATION(NpHandler, "{} removed you as a friend", n.npid);
     std::lock_guard lock(m_mutex_friend_state);
     auto& st = m_friend_states[user_id];
-    st.friends.erase(std::remove_if(st.friends.begin(), st.friends.end(),
-                                    [&](const FriendInfo& f) { return f.npid == n.npid; }),
-                     st.friends.end());
+
+    // Send a notification when losing a friend
+    if (std::erase_if(st.friends, [&](const FriendInfo& f) { return f.npid == n.npid; }) > 0) {
+        LOG_NOTIFICATION(NpHandler, "{} removed you as a friend", n.npid);
+    }
 }
 
 void NpHandler::OnFriendStatus(s32 user_id, const ShadNet::NotifyFriendStatus& n) {
@@ -88,6 +92,116 @@ NpHandler::FriendListSnapshot NpHandler::GetFriendList(s32 user_id) const {
     std::lock_guard lock(m_mutex_friend_state);
     const auto it = m_friend_states.find(user_id);
     return it == m_friend_states.end() ? FriendListSnapshot{} : it->second;
+}
+
+s32 NpHandler::SendFriendRequest(s32 user_id, const std::string& npid) {
+    std::shared_ptr<ShadNet::ShadNetClient> client;
+    {
+        std::lock_guard lock(m_mutex_clients);
+        const auto it = m_clients.find(user_id);
+        if (it == m_clients.end()) {
+            return ORBIS_NP_ERROR_SIGNED_OUT;
+        }
+        client = it->second;
+    }
+    if (!client->IsAuthenticated()) {
+        return ORBIS_NP_ERROR_SIGNED_OUT;
+    }
+    client->AddFriend(npid);
+    LOG_INFO(NpHandler, "user_id={} added '{}' as a friend", user_id, npid);
+
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_states[user_id];
+    const bool accepting = std::find(st.requests_received.begin(), st.requests_received.end(),
+                                     npid) != st.requests_received.end();
+    if (!accepting && std::find(st.requests_sent.begin(), st.requests_sent.end(), npid) ==
+                          st.requests_sent.end()) {
+        st.requests_sent.push_back(npid);
+    }
+    return ORBIS_OK;
+}
+
+s32 NpHandler::RemoveFriend(s32 user_id, const std::string& npid) {
+    std::shared_ptr<ShadNet::ShadNetClient> client;
+    {
+        std::lock_guard lock(m_mutex_clients);
+        const auto it = m_clients.find(user_id);
+        if (it == m_clients.end()) {
+            return ORBIS_NP_ERROR_SIGNED_OUT;
+        }
+        client = it->second;
+    }
+    if (!client->IsAuthenticated()) {
+        return ORBIS_NP_ERROR_SIGNED_OUT;
+    }
+    client->RemoveFriend(npid);
+    LOG_INFO(NpHandler, "user_id={} removed '{}' from their friends list", user_id, npid);
+
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_states[user_id];
+    st.friends.erase(std::remove_if(st.friends.begin(), st.friends.end(),
+                                    [&](const FriendInfo& f) { return f.npid == npid; }),
+                     st.friends.end());
+    const auto drop = [&](std::vector<std::string>& v) {
+        v.erase(std::remove(v.begin(), v.end(), npid), v.end());
+    };
+    drop(st.requests_received);
+    drop(st.requests_sent);
+    return ORBIS_OK;
+}
+
+s32 NpHandler::BlockUser(s32 user_id, const std::string& npid) {
+    std::shared_ptr<ShadNet::ShadNetClient> client;
+    {
+        std::lock_guard lock(m_mutex_clients);
+        const auto it = m_clients.find(user_id);
+        if (it == m_clients.end()) {
+            return ORBIS_NP_ERROR_SIGNED_OUT;
+        }
+        client = it->second;
+    }
+    if (!client->IsAuthenticated()) {
+        return ORBIS_NP_ERROR_SIGNED_OUT;
+    }
+    client->AddBlock(npid);
+    LOG_INFO(NpHandler, "user_id={} blocked '{}'", user_id, npid);
+
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_states[user_id];
+    if (std::find(st.blocked.begin(), st.blocked.end(), npid) == st.blocked.end()) {
+        st.blocked.push_back(npid);
+    }
+    st.friends.erase(std::remove_if(st.friends.begin(), st.friends.end(),
+                                    [&](const FriendInfo& f) { return f.npid == npid; }),
+                     st.friends.end());
+    const auto drop = [&](std::vector<std::string>& v) {
+        v.erase(std::remove(v.begin(), v.end(), npid), v.end());
+    };
+    drop(st.requests_received);
+    drop(st.requests_sent);
+    return ORBIS_OK;
+}
+
+s32 NpHandler::UnblockUser(s32 user_id, const std::string& npid) {
+    std::shared_ptr<ShadNet::ShadNetClient> client;
+    {
+        std::lock_guard lock(m_mutex_clients);
+        const auto it = m_clients.find(user_id);
+        if (it == m_clients.end()) {
+            return ORBIS_NP_ERROR_SIGNED_OUT;
+        }
+        client = it->second;
+    }
+    if (!client->IsAuthenticated()) {
+        return ORBIS_NP_ERROR_SIGNED_OUT;
+    }
+    client->RemoveBlock(npid);
+    LOG_INFO(NpHandler, "user_id={} unblocked '{}'", user_id, npid);
+
+    std::lock_guard lock(m_mutex_friend_state);
+    auto& st = m_friend_states[user_id];
+    st.blocked.erase(std::remove(st.blocked.begin(), st.blocked.end(), npid), st.blocked.end());
+    return ORBIS_OK;
 }
 
 }; // namespace Libraries::Np

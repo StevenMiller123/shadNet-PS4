@@ -4,7 +4,9 @@
 #pragma once
 
 #include <atomic>
+#include <optional>
 #include <string>
+#include <orbis/ImeDialog.h>
 
 #include "common/enum.h"
 #include "common/types.h"
@@ -46,6 +48,9 @@ public:
     Choice Show(const std::string& msg, s32 button_type, const char* button1 = nullptr,
                 const char* button2 = nullptr,
                 Libraries::Pad::Button buttons = Libraries::Pad::Button::None);
+    std::optional<std::string> ShowKeyboard(const char* title, const std::string& value,
+                                            OrbisImeType type, bool password = false,
+                                            u32 max_length = 128);
     void Abort();
 
 private:

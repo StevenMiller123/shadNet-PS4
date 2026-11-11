@@ -490,8 +490,9 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
         OnAuthReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd == ShadNet::CommandType::LookupOnlineId) {
         OnLookupReply(user_id, cmd, pkt_id, error, body);
-    } else if (cmd != ShadNet::CommandType::SetClientVersion) {
-        LOG_INFO(NpHandler, "Unsupported async command {} received", magic_enum::enum_name(cmd));
+    } else if (cmd_val > 13) {
+        LOG_INFO(NpHandler, "Unsupported async command {} (value {}) received",
+                 magic_enum::enum_name(cmd), cmd_val);
     }
 }
 

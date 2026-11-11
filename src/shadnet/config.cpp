@@ -117,7 +117,7 @@ void Settings::Initialize() {
         }
 
         // Tell the user how to access the settings menu
-        LOG_NOTIFICATION(shadNet, "Hold L3 + R3 to open plugin settings");
+        LOG_NOTIFICATION(shadNet, "Hold L3 + R3 to open the plugin menu");
     }
 }
 

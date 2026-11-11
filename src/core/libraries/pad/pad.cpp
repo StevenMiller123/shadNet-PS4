@@ -9,7 +9,7 @@
 #include "common/logging/log.h"
 #include "core/libraries/pad/pad.h"
 #include "shadnet/dialogs/invitation_prompt.h"
-#include "shadnet/dialogs/settings_menu.h"
+#include "shadnet/dialogs/plugin_menu.h"
 
 namespace Libraries::Pad {
 
@@ -17,7 +17,7 @@ static constexpr u32 POLL_INTERVAL = 16000;
 static constexpr u64 USER_REFRESH_INTERVAL = 1000000;
 
 static void PollPads() {
-    auto& menu = ShadNet::SettingsMenu::GetInstance();
+    auto& menu = ShadNet::PluginMenu::GetInstance();
     auto& prompt = ShadNet::InvitationPrompt::GetInstance();
 
     OrbisUserServiceLoginUserIdList user_list{};

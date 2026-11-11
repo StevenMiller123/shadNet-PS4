@@ -2,74 +2,21 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <charconv>
-#include <cstring>
 #include <orbis/ImeDialog.h>
 #include <orbis/MsgDialog.h>
-#include <orbis/libkernel.h>
 
 #include "common/logging/log.h"
-#include "shadnet/dialogs/settings_menu.h"
+#include "shadnet/dialogs/settings_page.h"
 
 namespace ShadNet {
 
-static constexpr u32 MENU_COMBO = ORBIS_PAD_BUTTON_L3 | ORBIS_PAD_BUTTON_R3;
-static constexpr u64 MENU_COMBO_HOLD_TIME = 2000000;
-static constexpr u32 DIALOG_POLL_INTERVAL = 16000;
 static constexpr u32 MAX_TEXT_LENGTH = 128;
+static constexpr u32 MAX_PORT_LENGTH = 5;
 
 using Choice = MessageDialog::Choice;
 using Button = Libraries::Pad::Button;
 
-SettingsMenu& SettingsMenu::GetInstance() {
-    static SettingsMenu s_instance;
-    return s_instance;
-}
-
-void SettingsMenu::OnPadInput(s32 user_id, u32 buttons) {
-    std::scoped_lock lk{m_input_mutex};
-
-    if (Settings::GetInstance().IsFirstRun() && !m_first_run_handled) {
-        // Open the settings on first boot so new users can sign in.
-        m_first_run_handled = true;
-        Open(user_id);
-
-        // Wait for the menu thread to finish up.
-        // Once it's done, tell the user how to access settings in the future.
-        m_thread.join();
-        LOG_NOTIFICATION(shadNet, "Hold L3 + R3 to reopen the settings menu while ingame");
-        return;
-    }
-
-    // Open the settings menu after the right button combo is held
-    u64 time = sceKernelGetProcessTime();
-    ComboState& combo = m_combo[user_id];
-    if ((buttons & MENU_COMBO) != MENU_COMBO) {
-        combo = {};
-        return;
-    }
-    if (combo.fired) {
-        return;
-    }
-    if (combo.start_time == 0) {
-        combo.start_time = time;
-    } else if (time - combo.start_time >= MENU_COMBO_HOLD_TIME) {
-        combo.fired = true;
-        Open(user_id);
-    }
-}
-
-void SettingsMenu::Open(s32 user_id) {
-    if (m_open.exchange(true)) {
-        return;
-    }
-    if (m_thread.joinable()) {
-        m_thread.join();
-    }
-    LOG_INFO(Config, "opening for user {:#x}", user_id);
-    m_thread = std::thread(&SettingsMenu::MenuThread, this, user_id);
-}
-
-void SettingsMenu::MenuThread(s32 user_id) {
+void SettingsPage::Run(s32 user_id) {
     m_user_id = user_id;
     m_dirty = false;
     auto& settings = Settings::GetInstance();
@@ -77,11 +24,6 @@ void SettingsMenu::MenuThread(s32 user_id) {
     m_user =
         saved_user != m_saved_user.end() ? saved_user->second : settings.GetUserSettings(user_id);
     m_server = m_saved_server.value_or(settings.GetServerSettings());
-
-    if (!m_dialog.Begin(user_id)) {
-        m_open = false;
-        return;
-    }
 
     std::vector<Field> user_fields = {
         {"shadNet", FieldType::Bool, &m_user.shadnet_enabled},
@@ -121,81 +63,35 @@ void SettingsMenu::MenuThread(s32 user_id) {
             }
         }
     }
-
-    m_dialog.End();
-    LOG_INFO(Config, "closed");
-    m_open = false;
 }
 
-std::optional<std::string> SettingsMenu::ShowKeyboard(const char* title, const std::string& value,
+std::optional<std::string> SettingsPage::ShowKeyboard(const char* title, const std::string& value,
                                                       FieldType type) {
-    std::u16string title_text(title, title + std::strlen(title));
-    std::u16string input_text(MAX_TEXT_LENGTH + 1, u'\0');
-    for (u64 i = 0; i < value.size() && i < MAX_TEXT_LENGTH; i++) {
-        input_text[i] = static_cast<u8>(value[i]);
-    }
-
-    OrbisImeDialogSetting setting{};
-    setting.userId = m_user_id;
-    setting.type = type == FieldType::Port  ? ORBIS_TYPE_NUMBER
-                   : type == FieldType::Url ? ORBIS_TYPE_TYPE_URL
-                                            : ORBIS_TYPE_BASIC_LATIN;
-    setting.option = type == FieldType::Password ? 0x4 | 0x2 : 0x2;
-    setting.maxTextLength = type == FieldType::Port ? 5 : MAX_TEXT_LENGTH;
-    setting.inputTextBuffer = reinterpret_cast<wchar_t*>(input_text.data());
-    setting.posx = 1920.0f / 2;
-    setting.posy = 1080.0f / 2;
-    setting.horizontalAlignment = ORBIS_H_CENTER;
-    setting.verticalAlignment = ORBIS_V_CENTER;
-    setting.title = reinterpret_cast<const wchar_t*>(title_text.c_str());
-
-    s32 result = sceImeDialogInit(&setting, nullptr);
-    if (result < 0) {
-        LOG_ERROR(Config, "sceImeDialogInit failed with error {:#x}", static_cast<u32>(result));
-        return std::nullopt;
-    }
-
-    while (sceImeDialogGetStatus() == ORBIS_DIALOG_STATUS_RUNNING) {
-        sceKernelUsleep(DIALOG_POLL_INTERVAL);
-    }
-
-    OrbisDialogResult dialog_result{};
-    result = sceImeDialogGetResult(&dialog_result);
-    sceImeDialogTerm();
-    if (result < 0) {
-        LOG_ERROR(Config, "sceImeDialogGetResult failed with error {:#x}",
-                  static_cast<u32>(result));
-        return std::nullopt;
-    }
-    if (dialog_result.endstatus != ORBIS_DIALOG_OK) {
-        return std::nullopt;
-    }
-
-    std::string text{};
-    for (char16_t c : input_text) {
-        if (c == u'\0') {
-            break;
-        }
-        text.push_back(c < 0x80 ? static_cast<char>(c) : '?');
-    }
-    return text;
+    const OrbisImeType ime_type = type == FieldType::Port  ? ORBIS_TYPE_NUMBER
+                                  : type == FieldType::Url ? ORBIS_TYPE_TYPE_URL
+                                                           : ORBIS_TYPE_BASIC_LATIN;
+    return m_dialog.ShowKeyboard(title, value, ime_type, type == FieldType::Password,
+                                 type == FieldType::Port ? MAX_PORT_LENGTH : MAX_TEXT_LENGTH);
 }
 
-std::string SettingsMenu::FormatValue(const Field& field) {
+std::string SettingsPage::FormatValue(const Field& field, bool use_default) {
+    const auto value_of = [use_default](const auto* setting) {
+        return use_default ? setting->default_value : setting->get();
+    };
     if (auto* setting = std::get_if<Setting<bool>*>(&field.value)) {
-        return (*setting)->get() ? "Enabled" : "Disabled";
+        return value_of(*setting) ? "Enabled" : "Disabled";
     }
     if (auto* setting = std::get_if<Setting<s32>*>(&field.value)) {
-        return std::to_string((*setting)->get());
+        return std::to_string(value_of(*setting));
     }
-    std::string value = std::get<Setting<std::string>*>(field.value)->get();
+    std::string value = value_of(std::get<Setting<std::string>*>(field.value));
     if (field.type == FieldType::Password) {
         return value.empty() ? "Not set" : "********";
     }
     return value.empty() ? "Not set" : value;
 }
 
-std::string SettingsMenu::FormatSummary() {
+std::string SettingsPage::FormatSummary() {
     return fmt::format("shadNet Settings\n\n"
                        "shadNet: {}\nNPID: {}\nPassword: {}\nAppear offline: {}\n\n"
                        "Server: {}\nWebApi server: {}\nP2P port: {}",
@@ -207,7 +103,7 @@ std::string SettingsMenu::FormatSummary() {
                        m_server.shadnet_p2p_port.get());
 }
 
-void SettingsMenu::EditFields(std::vector<Field> fields) {
+void SettingsPage::EditFields(std::vector<Field> fields) {
     u64 index = 0;
     while (true) {
         Field& field = fields[index];
@@ -229,18 +125,24 @@ void SettingsMenu::EditFields(std::vector<Field> fields) {
     }
 }
 
-void SettingsMenu::ResetField(Field& field) {
+void SettingsPage::ResetField(Field& field) {
     std::visit(
-        [this](auto* setting) {
-            if (setting->get() != setting->default_value) {
-                setting->set(setting->default_value);
-                m_dirty = true;
+        [this, &field](auto* setting) {
+            if (setting->get() == setting->default_value) {
+                return;
             }
+            const std::string msg =
+                fmt::format("Reset {} to {}?", field.name, FormatValue(field, true));
+            if (m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_YESNO) != Choice::Button1) {
+                return;
+            }
+            setting->set(setting->default_value);
+            m_dirty = true;
         },
         field.value);
 }
 
-void SettingsMenu::EditField(Field& field) {
+void SettingsPage::EditField(Field& field) {
     if (auto* setting = std::get_if<Setting<bool>*>(&field.value)) {
         (*setting)->set(!(*setting)->get());
         m_dirty = true;

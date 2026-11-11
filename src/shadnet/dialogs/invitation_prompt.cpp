@@ -11,7 +11,7 @@
 #include "core/libraries/invitation_dialog/invitation_dialog.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "shadnet/dialogs/invitation_prompt.h"
-#include "shadnet/dialogs/settings_menu.h"
+#include "shadnet/dialogs/plugin_menu.h"
 
 namespace ShadNet {
 
@@ -83,7 +83,7 @@ void InvitationPrompt::PromptThread() {
 }
 
 bool InvitationPrompt::CanShow() {
-    return !SettingsMenu::GetInstance().IsOpen() && !Libraries::InvitationDialog::IsRunning() &&
+    return !PluginMenu::GetInstance().IsOpen() && !Libraries::InvitationDialog::IsRunning() &&
            sceMsgDialogGetStatus() != ORBIS_COMMON_DIALOG_STATUS_RUNNING &&
            sceImeDialogGetStatus() != ORBIS_DIALOG_STATUS_RUNNING;
 }

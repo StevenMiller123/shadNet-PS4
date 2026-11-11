@@ -237,6 +237,10 @@ public:
         std::vector<std::string> blocked;
     };
     FriendListSnapshot GetFriendList(s32 user_id) const;
+    s32 SendFriendRequest(s32 user_id, const std::string& npid);
+    s32 RemoveFriend(s32 user_id, const std::string& npid);
+    s32 BlockUser(s32 user_id, const std::string& npid);
+    s32 UnblockUser(s32 user_id, const std::string& npid);
 
     // Session invitations
     struct PendingInvitation {

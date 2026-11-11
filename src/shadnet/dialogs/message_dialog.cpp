@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstring>
 #include <orbis/CommonDialog.h>
 #include <orbis/MsgDialog.h>
 #include <orbis/Pad.h>
-#include <orbis/UserService.h>
 #include <orbis/libkernel.h>
 
 #include "common/logging/log.h"
@@ -164,6 +164,59 @@ MessageDialog::Choice MessageDialog::Show(const std::string& msg, s32 button_typ
     }
     return dialog_result.buttonId == ORBIS_MSG_DIALOG_BUTTON_ID_BUTTON2 ? Choice::Button2
                                                                         : Choice::Button1;
+}
+
+std::optional<std::string> MessageDialog::ShowKeyboard(const char* title, const std::string& value,
+                                                       OrbisImeType type, bool password,
+                                                       u32 max_length) {
+    std::u16string title_text(title, title + std::strlen(title));
+    std::u16string input_text(max_length + 1, u'\0');
+    for (u64 i = 0; i < value.size() && i < max_length; i++) {
+        input_text[i] = static_cast<u8>(value[i]);
+    }
+
+    OrbisImeDialogSetting setting{};
+    setting.userId = m_user_id;
+    setting.type = type;
+    setting.option = password ? 0x4 | 0x2 : 0x2;
+    setting.maxTextLength = max_length;
+    setting.inputTextBuffer = reinterpret_cast<wchar_t*>(input_text.data());
+    setting.posx = 1920.0f / 2;
+    setting.posy = 1080.0f / 2;
+    setting.horizontalAlignment = ORBIS_H_CENTER;
+    setting.verticalAlignment = ORBIS_V_CENTER;
+    setting.title = reinterpret_cast<const wchar_t*>(title_text.c_str());
+
+    s32 result = sceImeDialogInit(&setting, nullptr);
+    if (result < 0) {
+        LOG_ERROR(shadNet, "sceImeDialogInit failed with error {:#x}", static_cast<u32>(result));
+        return std::nullopt;
+    }
+
+    while (sceImeDialogGetStatus() == ORBIS_DIALOG_STATUS_RUNNING) {
+        sceKernelUsleep(DIALOG_POLL_INTERVAL);
+    }
+
+    OrbisDialogResult dialog_result{};
+    result = sceImeDialogGetResult(&dialog_result);
+    sceImeDialogTerm();
+    if (result < 0) {
+        LOG_ERROR(shadNet, "sceImeDialogGetResult failed with error {:#x}",
+                  static_cast<u32>(result));
+        return std::nullopt;
+    }
+    if (dialog_result.endstatus != ORBIS_DIALOG_OK) {
+        return std::nullopt;
+    }
+
+    std::string text{};
+    for (char16_t c : input_text) {
+        if (c == u'\0') {
+            break;
+        }
+        text.push_back(c < 0x80 ? static_cast<char>(c) : '?');
+    }
+    return text;
 }
 
 void MessageDialog::Abort() {
