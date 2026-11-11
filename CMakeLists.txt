@@ -223,6 +223,7 @@ set(PLUGIN_LIBS
     -lSceNetCtl
     -lSceNpAuth
     -lSceNpCommon
+    -lSceNpProfileDialog
     -lSceNpManager
     -lSceNpManagerForToolkit
     -lSceNpMatching2
@@ -287,6 +288,8 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_matching2/np_matching2_signaling.cpp
                  src/core/libraries/np/np_matching2/np_matching2.cpp
                  src/core/libraries/np/np_partner/np_partner.cpp
+                 src/core/libraries/np/np_profile_dialog/np_profile_dialog_ui.cpp
+                 src/core/libraries/np/np_profile_dialog/np_profile_dialog.cpp
                  src/core/libraries/np/np_score/np_score.cpp
                  src/core/libraries/np/np_signaling/np_signaling_handler.cpp
                  src/core/libraries/np/np_signaling/np_signaling_helpers.cpp

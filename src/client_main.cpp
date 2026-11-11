@@ -27,6 +27,7 @@
 #include "core/libraries/np/np_manager/np_manager.h"
 #include "core/libraries/np/np_matching2/np_matching2.h"
 #include "core/libraries/np/np_partner/np_partner.h"
+#include "core/libraries/np/np_profile_dialog/np_profile_dialog.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_signaling/np_signaling.h"
 #include "core/libraries/np/np_trophy/np_trophy.h"
@@ -83,6 +84,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_MESSAGE_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_IME_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_INVITATION_DIALOG);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PROFILE_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TROPHY);
@@ -250,6 +252,7 @@ extern "C" s32 client_start() {
     Libraries::Np::NpTus::RegisterHooks();
     Libraries::Np::NpPartner::RegisterHooks();
     Libraries::Np::NpTrophy::RegisterHooks();
+    Libraries::Np::NpProfileDialog::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
     Libraries::SigninDialog::RegisterHooks();
     return 0;
