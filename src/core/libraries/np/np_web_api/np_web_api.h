@@ -155,6 +155,7 @@ s32 sceNpWebApiRegisterServicePushEventCallback(s32 title_user_ctx_id, s32 filte
 s32 sceNpWebApiUnregisterNotificationCallback(s32 title_user_ctx_id);
 s32 sceNpWebApiUnregisterPushEventCallback(s32 title_user_ctx_id, s32 callback_id);
 s32 sceNpWebApiUnregisterServicePushEventCallback(s32 title_user_ctx_id, s32 callback_id);
+s32 sceNpWebApiUtilityParseNpId(const char* json_np_id, OrbisNpId* np_id);
 s32 sceNpWebApiAbortHandle(s32 lib_ctx_id, s32 handle_id);
 s32 sceNpWebApiAbortRequest(s64 request_id);
 s32 sceNpWebApiAddHttpRequestHeader(s64 request_id, const char* field_name, const char* value);

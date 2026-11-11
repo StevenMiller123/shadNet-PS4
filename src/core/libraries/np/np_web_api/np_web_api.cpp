@@ -76,6 +76,7 @@ SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiSetRequestTimeout);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
 SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
+SHADNET_HOOK_DECLARE(Libraries::Np::NpWebApi, sceNpWebApiUtilityParseNpId);
 
 static void RegisterNpWebApiHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiCreateContext);
@@ -132,6 +133,9 @@ static void RegisterNpWebApiHooks() {
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiTerminate);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUnregisterExtdPushEventCallback);
     SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiVshInitialize);
+    // sceNpWebApiUtilityParseNpId needs to be hooked because of a shadNet bug.
+    // Remove this hook if the bug gets fixed.
+    SHADNET_HOOK(Libraries::Np::NpWebApi, sceNpWebApiUtilityParseNpId);
 }
 
 namespace Libraries::Np::NpWebApi {
@@ -686,6 +690,78 @@ s32 sceNpWebApiVshInitialize(s32 lib_http_ctx_id, u64 pool_size) {
         g_active_library_contexts++;
     }
     return result;
+}
+
+static constexpr u64 NP_ID_DECODE_BUFFER_SIZE = 0x40;
+static constexpr u64 NP_ID_SEGMENT_SIZE = 8;
+static constexpr u64 NP_ID_HANDLE_COPY_SIZE = 0x11;
+
+static bool DecodeNpIdBase64(const char* input, std::string& output) {
+    static constexpr std::string_view alphabet =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    u32 bits = 0;
+    s32 bit_count = 0;
+    for (const char* c = input; *c != '\0' && *c != '='; c++) {
+        const u64 value = alphabet.find(*c);
+        if (value == std::string_view::npos) {
+            return false;
+        }
+        bits = (bits << 6) | static_cast<u32>(value);
+        bit_count += 6;
+        if (bit_count >= 8) {
+            bit_count -= 8;
+            output.push_back(static_cast<char>((bits >> bit_count) & 0xff));
+        }
+    }
+    return output.size() <= NP_ID_DECODE_BUFFER_SIZE;
+}
+
+s32 sceNpWebApiUtilityParseNpId(const char* json_np_id, OrbisNpId* np_id) {
+    if (json_np_id == nullptr) {
+        return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
+    }
+    std::string decoded;
+    if (!DecodeNpIdBase64(json_np_id, decoded)) {
+        LOG_ERROR(Lib_NpWebApi, "invalid np id '{}'", json_np_id);
+        return ORBIS_NP_WEBAPI_ERROR_INVALID_ARGUMENT;
+    }
+
+    std::string handle;
+    std::string first;  // segment before '.'
+    std::string middle; // segment before '/', or the last one if there is no '/'
+    std::string last;   // segment after '/'
+    if (decoded.find('@') == std::string::npos) {
+        handle = decoded;
+    } else {
+        bool has_slash = false;
+        u64 start = 0;
+        for (u64 i = 0; i <= decoded.size(); i++) {
+            const char c = i < decoded.size() ? decoded[i] : '\0';
+            const std::string segment = decoded.substr(start, i - start);
+            if (c == '@') {
+                handle = segment.substr(0, NP_ID_HANDLE_COPY_SIZE);
+            } else if (c == '.') {
+                first = segment.substr(0, NP_ID_SEGMENT_SIZE);
+            } else if (c == '/') {
+                middle = segment.substr(0, NP_ID_SEGMENT_SIZE);
+                has_slash = true;
+            } else if (c == '\0') {
+                (has_slash ? last : middle) = segment.substr(0, NP_ID_SEGMENT_SIZE);
+            } else {
+                continue;
+            }
+            start = i + 1;
+        }
+    }
+
+    if (np_id != nullptr) {
+        std::memset(np_id, 0, sizeof(*np_id));
+        std::memcpy(np_id, handle.data(), std::min<u64>(handle.size(), NP_ID_HANDLE_COPY_SIZE));
+        std::snprintf(reinterpret_cast<char*>(np_id->opt), sizeof(np_id->opt), "%s%s%s",
+                      first.c_str(), middle.c_str(), last.c_str());
+        np_id->reserved[0] = 1;
+    }
+    return ORBIS_OK;
 }
 
 void RegisterHooks() {
