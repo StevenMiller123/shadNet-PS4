@@ -208,6 +208,7 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
         if (id_len > 0) {
             std::memcpy(np_id.handle.data, npid.data(), id_len);
         }
+        np_id.reserved[0] = 1;
         m_np_ids[user_id] = np_id;
         m_clients[user_id] = std::move(client);
     }

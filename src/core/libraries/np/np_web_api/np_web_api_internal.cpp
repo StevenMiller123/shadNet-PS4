@@ -251,8 +251,7 @@ OrbisNpWebApiUserContext* findUserContext(OrbisNpWebApiContext* context, s32 tit
 s32 createUserContextWithOnlineId(s32 lib_ctx_id, OrbisNpOnlineId* online_id) {
     LOG_WARNING(Lib_NpWebApi, "called lib_ctx_id = {}", lib_ctx_id);
 
-    s32 user_id = 0;
-    sceUserServiceGetInitialUser(&user_id);
+    s32 user_id = NpHandler::Instance().GetUserIdByOnlineId(*online_id);
     return createUserContext(lib_ctx_id, user_id);
 }
 
