@@ -8,7 +8,9 @@
 #include <arpa/inet.h>
 #include <fmt/format.h>
 #include <orbis/NpMatching2.h>
+#include <orbis/libkernel.h>
 
+#include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/shadnet_hook.h"
 #include "core/libraries/network/net/net_error.h"
@@ -142,6 +144,9 @@ static void RegisterNpMatching2Hooks() {
 }
 
 namespace Libraries::Np::NpMatching2 {
+
+static s32 g_sdk_version = 0;
+
 s32 sceNpMatching2CreateContext(const OrbisNpMatching2CreateContextParameter* param,
                                 OrbisNpMatching2ContextId* ctx_id) {
     LOG_INFO(Lib_NpMatching2, "called, np_id = {}, service_label = {}, size = {}",
@@ -406,6 +411,7 @@ s32 sceNpMatching2Initialize(OrbisNpMatching2InitializeParameter* param) {
         return ORBIS_NP_MATCHING2_ERROR_INVALID_ARGUMENT;
     }
 
+    sceKernelGetCompiledSdkVersion(&g_sdk_version);
     InitEventDispatcher();
     SetInitialized(true);
     return ORBIS_OK;
@@ -1005,7 +1011,9 @@ s32 sceNpMatching2GetRoomMemberDataInternal(
     ev.context_owner = ctx;
     ev.fire_at = std::chrono::steady_clock::now();
     ev.req_id = req_id;
-    ev.req_event = ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL_A;
+    ev.req_event = g_sdk_version >= Common::ElfInfo::FW_400 && ctx->a_variant
+                       ? ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL_A
+                       : ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL;
     ev.error_code = 0;
     const RequestCallbackInfo request_cb = ConsumeRequestCallback(ctx);
     ev.request_cb = request_cb.callback;

@@ -1228,32 +1228,24 @@ void* BuildGetRoomMemberDataInternalPayload(
         }
     }
 
-    std::vector<OrbisNpMatching2AttributeId> ids;
-    if (request.attr_id_num == 0) {
-        for (const auto& entry : member.bins) {
-            ids.push_back(entry.first);
-        }
-    } else {
-        ids.assign(request.attr_id, request.attr_id + request.attr_id_num);
+    constexpr auto attr_id = ORBIS_NP_MATCHING2_ROOMMEMBER_BIN_ATTR_INTERNAL_1_ID;
+    bool wants_attr = request.attr_id_num == 0;
+    for (u64 i = 0; i < request.attr_id_num; ++i) {
+        wants_attr |= request.attr_id[i] == attr_id;
     }
-    p.member_bin_attrs.reserve(ids.size());
-    p.bin_buffers.reserve(ids.size());
-    for (const OrbisNpMatching2AttributeId id : ids) {
-        const auto bin_it = member.bins.find(id);
+    if (wants_attr) {
         auto& dst = p.member_bin_attrs.emplace_back();
         dst = {};
-        dst.bin_attr.id = id;
-        if (bin_it == member.bins.end()) {
-            p.bin_buffers.emplace_back(64, u8{0});
-            dst.bin_attr.data = p.bin_buffers.back().data();
-            dst.bin_attr.data_size = 0;
-            continue;
+        dst.bin_attr.id = attr_id;
+        const auto bin_it = member.bins.find(attr_id);
+        if (bin_it != member.bins.end()) {
+            dst.last_update.tick = bin_it->second.update_date;
+            if (!bin_it->second.data.empty()) {
+                p.bin_buffers.push_back(bin_it->second.data);
+                dst.bin_attr.data = p.bin_buffers.back().data();
+                dst.bin_attr.data_size = p.bin_buffers.back().size();
+            }
         }
-        p.bin_buffers.push_back(bin_it->second.data);
-        auto& data = p.bin_buffers.back();
-        dst.last_update.tick = bin_it->second.update_date;
-        dst.bin_attr.data = data.empty() ? nullptr : data.data();
-        dst.bin_attr.data_size = data.size();
     }
 
     if (ctx.a_variant) {
