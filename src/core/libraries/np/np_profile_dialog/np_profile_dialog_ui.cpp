@@ -84,7 +84,8 @@ std::string NpProfileDialogUi::ResolveOnlineId() {
     if (NpSignaling::FindMatching2MemberNpId(m_state->account_id, &np_id)) {
         return ToString(np_id.handle);
     }
-    LOG_WARNING(Lib_NpProfileDialog, "Could not retrieve online id for account id {:#x}", m_state->account_id);
+    LOG_WARNING(Lib_NpProfileDialog, "Could not retrieve online id for account id {:#x}",
+                m_state->account_id);
     return {};
 }
 
