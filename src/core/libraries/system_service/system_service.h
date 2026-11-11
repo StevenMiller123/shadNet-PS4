@@ -9,6 +9,7 @@ namespace Libraries::SystemService {
 
 enum OrbisSystemServiceEventType : s32 {
     SessionInvitation = 0x10000002,
+    GameCustomData = 0x10000004,
 };
 
 struct OrbisSystemServiceStatus {

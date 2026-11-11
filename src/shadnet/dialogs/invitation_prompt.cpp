@@ -8,6 +8,7 @@
 #include <orbis/libkernel.h>
 
 #include "common/logging/log.h"
+#include "core/libraries/game_custom_data_dialog/game_custom_data_dialog.h"
 #include "core/libraries/invitation_dialog/invitation_dialog.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_profile_dialog/np_profile_dialog.h"
@@ -86,6 +87,7 @@ void InvitationPrompt::PromptThread() {
 bool InvitationPrompt::CanShow() {
     return !PluginMenu::GetInstance().IsOpen() && !Libraries::InvitationDialog::IsRunning() &&
            !Libraries::Np::NpProfileDialog::IsRunning() &&
+           !Libraries::GameCustomDataDialog::IsRunning() &&
            sceMsgDialogGetStatus() != ORBIS_COMMON_DIALOG_STATUS_RUNNING &&
            sceImeDialogGetStatus() != ORBIS_DIALOG_STATUS_RUNNING;
 }

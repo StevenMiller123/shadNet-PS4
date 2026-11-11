@@ -16,6 +16,7 @@
 #include "core/file_format/npbind.h"
 #include "core/file_format/psf.h"
 #include "core/libraries/app_content/app_content.h"
+#include "core/libraries/game_custom_data_dialog/game_custom_data_dialog.h"
 #include "core/libraries/invitation_dialog/invitation_dialog.h"
 #include "core/libraries/kernel/kernel.h"
 #include "core/libraries/network/http/http.h"
@@ -85,6 +86,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_IME_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_INVITATION_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PROFILE_DIALOG);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_GAME_CUSTOM_DATA_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TROPHY);
@@ -253,6 +255,7 @@ extern "C" s32 client_start() {
     Libraries::Np::NpPartner::RegisterHooks();
     Libraries::Np::NpTrophy::RegisterHooks();
     Libraries::Np::NpProfileDialog::RegisterHooks();
+    Libraries::GameCustomDataDialog::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
     Libraries::SigninDialog::RegisterHooks();
     return 0;

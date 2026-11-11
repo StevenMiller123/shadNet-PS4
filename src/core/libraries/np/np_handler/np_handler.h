@@ -262,6 +262,48 @@ public:
     bool AcceptSessionInvitation(s32 user_id, const std::string& invitation_id);
     void DeclineSessionInvitation(s32 user_id, const std::string& invitation_id);
 
+    // GameCustomDataDialog data
+    struct GameCustomDataToSend {
+        std::vector<std::string> to;
+        std::string message;
+        std::string data_name;
+        std::string data_description;
+        std::vector<std::pair<std::string, std::string>> localized_names;
+        std::vector<std::pair<std::string, std::string>> localized_descriptions;
+        s32 expire_minutes = 0;
+        std::vector<std::string> platforms;
+        bool is_url = false;
+        std::string url;
+        bool with_item_id = false;
+        std::vector<u8> game_data;
+        std::vector<u8> thumbnail;
+    };
+    struct GameCustomDataResult {
+        bool ok = false;
+        s32 http_status = 0;
+        s64 error_code = 0;
+        std::string message;
+    };
+    GameCustomDataResult SendGameCustomData(s32 user_id, const GameCustomDataToSend& item);
+
+    struct ReceivedGameCustomData {
+        s64 item_id = 0;
+        std::string from_online_id;
+        OrbisNpAccountId from_account_id = 0;
+        std::string received_date;
+        std::string expired_date;
+        bool used = false;
+        bool is_url = false;
+        std::string url;
+        std::string message;
+        std::string data_name;
+        std::string data_description;
+        std::vector<std::string> platforms;
+    };
+    GameCustomDataResult ListReceivedGameCustomData(s32 user_id, const std::string& np_language,
+                                                    std::vector<ReceivedGameCustomData>& out);
+    void PostGameCustomDataEvent(s32 user_id, s64 item_id);
+
     // State callbacks
     using StateCallback = void (*)(s32 user_id, OrbisNpState state);
     s32 RegisterStateCallback(StateCallback cb, void* userdata);

@@ -224,6 +224,7 @@ set(PLUGIN_LIBS
     -lSceNpAuth
     -lSceNpCommon
     -lSceNpProfileDialog
+    -lSceGameCustomDataDialog
     -lSceNpManager
     -lSceNpManagerForToolkit
     -lSceNpMatching2
@@ -261,6 +262,8 @@ set(COMMON_SOURCES src/common/libjbc/jailbreak.c
 set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/file_format/psf.cpp
                  src/core/libraries/app_content/app_content.cpp
+                 src/core/libraries/game_custom_data_dialog/game_custom_data_dialog_ui.cpp
+                 src/core/libraries/game_custom_data_dialog/game_custom_data_dialog.cpp
                  src/core/libraries/invitation_dialog/invitation_dialog_ui.cpp
                  src/core/libraries/invitation_dialog/invitation_dialog.cpp
                  src/core/libraries/kernel/kernel.cpp
@@ -272,6 +275,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
+                 src/core/libraries/np/np_handler/np_handler_game_custom_data.cpp
                  src/core/libraries/np/np_handler/np_handler_invitation.cpp
                  src/core/libraries/np/np_handler/np_handler_lookup.cpp
                  src/core/libraries/np/np_handler/np_handler_score.cpp
