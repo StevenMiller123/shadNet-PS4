@@ -11,6 +11,7 @@
 #include "core/libraries/np/np_signaling/np_signaling_handler.h"
 #include "core/libraries/np/np_signaling/np_signaling_state.h"
 #include "core/libraries/np/np_signaling/np_signaling_transport.h"
+#include "core/net_util/net_p2p.h"
 #include "core/net_util/net_util.h"
 
 namespace Libraries::Np::NpSignaling {
@@ -435,8 +436,7 @@ SignalingHandshake MakeHandshakeLocked(const PeerTransport& transport, Handshake
     pkt.from_conn_id = static_cast<u32>(transport.transport_id);
     std::memcpy(pkt.online_id_from, transport.local_online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH);
     std::memcpy(pkt.online_id_to, transport.online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH);
-    auto* netinfo = Common::Singleton<NetUtil::NetUtilInternal>::Instance();
-    pkt.mapped_addr = netinfo->GetExternalIp();
+    pkt.mapped_addr = NetUtil::GetPublicAddr();
     pkt.mapped_port = 0;
     return pkt;
 }
@@ -463,8 +463,7 @@ SignalingControl MakeControlLocked(const ConnectionInfo& ci, ControlKind kind) {
         std::memcpy(pkt.online_id_from, transport->local_online_id.data,
                     ORBIS_NP_ONLINEID_MAX_LENGTH);
         std::memcpy(pkt.online_id_to, transport->online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH);
-        auto* netinfo = Common::Singleton<NetUtil::NetUtilInternal>::Instance();
-        pkt.mapped_addr = netinfo->GetExternalIp();
+        pkt.mapped_addr = NetUtil::GetPublicAddr();
         pkt.mapped_port = 0;
         return pkt;
     }
@@ -478,8 +477,7 @@ SignalingControl MakeControlLocked(const PeerTransport& transport, ControlKind k
     pkt.from_conn_id = static_cast<u32>(transport.transport_id);
     std::memcpy(pkt.online_id_from, transport.local_online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH);
     std::memcpy(pkt.online_id_to, transport.online_id.data, ORBIS_NP_ONLINEID_MAX_LENGTH);
-    auto* netinfo = Common::Singleton<NetUtil::NetUtilInternal>::Instance();
-    pkt.mapped_addr = netinfo->GetExternalIp();
+    pkt.mapped_addr = NetUtil::GetPublicAddr();
     pkt.mapped_port = 0;
     return pkt;
 }

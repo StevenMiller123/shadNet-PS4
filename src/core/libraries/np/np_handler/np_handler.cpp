@@ -10,6 +10,7 @@
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_matching2/np_matching2_mm.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
+#include "core/net_util/net_upnp.h"
 #include "shadnet/client.h"
 #include "shadnet/config.h"
 #include "shadnet/server_probe.h"
@@ -191,6 +192,11 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
 
     LOG_NOTIFICATION(NpHandler, "{} successfully signed in to shadNet, account_id={}", npid,
                      client->GetUserId());
+
+    NetUtil::UPnPClient::Instance().SetP2PFeaturesEnabled(client->IsMatching2Enabled());
+    if (client->IsMatching2Enabled() && config.IsUpnpEnabled()) {
+        NetUtil::UPnPClient::Instance().Start();
+    }
 
     NpMatching2::SetMmShadNetClient(client, host, port);
 

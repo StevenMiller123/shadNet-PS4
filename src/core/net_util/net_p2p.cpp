@@ -7,9 +7,12 @@
 #include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
 #include "common/plugin_common.h"
+#include "common/singleton.h"
 #include "core/libraries/network/net/net.h"
 #include "core/libraries/network/net/net_error.h"
 #include "core/net_util/net_p2p.h"
+#include "core/net_util/net_upnp.h"
+#include "core/net_util/net_util.h"
 #include "shadnet/config.h"
 
 namespace NetUtil {
@@ -148,6 +151,15 @@ u16 P2PTransport::StartLocked(u16 udp_port, bool allow_fallback) {
     } else {
         LOG_INFO(Lib_Net, "P2P transport on UDP port {}", port);
     }
+
+    if (!ShadNet::Settings::GetInstance().IsUpnpEnabled()) {
+        LOG_INFO(Lib_Net, "P2P on UDP port {}: UPnP forwarding off", port);
+    } else {
+        LOG_INFO(Lib_Net, "P2P on UDP port {}: asking the router to forward it (UPnP)", port);
+        auto& upnp = UPnPClient::Instance();
+        upnp.Start();
+        upnp.MapPortAsync(port);
+    }
     return port;
 }
 
@@ -155,6 +167,7 @@ void P2PTransport::StopLocked() {
     if (m_socket >= 0) {
         sceNetSocketClose(m_socket);
         LOG_INFO(Lib_Net, "P2P transport on UDP port {} stopped", m_bound_port);
+        UPnPClient::Instance().UnmapPort(m_bound_port);
     }
     m_socket = -1;
     m_bound_port = 0;
@@ -318,6 +331,13 @@ u16 StartP2P(u16 udp_port) {
 
 void StopP2P() {
     P2PTransport::Instance().Stop();
+}
+
+u32 GetPublicAddr() {
+    if (const u32 upnp = UPnPClient::Instance().GetExternalIp(); upnp != 0) {
+        return upnp;
+    }
+    return Common::Singleton<NetUtilInternal>::Instance()->GetExternalIp();
 }
 
 bool EnsureP2PTransport() {

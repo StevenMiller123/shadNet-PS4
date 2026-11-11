@@ -13,6 +13,7 @@
 #include "core/libraries/np/np_signaling/np_signaling_helpers.h"
 #include "core/libraries/np/np_signaling/np_signaling_state.h"
 #include "core/libraries/np/np_signaling/np_signaling_transport.h"
+#include "core/net_util/net_p2p.h"
 #include "core/net_util/net_util.h"
 
 SHADNET_HOOK_DECLARE(Libraries::Np::NpSignaling, sceNpSignalingInitialize);
@@ -682,7 +683,7 @@ s32 sceNpSignalingGetLocalNetInfo(OrbisNpSignalingContextId ctx_id, OrbisNpSigna
         info->nat_status = nat_info.nat_type;
     }
     if (info->mapped_addr == 0) {
-        const u32 external = netinfo->GetExternalIp();
+        const u32 external = NetUtil::GetPublicAddr();
         info->mapped_addr = external != 0 ? external : info->local_addr;
     }
     info->pad_14 = 0;

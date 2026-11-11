@@ -174,7 +174,7 @@ void* BuildSignalingGetPingInfoPayload(ContextObject& ctx, CallbackPayload& p,
 
 // Our own address combined with the external IP from the STUN echo plus our P2P port
 static void FillMappedAddr(OrbisNpMatching2SignalingConnectionInfoAddr& out) {
-    u32 addr = Common::Singleton<NetUtil::NetUtilInternal>::Instance()->GetExternalIp();
+    u32 addr = NetUtil::GetPublicAddr();
     if (addr == 0) {
         addr = NetUtil::GetP2PAdvertisedAddr();
     }
@@ -306,7 +306,7 @@ s32 FillMatching2LocalNetInfo(void* info) {
         out->nat_status = nat_info.nat_type;
     }
     if (out->mapped_addr == 0) {
-        const u32 external = netinfo->GetExternalIp();
+        const u32 external = NetUtil::GetPublicAddr();
         out->mapped_addr = external != 0 ? external : out->local_addr;
     }
     out->pad_14 = 0;

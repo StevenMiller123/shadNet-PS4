@@ -24,6 +24,7 @@
 #include "core/libraries/np/np_signaling/np_signaling_handler.h"
 #include "core/libraries/np/np_signaling/np_signaling_transport.h"
 #include "core/net_util/net_p2p.h"
+#include "core/net_util/net_upnp.h"
 #include "shadnet.pb.h"
 #include "shadnet/client.h"
 
@@ -819,6 +820,7 @@ void SetMmShadNetClient(std::shared_ptr<ShadNet::ShadNetClient> client,
         server_udp_port = g_mm.server_udp_port;
     }
     LOG_INFO(Lib_NpMatching2, "matching2_enabled={}", matching2_enabled);
+    NetUtil::UPnPClient::Instance().SetP2PFeaturesEnabled(matching2_enabled);
 
     if (!client) {
         NpSignaling::SetTransportHooks({});

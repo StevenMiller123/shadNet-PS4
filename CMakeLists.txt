@@ -314,6 +314,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
 )
 
 set(NETWORKING_SOURCES src/core/net_util/net_p2p.cpp
+                       src/core/net_util/net_upnp.cpp
                        src/core/net_util/net_util.cpp
 )
 
@@ -481,6 +482,17 @@ if(IS_DIRECTORY "${EXTERNALS_DIR}/protobuf")
 
     shadnet_add_cmake_external(protobuf)
     list(APPEND SHADNET_HANDLED_EXTERNALS protobuf)
+endif()
+
+if(IS_DIRECTORY "${EXTERNALS_DIR}/miniupnp")
+    set(UPNPC_BUILD_STATIC ON CACHE BOOL "" FORCE)
+    set(UPNPC_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+    set(UPNPC_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(UPNPC_BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+    set(UPNPC_NO_INSTALL ON CACHE BOOL "" FORCE)
+
+    shadnet_add_cmake_external(miniupnp/miniupnpc)
+    list(APPEND SHADNET_HANDLED_EXTERNALS miniupnp)
 endif()
 
 if(IS_DIRECTORY "${EXTERNALS_DIR}/goldhen_plugins_sdk")

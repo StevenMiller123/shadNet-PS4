@@ -35,7 +35,7 @@ void SettingsPage::Run(s32 user_id) {
         {"Server", FieldType::Url, &m_server.shadnet_server},
         {"WebApi server", FieldType::Url, &m_server.shadnet_webapi_server},
         {"P2P port", FieldType::Port, &m_server.shadnet_p2p_port},
-        // {"UPnP", FieldType::Bool, &m_server.shadnet_enable_upnp},
+        {"UPnP", FieldType::Bool, &m_server.shadnet_enable_upnp},
     };
 
     while (true) {
@@ -94,13 +94,14 @@ std::string SettingsPage::FormatValue(const Field& field, bool use_default) {
 std::string SettingsPage::FormatSummary() {
     return fmt::format("shadNet Settings\n\n"
                        "shadNet: {}\nNPID: {}\nPassword: {}\nAppear offline: {}\n\n"
-                       "Server: {}\nWebApi server: {}\nP2P port: {}",
+                       "Server: {}\nWebApi server: {}\nP2P port: {}\nUPnP: {}",
                        m_user.shadnet_enabled.get() ? "Enabled" : "Disabled",
                        m_user.shadnet_npid.get().empty() ? "Not set" : m_user.shadnet_npid.get(),
                        m_user.shadnet_password.get().empty() ? "Not set" : "********",
                        m_user.shadnet_appear_offline.get() ? "Enabled" : "Disabled",
                        m_server.shadnet_server.get(), m_server.shadnet_webapi_server.get(),
-                       m_server.shadnet_p2p_port.get());
+                       m_server.shadnet_p2p_port.get(),
+                       m_server.shadnet_enable_upnp.get() ? "Enabled" : "Disabled");
 }
 
 void SettingsPage::EditFields(std::vector<Field> fields) {

@@ -69,6 +69,7 @@ private:
 void ConfigureP2P(u16 udp_port, u32 advertised_addr);
 u16 StartP2P(u16 udp_port);
 void StopP2P();
+u32 GetPublicAddr();
 
 bool EnsureP2PTransport();
 bool P2PTransportIsReady();
