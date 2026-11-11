@@ -15,7 +15,6 @@ namespace ShadNet {
 
 static constexpr u32 MENU_COMBO = ORBIS_PAD_BUTTON_L3 | ORBIS_PAD_BUTTON_R3;
 static constexpr u64 MENU_COMBO_HOLD_TIME = 2000000;
-static constexpr u64 MAX_ONLINE_FRIENDS = 10;
 
 using Choice = MessageDialog::Choice;
 
@@ -97,36 +96,38 @@ void PluginMenu::MenuThread(s32 user_id, bool settings_only) {
 
 std::string PluginMenu::FormatHome(s32 user_id) {
     auto& np_handler = Libraries::Np::NpHandler::Instance();
+    const auto& game_info = Common::ElfInfo::Instance();
+    const bool signed_in = np_handler.IsSignedIn(user_id);
 
     std::string msg = "shadNet\n\n";
-    if (np_handler.IsSignedIn(user_id)) {
+    if (signed_in) {
         const auto np_id = np_handler.GetNpId(user_id);
         const auto* name = np_id.handle.data;
-        msg += fmt::format("Signed in as {}\n\nOnline friends:\n",
+        msg += fmt::format("Signed in as {}\n",
                            std::string(name, strnlen(name, sizeof(np_id.handle.data))));
-
-        u64 online = 0;
-        for (const auto& info : np_handler.GetFriendList(user_id).friends) {
-            if (!info.online) {
-                continue;
-            }
-            if (online++ < MAX_ONLINE_FRIENDS) {
-                msg += info.npid + "\n";
-            }
-        }
-        if (online == 0) {
-            msg += "None\n";
-        } else if (online > MAX_ONLINE_FRIENDS) {
-            msg += fmt::format("...and {} more\n", online - MAX_ONLINE_FRIENDS);
-        }
     } else {
         const auto user_name = Settings::GetInstance().GetNpId(user_id);
         msg += fmt::format("User {} is not signed in\n", user_name);
     }
 
-    const auto& game_info = Common::ElfInfo::Instance();
-    msg +=
-        fmt::format("\n{}\n{} v{}", game_info.Title(), game_info.GameSerial(), game_info.AppVer());
+    // Game info goes above the online friends so a long list can't push it out of view.
+    msg += fmt::format("\n{}\n{} v{}\n", game_info.Title(), game_info.GameSerial(),
+                       game_info.AppVer());
+    if (!signed_in) {
+        return msg;
+    }
+
+    msg += "\nOnline friends:\n";
+    bool any_online = false;
+    for (const auto& info : np_handler.GetFriendList(user_id).friends) {
+        if (info.online) {
+            msg += info.npid + "\n";
+            any_online = true;
+        }
+    }
+    if (!any_online) {
+        msg += "None\n";
+    }
     return msg;
 }
 

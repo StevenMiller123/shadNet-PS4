@@ -10,7 +10,6 @@
 
 namespace ShadNet {
 
-static constexpr u64 MAX_LIST_ENTRIES = 16;
 static constexpr u32 MIN_NPID_LENGTH = 3;
 static constexpr u32 MAX_NPID_LENGTH = 16;
 
@@ -46,21 +45,17 @@ void FriendsPage::Run(s32 user_id) {
         const auto friends = GetFriends();
         const u64 requests = np_handler.GetFriendList(user_id).requests_received.size();
 
-        std::string msg = "Friends\n\n";
-        if (friends.empty()) {
-            msg += "You haven't added any friends yet.\n";
-        }
-        for (u64 i = 0; i < friends.size() && i < MAX_LIST_ENTRIES; i++) {
-            msg +=
-                fmt::format("{}: {}\n", friends[i].npid, friends[i].online ? "Online" : "Offline");
-        }
-        if (friends.size() > MAX_LIST_ENTRIES) {
-            msg += fmt::format("...and {} more\n", friends.size() - MAX_LIST_ENTRIES);
-        }
+        std::string msg =
+            "Friends\nPress L1 to send friend requests\nPress R1 to view blocked users\n\n";
         if (requests > 0) {
-            msg += fmt::format("\n{} pending friend request(s)\n", requests);
+            msg += fmt::format("{} pending friend request(s)\n\n", requests);
         }
-        msg += "\nPress L1 to send friend requests\nPress R1 to view blocked users";
+        if (friends.empty()) {
+            msg += "You haven't added any friends yet.";
+        }
+        for (const auto& info : friends) {
+            msg += fmt::format("{}: {}\n", info.npid, info.online ? "Online" : "Offline");
+        }
 
         Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Manage Friends",
                                       "Friend Requests", Button::L1 | Button::R1);
@@ -221,17 +216,13 @@ void FriendsPage::ShowSentRequests() {
         auto sent = np_handler.GetFriendList(m_user_id).requests_sent;
         std::sort(sent.begin(), sent.end());
 
-        std::string msg = "Sent friend requests\n\n";
+        std::string msg = "Sent friend requests\nPress R1 to return to your friends list\n\n";
         if (sent.empty()) {
-            msg += "You have no pending sent requests.\n";
+            msg += "You have no pending sent requests.";
         }
-        for (u64 i = 0; i < sent.size() && i < MAX_LIST_ENTRIES; i++) {
-            msg += sent[i] + "\n";
+        for (const auto& npid : sent) {
+            msg += npid + "\n";
         }
-        if (sent.size() > MAX_LIST_ENTRIES) {
-            msg += fmt::format("...and {} more\n", sent.size() - MAX_LIST_ENTRIES);
-        }
-        msg += "\nPress R1 to return to your friends list";
 
         Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Send Request",
                                       "Back", Button::R1);
@@ -297,17 +288,13 @@ void FriendsPage::ShowBlocked() {
     while (true) {
         const auto blocked = GetBlocked();
 
-        std::string msg = "Blocked users\n\n";
+        std::string msg = "Blocked users\nPress L1 to return to your friends list\n\n";
         if (blocked.empty()) {
-            msg += "You haven't blocked anyone.\n";
+            msg += "You haven't blocked anyone.";
         }
-        for (u64 i = 0; i < blocked.size() && i < MAX_LIST_ENTRIES; i++) {
-            msg += blocked[i] + "\n";
+        for (const auto& npid : blocked) {
+            msg += npid + "\n";
         }
-        if (blocked.size() > MAX_LIST_ENTRIES) {
-            msg += fmt::format("...and {} more\n", blocked.size() - MAX_LIST_ENTRIES);
-        }
-        msg += "\nPress L1 to return to your friends list";
 
         Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Manage Blocks",
                                       "Back", Button::L1);
