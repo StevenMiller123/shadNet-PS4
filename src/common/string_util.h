@@ -13,4 +13,8 @@ namespace Common {
 
 void ToLowerInPlace(std::string& str);
 
+[[nodiscard]] std::u16string UTF8ToUTF16(std::string_view str);
+
+[[nodiscard]] std::string UTF16ToUTF8(std::u16string_view str);
+
 } // namespace Common

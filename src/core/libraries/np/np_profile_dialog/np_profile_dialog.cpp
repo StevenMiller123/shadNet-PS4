@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+#include <iterator>
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/NpProfileDialog.h>
 
@@ -104,20 +106,24 @@ s32 sceNpProfileDialogOpenA(const OrbisNpProfileDialogParamA* param) {
 }
 
 s32 sceNpProfileDialogGetResult(OrbisNpProfileDialogResult* result) {
+    if (result == nullptr) {
+        return ORBIS_COMMON_DIALOG_ERROR_ARG_NULL;
+    }
+    if (std::any_of(std::begin(result->reserved), std::end(result->reserved),
+                    [](u8 b) { return b != 0; })) {
+        return ORBIS_COMMON_DIALOG_ERROR_PARAM_INVALID;
+    }
     if (g_status == OrbisCommonDialogStatus::ORBIS_COMMON_DIALOG_STATUS_NONE) {
         return ORBIS_COMMON_DIALOG_ERROR_NOT_INITIALIZED;
     }
     if (g_status != OrbisCommonDialogStatus::ORBIS_COMMON_DIALOG_STATUS_FINISHED) {
         return ORBIS_COMMON_DIALOG_ERROR_NOT_FINISHED;
     }
-    if (result == nullptr) {
-        return ORBIS_COMMON_DIALOG_ERROR_ARG_NULL;
-    }
     *result = {};
     result->result = ORBIS_OK;
     result->user_action = g_state.result;
     result->user_data = g_state.user_data;
-    return ORBIS_OK;
+    return result->result;
 }
 
 OrbisCommonDialogStatus sceNpProfileDialogGetStatus() {

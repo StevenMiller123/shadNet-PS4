@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <cstring>
+#include <iterator>
 #include <magic_enum/magic_enum.hpp>
 #include <orbis/InvitationDialog.h>
 
@@ -144,6 +146,7 @@ s32 sceInvitationDialogOpenA(const OrbisInvitationDialogParamA* param) {
         error != ORBIS_OK) {
         return error;
     }
+    g_state.a_variant = true;
 
     if (param->mode == ORBIS_INVITATION_DIALOG_MODE_SEND) {
         if (param->data_param == nullptr) {
@@ -177,24 +180,36 @@ s32 sceInvitationDialogOpenA(const OrbisInvitationDialogParamA* param) {
     return ORBIS_OK;
 }
 
-s32 sceInvitationDialogGetResult(OrbisInvitationDialogResult* result) {
+template <typename ResultT>
+static s32 CheckResultParam(const ResultT* result, bool a_variant) {
+    if (result == nullptr) {
+        return ORBIS_COMMON_DIALOG_ERROR_ARG_NULL;
+    }
+    if (std::any_of(std::begin(result->reserved), std::end(result->reserved),
+                    [](u8 b) { return b != 0; })) {
+        return ORBIS_COMMON_DIALOG_ERROR_PARAM_INVALID;
+    }
     if (g_status == OrbisCommonDialogStatus::ORBIS_COMMON_DIALOG_STATUS_NONE) {
         return ORBIS_COMMON_DIALOG_ERROR_NOT_INITIALIZED;
     }
     if (g_status != OrbisCommonDialogStatus::ORBIS_COMMON_DIALOG_STATUS_FINISHED) {
         return ORBIS_COMMON_DIALOG_ERROR_NOT_FINISHED;
     }
-    if (result == nullptr) {
-        return ORBIS_COMMON_DIALOG_ERROR_ARG_NULL;
+    if (g_state.a_variant != a_variant) {
+        return ORBIS_COMMON_DIALOG_ERROR_RESULT_NONE;
     }
-    if (g_state.error_code != 0) {
-        return ORBIS_INVITATION_DIALOG_ERROR_BLOCKED_ALL_PLAYERS;
+    return ORBIS_OK;
+}
+
+s32 sceInvitationDialogGetResult(OrbisInvitationDialogResult* result) {
+    if (const s32 error = CheckResultParam(result, false); error != ORBIS_OK) {
+        return error;
     }
 
     result->callback_arg = g_state.callback_arg;
     result->error_code = g_state.error_code;
     result->result = g_state.result;
-    if (result->sent_online_ids != nullptr) {
+    if (result->result == ORBIS_OK && result->sent_online_ids != nullptr) {
         u32 count = std::min<u32>(g_state.sent_online_ids.size(),
                                   ORBIS_INVITATION_DIALOG_ADDRESS_USER_LIST_MAX_SIZE);
         for (u32 i = 0; i < count; i++) {
@@ -203,29 +218,20 @@ s32 sceInvitationDialogGetResult(OrbisInvitationDialogResult* result) {
             std::strncpy(online_id.data, g_state.sent_online_ids[i].c_str(),
                          sizeof(online_id.data));
         }
-        result->sent_online_ids->count = g_state.result == ORBIS_OK ? count : 0;
+        result->sent_online_ids->count = count;
     }
-    return 0;
+    return g_state.error_code;
 }
 
 s32 sceInvitationDialogGetResultA(OrbisInvitationDialogResultA* result) {
-    if (g_status == OrbisCommonDialogStatus::ORBIS_COMMON_DIALOG_STATUS_NONE) {
-        return ORBIS_COMMON_DIALOG_ERROR_NOT_INITIALIZED;
-    }
-    if (g_status != OrbisCommonDialogStatus::ORBIS_COMMON_DIALOG_STATUS_FINISHED) {
-        return ORBIS_COMMON_DIALOG_ERROR_NOT_FINISHED;
-    }
-    if (result == nullptr) {
-        return ORBIS_COMMON_DIALOG_ERROR_ARG_NULL;
-    }
-    if (g_state.error_code != 0) {
-        return ORBIS_INVITATION_DIALOG_ERROR_BLOCKED_ALL_PLAYERS;
+    if (const s32 error = CheckResultParam(result, true); error != ORBIS_OK) {
+        return error;
     }
 
     result->callback_arg = g_state.callback_arg;
     result->error_code = g_state.error_code;
     result->result = g_state.result;
-    if (result->sent_users != nullptr) {
+    if (result->result == ORBIS_OK && result->sent_users != nullptr) {
         u32 count =
             std::min<u32>(std::max(g_state.sent_online_ids.size(), g_state.sent_account_ids.size()),
                           ORBIS_INVITATION_DIALOG_ADDRESS_USER_LIST_MAX_SIZE);
@@ -240,9 +246,9 @@ s32 sceInvitationDialogGetResultA(OrbisInvitationDialogResultA* result) {
                 user.account_id = g_state.sent_account_ids[i];
             }
         }
-        result->sent_users->count = g_state.result == ORBIS_OK ? count : 0;
+        result->sent_users->count = count;
     }
-    return 0;
+    return g_state.error_code;
 }
 
 OrbisCommonDialogStatus sceInvitationDialogGetStatus() {

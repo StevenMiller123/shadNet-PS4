@@ -26,6 +26,7 @@ struct DialogState {
     std::string session_id;
     void* callback_arg = nullptr;
     s32 error_code = 0;
+    bool a_variant = false;
     std::vector<Np::OrbisNpOnlineId> online_ids;
     std::vector<Np::OrbisNpAccountId> account_ids;
     std::vector<std::string> sent_online_ids;

@@ -8,6 +8,7 @@
 #include <orbis/libkernel.h>
 
 #include "common/logging/log.h"
+#include "common/string_util.h"
 #include "core/libraries/common_dialog/common_dialog_error.h"
 #include "shadnet/dialogs/message_dialog.h"
 
@@ -169,11 +170,10 @@ MessageDialog::Choice MessageDialog::Show(const std::string& msg, s32 button_typ
 std::optional<std::string> MessageDialog::ShowKeyboard(const char* title, const std::string& value,
                                                        OrbisImeType type, bool password,
                                                        u32 max_length) {
-    std::u16string title_text(title, title + std::strlen(title));
-    std::u16string input_text(max_length + 1, u'\0');
-    for (u64 i = 0; i < value.size() && i < max_length; i++) {
-        input_text[i] = static_cast<u8>(value[i]);
-    }
+    const std::u16string title_text = Common::UTF8ToUTF16(title);
+    std::u16string input_text = Common::UTF8ToUTF16(value);
+    input_text.resize(max_length + 1, u'\0');
+    input_text[max_length] = u'\0';
 
     OrbisImeDialogSetting setting{};
     setting.userId = m_user_id;
@@ -209,14 +209,7 @@ std::optional<std::string> MessageDialog::ShowKeyboard(const char* title, const 
         return std::nullopt;
     }
 
-    std::string text{};
-    for (char16_t c : input_text) {
-        if (c == u'\0') {
-            break;
-        }
-        text.push_back(c < 0x80 ? static_cast<char>(c) : '?');
-    }
-    return text;
+    return Common::UTF16ToUTF8(input_text.c_str());
 }
 
 void MessageDialog::Abort() {
