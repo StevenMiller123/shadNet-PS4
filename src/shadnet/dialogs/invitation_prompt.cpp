@@ -28,7 +28,7 @@ InvitationPrompt& InvitationPrompt::GetInstance() {
 
 void InvitationPrompt::Push(s32 user_id, std::string invitation_id, std::string session_id,
                             std::string from_npid) {
-    LOG_NOTIFICATION(shadNet, "{} invited you to a game session", from_npid);
+    LOG_DEBUG(shadNet, "{} invited you to a game session", from_npid);
 
     std::scoped_lock lk{m_mutex};
     std::erase_if(m_prompts, [&](const Prompt& p) { return p.invitation_id == invitation_id; });
@@ -103,9 +103,9 @@ void InvitationPrompt::ShowPrompt(const Prompt& prompt) {
     auto& np_handler = Libraries::Np::NpHandler::Instance();
     if (choice == Choice::Button1) {
         if (np_handler.AcceptSessionInvitation(prompt.user_id, prompt.invitation_id)) {
-            LOG_NOTIFICATION(shadNet, "Joining {}'s session", prompt.from_npid);
+            LOG_DEBUG(shadNet, "Joining {}'s session", prompt.from_npid);
         } else {
-            LOG_NOTIFICATION(shadNet, "{}'s invitation is no longer available", prompt.from_npid);
+            LOG_NOTIFICATION(shadNet, "{}'s invitation is no longer valid", prompt.from_npid);
         }
     } else if (choice == Choice::Button2) {
         np_handler.DeclineSessionInvitation(prompt.user_id, prompt.invitation_id);
