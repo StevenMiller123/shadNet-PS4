@@ -244,7 +244,7 @@ s32 sceNpSignalingCreateContextA(s32 user_id, void* callback, void* callback_arg
         ctx.owner_online_id = owner_npid.handle;
         ctx.flags = 0x4 | 0x2;
         ctx.account_id = account_id;
-        ctx.platform_type = 0;
+        ctx.platform_type = static_cast<u32>(OrbisNpPlatformType::PS4);
         ctx.compiled_sdk_version = CaptureCompiledSdkVersion();
         ctx.activate_budget_us = kActivateBudgetMaxUs;
         ctx.activate_last_update_us = NowUs();
@@ -298,8 +298,8 @@ s32 sceNpSignalingDeleteContext(OrbisNpSignalingContextId ctx_id) {
 s32 sceNpSignalingActivateConnection(OrbisNpSignalingContextId ctx_id, const void* peer_np_id,
                                      OrbisNpSignalingConnectionId* out_conn_id) {
     const s64 call_time = NowMs();
-    LOG_INFO(Lib_NpSignaling, "(STUBBED) t={} ctx_id={} peer_np_id={:p} out_conn_id={:p}",
-             call_time, ctx_id, peer_np_id, fmt::ptr(out_conn_id));
+    LOG_INFO(Lib_NpSignaling, "t={} ctx_id={} peer_np_id={:p} out_conn_id={:p}", call_time, ctx_id,
+             peer_np_id, fmt::ptr(out_conn_id));
 
     {
         SignalingMutexGuard lock;
@@ -356,7 +356,7 @@ s32 sceNpSignalingActivateConnectionA(OrbisNpSignalingContextId ctx_id,
                  OnlineIdToString(peer_npid.handle), rc, rc == ORBIS_OK ? *out_conn_id : 0);
         return rc;
     }
-    LOG_INFO(Lib_NpSignaling, "(STUBBED) ctx_id={}", ctx_id);
+    LOG_INFO(Lib_NpSignaling, "ctx_id={}", ctx_id);
 
     SignalingMutexGuard lock;
     if (!GetState()->initialized) {
