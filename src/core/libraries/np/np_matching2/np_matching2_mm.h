@@ -46,7 +46,7 @@ s32 MmContextStop(OrbisNpMatching2ContextId ctx_id);
 
 s32 MmSubmitRequest(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req_id,
                     OrbisNpMatching2Event req_event, MmCommand cmd, const std::vector<u8>& payload,
-                    bool a_variant = false);
+                    bool a_variant = false, std::vector<OrbisNpMatching2AttributeId> attr_ids = {});
 
 s32 MmCreateJoinRoom(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req_id,
                      const OrbisNpMatching2CreateJoinRoomRequest& request);

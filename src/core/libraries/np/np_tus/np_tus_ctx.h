@@ -15,6 +15,7 @@ struct TusRequestCtx {
     std::mutex mutex;
     std::condition_variable cv;
     std::optional<s32> result;
+    bool started = false;
 
     void SetResult(s32 r) {
         {

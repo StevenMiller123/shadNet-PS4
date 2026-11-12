@@ -7,7 +7,9 @@
 #include <mutex>
 #include <string>
 #include <orbis/UserService.h>
+#include <orbis/libkernel.h>
 
+#include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/shadnet_hook.h"
 #include "core/libraries/np/np_auth/np_auth.h"
@@ -66,6 +68,7 @@ static void RegisterNpAuthHooks() {
 namespace Libraries::Np::NpAuth {
 
 static bool g_shadnet_enabled = false;
+static s32 g_sdk_version = 0;
 static std::mutex g_auth_request_mutex;
 static constexpr s32 ORBIS_NP_AUTH_POLL_ASYNC_RET_FINISHED = 0;
 static constexpr s32 ORBIS_NP_AUTH_POLL_ASYNC_RET_RUNNING = 1;
@@ -74,6 +77,7 @@ static constexpr u32 ORBIS_NP_AUTH_TIMEOUT_NO_EFFECT = 0;
 struct NpAuthRequest {
     bool async = false;
     bool aborted = false;
+    bool started = false;
     std::shared_ptr<AuthRequestCtx> ctx;
 };
 
@@ -132,7 +136,7 @@ static s32 StartRequest(s32 req_id, bool* async, std::shared_ptr<AuthRequestCtx>
     if (const s32 error = FindRequest(req_id, &request); error != ORBIS_OK) {
         return error;
     }
-    if (request->ctx) {
+    if (request->started) {
         LOG_ERROR(Lib_NpAuth, "request {} already started", req_id);
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
@@ -140,7 +144,10 @@ static s32 StartRequest(s32 req_id, bool* async, std::shared_ptr<AuthRequestCtx>
         LOG_ERROR(Lib_NpAuth, "request {} already aborted", req_id);
         return ORBIS_NP_AUTH_ERROR_ABORTED;
     }
-    request->ctx = std::make_shared<AuthRequestCtx>();
+    request->started = true;
+    if (!request->ctx) {
+        request->ctx = std::make_shared<AuthRequestCtx>();
+    }
     *async = request->async;
     *ctx = request->ctx;
     return ORBIS_OK;
@@ -160,7 +167,7 @@ s32 GetAuthorizationCode(s32 req_id, const OrbisNpAuthGetAuthorizationCodeParame
         LOG_ERROR(Lib_NpAuth, "invalid size {}", param->size);
         return ORBIS_NP_AUTH_ERROR_INVALID_SIZE;
     }
-    if (param->client_id == nullptr || param->scope == nullptr) {
+    if (param->user_id == -1 || param->client_id == nullptr || param->scope == nullptr) {
         LOG_ERROR(Lib_NpAuth, "invalid argument");
         return ORBIS_NP_AUTH_ERROR_INVALID_ARGUMENT;
     }
@@ -292,20 +299,29 @@ s32 sceNpAuthAbortRequest(s32 req_id) {
     }
     if (request->ctx) {
         request->ctx->SetResult(ORBIS_NP_AUTH_ERROR_ABORTED);
-    } else {
+    }
+    if (!request->started) {
         request->aborted = true;
     }
     return ORBIS_OK;
 }
 
-static s32 FindAsyncRequest(s32 req_id, std::shared_ptr<AuthRequestCtx>* ctx) {
+static s32 FindAsyncRequest(s32 req_id, bool create, std::shared_ptr<AuthRequestCtx>* ctx) {
     std::scoped_lock lk{g_auth_request_mutex};
     NpAuthRequest* request = nullptr;
     if (const s32 error = FindRequest(req_id, &request); error != ORBIS_OK) {
         return error;
     }
-    if (!request->async || !request->ctx) {
+    if (!request->async) {
         return ORBIS_NP_AUTH_ERROR_INVALID_ID;
+    }
+    if (!request->started) {
+        if (g_sdk_version < Common::ElfInfo::FW_200) {
+            return ORBIS_NP_AUTH_ERROR_INVALID_ID;
+        }
+        if (create && !request->ctx) {
+            request->ctx = std::make_shared<AuthRequestCtx>();
+        }
     }
     *ctx = request->ctx;
     return ORBIS_OK;
@@ -317,7 +333,7 @@ s32 sceNpAuthWaitAsync(s32 req_id, s32* result) {
     }
 
     std::shared_ptr<AuthRequestCtx> ctx;
-    if (const s32 error = FindAsyncRequest(req_id, &ctx); error != ORBIS_OK) {
+    if (const s32 error = FindAsyncRequest(req_id, true, &ctx); error != ORBIS_OK) {
         return error;
     }
     *result = ctx->Wait();
@@ -333,8 +349,11 @@ s32 sceNpAuthPollAsync(s32 req_id, s32* result) {
     }
 
     std::shared_ptr<AuthRequestCtx> ctx;
-    if (const s32 error = FindAsyncRequest(req_id, &ctx); error != ORBIS_OK) {
+    if (const s32 error = FindAsyncRequest(req_id, false, &ctx); error != ORBIS_OK) {
         return error;
+    }
+    if (!ctx) {
+        return ORBIS_NP_AUTH_POLL_ASYNC_RET_RUNNING;
     }
     std::scoped_lock lock{ctx->mutex};
     if (!ctx->result.has_value()) {
@@ -443,6 +462,7 @@ s32 sceNpAuthGetIdTokenV3(s32 req_id, const OrbisNpAuthGetIdTokenParameterA* par
 
 void RegisterHooks() {
     g_shadnet_enabled = NpHandler::Instance().IsActive();
+    sceKernelGetCompiledSdkVersion(&g_sdk_version);
     RegisterNpAuthHooks();
 }
 

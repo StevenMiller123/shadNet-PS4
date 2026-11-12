@@ -3,7 +3,9 @@
 
 #include <map>
 #include <orbis/NpTus.h>
+#include <orbis/libkernel.h>
 
+#include "common/elf_info.h"
 #include "common/logging/log.h"
 #include "common/shadnet_hook.h"
 #include "core/libraries/np/np_error.h"
@@ -383,7 +385,9 @@ struct NpTusTitleContext {
 };
 
 constexpr u64 TusMaxTitleCtx = 32;
-constexpr u64 TusMaxRequests = 256;
+constexpr u64 TusMaxRequests = 32;
+constexpr s32 TusFirstTitleCtxId = 0x10000001;
+constexpr s32 TusLastTitleCtxId = 0x1fffffff;
 constexpr s32 TusMaxSlotsPerRequest = 64;
 constexpr s32 TusMaxSelectedFriends = 100;
 constexpr u64 TssMaxSize = 64 * 1024U;
@@ -394,19 +398,43 @@ static std::mutex g_mutex;
 static std::map<s32, NpTusTitleContext> g_title_ctxs;
 static std::map<s32, NpTusRequest> g_requests;
 
+static std::shared_ptr<TusRequestCtx> BeginRequestCtxLocked(NpTusRequest& req) {
+    if (req.ctx && !req.ctx->started && !req.ctx->HasResult()) {
+        req.ctx->started = true;
+        return req.ctx;
+    }
+    req.ctx = std::make_shared<TusRequestCtx>();
+    req.ctx->started = true;
+    return req.ctx;
+}
+
+static std::shared_ptr<TusRequestCtx> BeginRequestCtx(NpTusRequest& req) {
+    std::lock_guard lock(g_mutex);
+    return BeginRequestCtxLocked(req);
+}
+
 static s32 FakeAsyncComplete(s32 req_id, s32 result = ORBIS_OK) {
     std::lock_guard lock(g_mutex);
     auto it = g_requests.find(req_id);
     if (it == g_requests.end()) {
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    ctx->SetResult(result);
-    it->second.ctx = std::move(ctx);
+    BeginRequestCtxLocked(it->second)->SetResult(result);
     return ORBIS_OK;
 }
-static s32 g_next_ctx_id = 1;
+static s32 g_next_ctx_id = TusFirstTitleCtxId;
 static s32 g_next_req_id = 1;
+static s32 g_sdk_version = 0;
+
+static bool ObjectLimitApplies() {
+    return g_sdk_version >= Common::ElfInfo::FW_200;
+}
+
+static s32 AllocTitleCtxId() {
+    const s32 id = g_next_ctx_id;
+    g_next_ctx_id = id >= TusLastTitleCtxId ? TusFirstTitleCtxId : id + 1;
+    return id;
+}
 
 s32 GetRequest(s32 request_id, NpTusRequest** out) {
     std::lock_guard lock(g_mutex);
@@ -418,6 +446,7 @@ s32 GetRequest(s32 request_id, NpTusRequest** out) {
     *out = &it->second;
     return ORBIS_OK;
 }
+
 static s32 ResolveTus(s32 request_id, NpTusRequest** req_out, u32* svc_out, s32* uid_out,
                       std::string* self_np_id_out) {
     OrbisNpId self_np{};
@@ -456,11 +485,11 @@ s32 sceNpTusCreateNpTitleCtx(OrbisNpServiceLabel service_label, OrbisNpId* np_id
     LOG_INFO(Lib_NpTus, "service_label = {}, np_id->data = {}", service_label, np_id->handle.data);
 
     std::lock_guard lock(g_mutex);
-    if (g_title_ctxs.size() >= TusMaxTitleCtx) {
+    if (ObjectLimitApplies() && g_title_ctxs.size() >= TusMaxTitleCtx) {
         LOG_ERROR(Lib_NpTus, "too many title contexts");
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_OBJECTS;
     }
-    const s32 id = g_next_ctx_id++;
+    const s32 id = AllocTitleCtxId();
     NpTusTitleContext tc;
     tc.service_label = service_label;
     tc.np_id = *np_id;
@@ -525,7 +554,7 @@ s32 sceNpTusCreateRequest(s32 lib_ctx_id) {
         LOG_ERROR(Lib_NpTus, "invalid context id {}", lib_ctx_id);
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
     }
-    if (g_requests.size() >= TusMaxRequests) {
+    if (ObjectLimitApplies() && g_requests.size() >= TusMaxRequests) {
         LOG_ERROR(Lib_NpTus, "too many requests");
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_OBJECTS;
     }
@@ -620,12 +649,10 @@ s32 sceNpTusWaitAsync(s32 req_id, s32* result) {
             LOG_ERROR(Lib_NpTus, "invalid request id {}", req_id);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
         }
+        if (!it->second.ctx) {
+            it->second.ctx = std::make_shared<TusRequestCtx>();
+        }
         ctx = it->second.ctx;
-    }
-
-    if (!ctx) {
-        LOG_ERROR(Lib_NpTus, "request not started");
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
 
     std::unique_lock lock(ctx->mutex);
@@ -650,7 +677,7 @@ s32 sceNpTusGetMultiSlotVariableAsync(s32 req_id, OrbisNpId* np_id, s32* slot_id
              "array_len = {}, option = {}",
              req_id, np_id ? np_id->handle.data : "", fmt::ptr(slot_ids), fmt::ptr(variable_array),
              variables_size, array_len, fmt::ptr(option));
-    if (!slot_ids || !variable_array) {
+    if (!np_id || !slot_ids || !variable_array) {
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -682,8 +709,7 @@ s32 sceNpTusGetMultiSlotVariableAsync(s32 req_id, OrbisNpId* np_id, s32* slot_id
         (np_id && np_id->handle.data[0]) ? std::string(np_id->handle.data) : self;
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     const s32 n = array_len;
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotVariable(uid, static_cast<s32>(svc), owner,
                                                                std::string(), slots, variable_array,
                                                                static_cast<u64>(n), ctx);
@@ -716,7 +742,7 @@ s32 sceNpTusSetMultiSlotVariableAsync(s32 req_id, OrbisNpId* np_id, s32* slot_id
              req_id, np_id ? np_id->handle.data : "", fmt::ptr(slot_ids), fmt::ptr(variables),
              array_len, fmt::ptr(option));
 
-    if (!slot_ids || !variables) {
+    if (!np_id || !slot_ids || !variables) {
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -744,8 +770,7 @@ s32 sceNpTusSetMultiSlotVariableAsync(s32 req_id, OrbisNpId* np_id, s32* slot_id
         (np_id && np_id->handle.data[0]) ? std::string(np_id->handle.data) : self;
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     std::vector<s64> vals(variables, variables + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusSetMultiSlotVariable(uid, static_cast<s32>(svc), owner,
                                                                std::string(), slots, vals, ctx);
     if (submit < 0) {
@@ -813,8 +838,7 @@ s32 sceNpTusGetMultiSlotVariableAVUserAsync(s32 req_id,
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     const s32 n = array_len;
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, slots, nullptr,
         static_cast<u64>(n), ctx, variable_array);
@@ -880,8 +904,7 @@ s32 sceNpTusSetMultiSlotVariableVUserAsync(s32 req_id,
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     std::vector<s64> values(variables, variables + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusSetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, slots, values, ctx);
     if (submit < 0) {
@@ -940,8 +963,7 @@ s32 sceNpTusSetMultiSlotVariableAAsync(s32 req_id, OrbisNpAccountId target_accou
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     std::vector<s64> vals(variables, variables + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusSetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(), slots, vals, ctx,
         static_cast<s64>(target_account_id));
@@ -989,8 +1011,7 @@ s32 sceNpTusGetMultiSlotVariableAAsync(s32 req_id, OrbisNpAccountId target_accou
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     const s32 n = array_len;
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(), slots, nullptr,
         static_cast<u64>(n), ctx, variable_array, static_cast<s64>(target_account_id));
@@ -1042,8 +1063,7 @@ s32 sceNpTusGetDataAAsync(s32 req_id, OrbisNpAccountId target_account_id, s32 sl
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetData(
         uid, static_cast<s32>(svc), std::string(), std::string(), account, slot_id, data_status,
         data_status_size, data, data ? recv_size : 0, offset, ctx);
@@ -1111,8 +1131,7 @@ s32 sceNpTusSetDataAAsync(s32 req_id, OrbisNpAccountId target_account_id, s32 sl
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     if (!complete) {
         ctx->SetResult(ORBIS_OK);
         return ORBIS_OK;
@@ -1179,8 +1198,7 @@ s32 sceNpTusGetDataAVUserAsync(s32 req_id, const OrbisNpTusVirtualUserId* target
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetData(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, data_status,
         data_status_size, data, data ? recv_size : 0, offset, ctx);
@@ -1254,8 +1272,7 @@ s32 sceNpTusSetDataAVUserAsync(s32 req_id, const OrbisNpTusVirtualUserId* target
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     if (!complete) {
         ctx->SetResult(ORBIS_OK);
         return ORBIS_OK;
@@ -1304,7 +1321,7 @@ s32 sceNpTusAddAndGetVariableAsync(s32 req_id, const OrbisNpId* target_np_id, s3
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
-    if (!out_variable) {
+    if (!target_np_id || !out_variable) {
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -1333,8 +1350,7 @@ s32 sceNpTusAddAndGetVariableAsync(s32 req_id, const OrbisNpId* target_np_id, s3
     const std::string author_np_id =
         has_author_check ? std::string(is_last_changed_author->handle.data) : std::string();
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusAddAndGetVariable(
         uid, static_cast<s32>(svc), owner, std::string(), 0, slot_id, in_variable, has_author_check,
         0, author_np_id, has_date_check, has_date_check ? is_last_changed_date->tick : 0,
@@ -1407,8 +1423,7 @@ s32 sceNpTusAddAndGetVariableVUserAsync(
     const std::string author_np_id =
         has_author_check ? std::string(is_last_changed_author->handle.data) : std::string();
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusAddAndGetVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, in_variable,
         has_author_check, 0, author_np_id, has_date_check,
@@ -1432,7 +1447,7 @@ s32 sceNpTusGetDataAsync(s32 req_id, const OrbisNpId* target_np_id, s32 slot_id,
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
-    if (!data_status || data_status_size == 0) {
+    if (!target_np_id || !data_status || data_status_size == 0) {
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -1464,8 +1479,7 @@ s32 sceNpTusGetDataAsync(s32 req_id, const OrbisNpId* target_np_id, s32 slot_id,
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetData(uid, static_cast<s32>(svc), owner, std::string(),
                                                   0, slot_id, nullptr, data_status_size, data,
                                                   data ? recv_size : 0, offset, ctx, data_status);
@@ -1523,8 +1537,7 @@ s32 sceNpTusGetDataVUserAsync(s32 req_id, const OrbisNpTusVirtualUserId* target_
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetData(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, nullptr,
         data_status_size, data, data ? recv_size : 0, offset, ctx, data_status);
@@ -1586,8 +1599,7 @@ s32 sceNpTusGetFriendsDataStatusAsync(s32 req_id, s32 slot_id, s32 include_self,
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetFriendsDataStatus(
         uid, static_cast<s32>(svc), slot_id, include_self != 0, sort_type,
         static_cast<u32>(array_len), status_array, nullptr, static_cast<u64>(array_len), ctx);
@@ -1649,8 +1661,7 @@ s32 sceNpTusGetFriendsVariableAsync(s32 req_id, s32 slot_id, s32 include_self, s
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetFriendsVariable(
         uid, static_cast<s32>(svc), slot_id, include_self != 0, sort_type,
         static_cast<u32>(array_len), variable_array, nullptr, static_cast<u64>(array_len), ctx);
@@ -1714,8 +1725,7 @@ s32 sceNpTusGetMultiSlotDataStatusAsync(s32 req_id, const OrbisNpId* target_np_i
     const std::string owner =
         target_np_id->handle.data[0] ? std::string(target_np_id->handle.data) : self;
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotDataStatus(
         uid, static_cast<s32>(svc), owner, std::string(), 0, slots, status_array, nullptr,
         static_cast<u64>(array_len), ctx);
@@ -1786,8 +1796,7 @@ s32 sceNpTusGetMultiSlotDataStatusVUserAsync(s32 req_id,
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotDataStatus(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slots, status_array, nullptr,
         static_cast<u64>(array_len), ctx);
@@ -1811,7 +1820,7 @@ s32 sceNpTusSetDataAsync(s32 req_id, const OrbisNpId* target_np_id, s32 slot_id,
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
-    if (!data || send_size == 0) {
+    if (!target_np_id || !data || send_size == 0) {
         LOG_ERROR(Lib_NpTus, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -1856,8 +1865,7 @@ s32 sceNpTusSetDataAsync(s32 req_id, const OrbisNpId* target_np_id, s32 slot_id,
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     if (!complete) {
         ctx->SetResult(ORBIS_OK);
         return ORBIS_OK;
@@ -1940,8 +1948,7 @@ s32 sceNpTusSetDataVUserAsync(s32 req_id, const OrbisNpTusVirtualUserId* target_
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     if (!complete) {
         ctx->SetResult(ORBIS_OK);
         return ORBIS_OK;
@@ -2023,8 +2030,7 @@ s32 sceNpTusTryAndSetVariableAsync(s32 req_id, const OrbisNpId* target_np_id, s3
     const std::string author_np_id =
         has_author_check ? std::string(is_last_changed_author->handle.data) : std::string();
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusTryAndSetVariable(
         uid, static_cast<s32>(svc), owner, std::string(), 0, slot_id, ope_type, variable,
         compare_value != nullptr, compare_value ? *compare_value : variable, has_author_check, 0,
@@ -2103,8 +2109,7 @@ s32 sceNpTusTryAndSetVariableVUserAsync(
     const std::string author_np_id =
         has_author_check ? std::string(is_last_changed_author->handle.data) : std::string();
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusTryAndSetVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, ope_type, variable,
         compare_value != nullptr, compare_value ? *compare_value : variable, has_author_check, 0,
@@ -2167,8 +2172,7 @@ s32 sceNpTusAddAndGetVariableAAsync(s32 req_id, OrbisNpAccountId target_account_
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusAddAndGetVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slot_id, in_variable, has_author_check,
@@ -2236,8 +2240,7 @@ s32 sceNpTusAddAndGetVariableAVUserAsync(
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusAddAndGetVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, in_variable,
         has_author_check, has_author_check ? static_cast<s64>(*is_last_changed_author) : 0,
@@ -2294,8 +2297,7 @@ s32 sceNpTusDeleteMultiSlotDataAsync(s32 req_id, const OrbisNpId* target_np_id, 
     const std::string owner =
         target_np_id->handle.data[0] ? std::string(target_np_id->handle.data) : self;
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusDeleteMultiSlotData(uid, static_cast<s32>(svc), owner,
                                                               std::string(), 0, slots, ctx);
     if (submit < 0) {
@@ -2357,8 +2359,7 @@ s32 sceNpTusDeleteMultiSlotDataVUserAsync(s32 req_id,
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusDeleteMultiSlotData(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slots, ctx);
     if (submit < 0) {
@@ -2413,8 +2414,7 @@ s32 sceNpTusDeleteMultiSlotVariableAsync(s32 req_id, const OrbisNpId* target_np_
     const std::string owner =
         target_np_id->handle.data[0] ? std::string(target_np_id->handle.data) : self;
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusDeleteMultiSlotVariable(uid, static_cast<s32>(svc), owner,
                                                                   std::string(), 0, slots, ctx);
     if (submit < 0) {
@@ -2476,8 +2476,7 @@ s32 sceNpTusDeleteMultiSlotVariableVUserAsync(s32 req_id,
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusDeleteMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slots, ctx);
     if (submit < 0) {
@@ -2593,8 +2592,7 @@ s32 sceNpTusGetMultiSlotDataStatusAAsync(s32 req_id, OrbisNpAccountId target_acc
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotDataStatus(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slots, nullptr, status_array,
@@ -2666,8 +2664,7 @@ s32 sceNpTusGetMultiSlotDataStatusAVUserAsync(s32 req_id,
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotDataStatus(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slots, nullptr, status_array,
         static_cast<u64>(array_len), ctx);
@@ -2745,8 +2742,7 @@ s32 sceNpTusGetMultiUserDataStatusAsync(s32 req_id, const OrbisNpId* target_np_i
             h[0] ? std::string(h, strnlen(h, sizeof(target_np_id_array[i].handle.data))) : self);
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserDataStatus(
         uid, static_cast<s32>(svc), slot_id, npids, {}, {}, status_array, nullptr,
         static_cast<u64>(array_len), ctx);
@@ -2815,8 +2811,7 @@ s32 sceNpTusGetMultiUserDataStatusVUserAsync(
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserDataStatus(
         uid, static_cast<s32>(svc), slot_id, {}, vusers, {}, status_array, nullptr,
         static_cast<u64>(array_len), ctx);
@@ -2881,8 +2876,7 @@ s32 sceNpTusGetMultiUserVariableAsync(s32 req_id, const OrbisNpId* target_np_id_
             h[0] ? std::string(h, strnlen(h, sizeof(target_np_id_array[i].handle.data))) : self);
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserVariable(
         uid, static_cast<s32>(svc), slot_id, npids, {}, {}, variable_array, nullptr,
         static_cast<u64>(array_len), ctx);
@@ -2951,8 +2945,7 @@ s32 sceNpTusGetMultiUserVariableVUserAsync(
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserVariable(
         uid, static_cast<s32>(svc), slot_id, {}, vusers, {}, variable_array, nullptr,
         static_cast<u64>(array_len), ctx);
@@ -3098,8 +3091,7 @@ s32 sceNpTusTryAndSetVariableAAsync(s32 req_id, OrbisNpAccountId target_account_
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusTryAndSetVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slot_id, ope_type, variable, compare_value != nullptr,
@@ -3177,8 +3169,7 @@ s32 sceNpTusTryAndSetVariableAVUserAsync(
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusTryAndSetVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, ope_type, variable,
         compare_value != nullptr, compare_value ? *compare_value : variable, has_author_check,
@@ -3221,8 +3212,7 @@ s32 sceNpTusDeleteMultiSlotDataAAsync(s32 req_id, OrbisNpAccountId target_accoun
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusDeleteMultiSlotData(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slots, ctx);
@@ -3288,8 +3278,7 @@ s32 sceNpTusDeleteMultiSlotVariableAAsync(s32 req_id, OrbisNpAccountId target_ac
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusDeleteMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slots, ctx);
@@ -3370,8 +3359,7 @@ s32 sceNpTusGetFriendsDataStatusAAsync(s32 req_id, s32 slot_id, s32 include_self
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetFriendsDataStatus(
         uid, static_cast<s32>(svc), slot_id, include_self != 0, sort_type,
         static_cast<u32>(array_len), nullptr, status_array, static_cast<u64>(array_len), ctx,
@@ -3452,8 +3440,7 @@ s32 sceNpTusGetFriendsVariableAAsync(s32 req_id, s32 slot_id, s32 include_self, 
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetFriendsVariable(
         uid, static_cast<s32>(svc), slot_id, include_self != 0, sort_type,
         static_cast<u32>(array_len), nullptr, variable_array, static_cast<u64>(array_len), ctx,
@@ -3525,8 +3512,7 @@ s32 sceNpTusGetMultiSlotVariableVUserAsync(s32 req_id,
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, slots, variable_array,
         static_cast<u64>(array_len), ctx, nullptr, 0);
@@ -3590,8 +3576,7 @@ s32 sceNpTusGetMultiUserDataStatusAAsync(s32 req_id,
         accounts.push_back(static_cast<s64>(target_account_id_array[i]));
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserDataStatus(
         uid, static_cast<s32>(svc), slot_id, {}, {}, accounts, nullptr, status_array,
         static_cast<u64>(array_len), ctx);
@@ -3659,8 +3644,7 @@ s32 sceNpTusGetMultiUserDataStatusAVUserAsync(
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserDataStatus(
         uid, static_cast<s32>(svc), slot_id, {}, vusers, {}, nullptr, status_array,
         static_cast<u64>(array_len), ctx);
@@ -3723,8 +3707,7 @@ s32 sceNpTusGetMultiUserVariableAAsync(s32 req_id, const OrbisNpAccountId* targe
         accounts.push_back(static_cast<s64>(target_account_id_array[i]));
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserVariable(
         uid, static_cast<s32>(svc), slot_id, {}, {}, accounts, nullptr, variable_array,
         static_cast<u64>(array_len), ctx);
@@ -3793,8 +3776,7 @@ s32 sceNpTusGetMultiUserVariableAVUserAsync(
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserVariable(
         uid, static_cast<s32>(svc), slot_id, {}, vusers, {}, nullptr, variable_array,
         static_cast<u64>(array_len), ctx);
@@ -3857,8 +3839,7 @@ s32 sceNpTusAddAndGetVariableForCrossSaveAsync(s32 req_id, OrbisNpAccountId targ
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusAddAndGetVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slot_id, in_variable, has_author_check,
@@ -3926,8 +3907,7 @@ s32 sceNpTusAddAndGetVariableForCrossSaveVUserAsync(
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusAddAndGetVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, in_variable,
         has_author_check, has_author_check ? static_cast<s64>(*is_last_changed_author) : 0,
@@ -3996,8 +3976,7 @@ s32 sceNpTusGetDataForCrossSaveAsync(s32 req_id, OrbisNpAccountId target_account
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetData(
         uid, static_cast<s32>(svc), std::string(), std::string(), account, slot_id, nullptr,
         data_status_size, data, data ? recv_size : 0, offset, ctx, nullptr, data_status);
@@ -4075,8 +4054,7 @@ s32 sceNpTusGetDataForCrossSaveVUserAsync(s32 req_id,
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetData(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, nullptr,
         data_status_size, data, data ? recv_size : 0, offset, ctx, nullptr, data_status);
@@ -4161,8 +4139,7 @@ s32 sceNpTusGetFriendsDataStatusForCrossSaveAsync(s32 req_id, s32 slot_id, s32 i
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetFriendsDataStatus(
         uid, static_cast<s32>(svc), slot_id, include_self != 0, sort_type,
         static_cast<u32>(array_len), nullptr, nullptr, static_cast<u64>(array_len), ctx,
@@ -4247,8 +4224,7 @@ s32 sceNpTusGetFriendsVariableForCrossSaveAsync(s32 req_id, s32 slot_id, s32 inc
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetFriendsVariable(
         uid, static_cast<s32>(svc), slot_id, include_self != 0, sort_type,
         static_cast<u32>(array_len), nullptr, nullptr, static_cast<u64>(array_len), ctx,
@@ -4314,8 +4290,7 @@ s32 sceNpTusGetMultiSlotDataStatusForCrossSaveAsync(s32 req_id, OrbisNpAccountId
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotDataStatus(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slots, nullptr, nullptr, static_cast<u64>(array_len),
@@ -4388,8 +4363,7 @@ s32 sceNpTusGetMultiSlotDataStatusForCrossSaveVUserAsync(
         return ret;
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotDataStatus(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slots, nullptr, nullptr,
         static_cast<u64>(array_len), ctx, status_array);
@@ -4453,8 +4427,7 @@ s32 sceNpTusGetMultiSlotVariableForCrossSaveAsync(s32 req_id, OrbisNpAccountId t
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     const s32 n = array_len;
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(), slots, nullptr,
         static_cast<u64>(n), ctx, nullptr, static_cast<s64>(target_account_id), variable_array);
@@ -4525,8 +4498,7 @@ s32 sceNpTusGetMultiSlotVariableForCrossSaveVUserAsync(
     }
     std::vector<s32> slots(slot_ids, slot_ids + array_len);
     const s32 n = array_len;
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiSlotVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, slots, nullptr,
         static_cast<u64>(n), ctx, nullptr, 0, variable_array);
@@ -4595,8 +4567,7 @@ s32 sceNpTusGetMultiUserDataStatusForCrossSaveAsync(s32 req_id,
         accounts.push_back(static_cast<s64>(target_account_id_array[i]));
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserDataStatus(
         uid, static_cast<s32>(svc), slot_id, {}, {}, accounts, nullptr, nullptr,
         static_cast<u64>(array_len), ctx, status_array);
@@ -4667,8 +4638,7 @@ s32 sceNpTusGetMultiUserDataStatusForCrossSaveVUserAsync(
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserDataStatus(
         uid, static_cast<s32>(svc), slot_id, {}, vusers, {}, nullptr, nullptr,
         static_cast<u64>(array_len), ctx, status_array);
@@ -4737,8 +4707,7 @@ s32 sceNpTusGetMultiUserVariableForCrossSaveAsync(s32 req_id,
         accounts.push_back(static_cast<s64>(target_account_id_array[i]));
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserVariable(
         uid, static_cast<s32>(svc), slot_id, {}, {}, accounts, nullptr, nullptr,
         static_cast<u64>(array_len), ctx, variable_array);
@@ -4809,8 +4778,7 @@ s32 sceNpTusGetMultiUserVariableForCrossSaveVUserAsync(
     if (auto ret = ResolveTus(req_id, &req, &svc, &uid, &self); ret < 0) {
         return ret;
     }
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusGetMultiUserVariable(
         uid, static_cast<s32>(svc), slot_id, {}, vusers, {}, nullptr, nullptr,
         static_cast<u64>(array_len), ctx, variable_array);
@@ -4879,8 +4847,7 @@ s32 sceNpTusTryAndSetVariableForCrossSaveAsync(s32 req_id, OrbisNpAccountId targ
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusTryAndSetVariable(
         uid, static_cast<s32>(svc), std::string(), std::string(),
         static_cast<s64>(target_account_id), slot_id, ope_type, variable, compare_value != nullptr,
@@ -4958,8 +4925,7 @@ s32 sceNpTusTryAndSetVariableForCrossSaveVUserAsync(
     const bool has_author_check = is_last_changed_author != nullptr;
     const bool has_date_check = is_last_changed_date != nullptr;
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TusTryAndSetVariable(
         uid, static_cast<s32>(svc), std::string(), virtual_user, 0, slot_id, ope_type, variable,
         compare_value != nullptr, compare_value ? *compare_value : variable, has_author_check,
@@ -5038,8 +5004,7 @@ s32 sceNpTssGetDataAsync(s32 req_id, s32 slot_id, OrbisNpTssDataStatus* data_sta
         }
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TssGetData(
         uid, static_cast<s32>(svc), slot_id, has_offset, start_offset, has_last_byte, last_byte,
         has_if_param, if_type, if_last_modified, data_status, data, data ? recv_size : 0, ctx);
@@ -5085,8 +5050,7 @@ s32 sceNpTssGetSmallStorageAsync(s32 req_id, void* data, u64 max_size, u64* cont
         return ret;
     }
 
-    auto ctx = std::make_shared<TusRequestCtx>();
-    req->ctx = ctx;
+    auto ctx = BeginRequestCtx(*req);
     s32 submit = NpHandler::Instance().TssGetData(uid, static_cast<s32>(svc), 0, false, 0, false, 0,
                                                   false, 0, 0, nullptr, data, data ? max_size : 0,
                                                   ctx, content_length);
@@ -5118,9 +5082,25 @@ s32 sceNpTssGetStorage() {
     return ORBIS_OK;
 }
 
-s32 sceNpTusChangeModeForOtherSaveDataOwners() {
-    LOG_ERROR(Lib_NpTus, "(STUBBED) called");
+static s32 LookupTusId(s32 id) {
+    std::lock_guard lock(g_mutex);
+    const bool found = id >= TusFirstTitleCtxId && id < TusLastTitleCtxId
+                           ? g_title_ctxs.contains(id)
+                           : g_requests.contains(id);
+    if (!found) {
+        LOG_ERROR(Lib_NpTus, "invalid id {}", id);
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
+    }
     return ORBIS_OK;
+}
+
+s32 sceNpTusChangeModeForOtherSaveDataOwners(s32 id, s32 mode) {
+    LOG_INFO(Lib_NpTus, "id={} mode={}", id, mode);
+    if (static_cast<u32>(mode) > 3) {
+        LOG_ERROR(Lib_NpTus, "invalid mode {}", mode);
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
+    return LookupTusId(id);
 }
 
 s32 sceNpTusCreateTitleCtx() {
@@ -5133,12 +5113,24 @@ s32 sceNpTusSetThreadParam() {
     return ORBIS_OK;
 }
 
-s32 sceNpTusSetTimeout() {
-    LOG_ERROR(Lib_NpTus, "(STUBBED) called");
-    return ORBIS_OK;
+s32 sceNpTusSetTimeout(s32 id, s32 resolve_retry, s32 resolve_timeout, s32 conn_timeout,
+                       s32 send_timeout, s32 recv_timeout) {
+    LOG_INFO(Lib_NpTus,
+             "id={} resolve_retry={} resolve_timeout={} conn_timeout={} send_timeout={} "
+             "recv_timeout={}",
+             id, resolve_retry, resolve_timeout, conn_timeout, send_timeout, recv_timeout);
+    // Timeouts are in microseconds
+    const auto valid = [](s32 value, s32 minimum) { return value == 0 || value >= minimum; };
+    if (resolve_retry < 0 || !valid(resolve_timeout, 1000000) || !valid(conn_timeout, 10000000) ||
+        !valid(send_timeout, 10000000) || !valid(recv_timeout, 10000000)) {
+        LOG_ERROR(Lib_NpTus, "invalid timeout");
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
+    return LookupTusId(id);
 }
 
 void RegisterHooks() {
+    sceKernelGetCompiledSdkVersion(&g_sdk_version);
     return RegisterNpTusHooks();
 }
 

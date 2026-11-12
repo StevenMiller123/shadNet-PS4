@@ -37,6 +37,7 @@ struct PendingRequest {
     bool a_variant = false;
     OrbisNpMatching2RequestCallback request_cb = nullptr;
     void* request_cb_arg = nullptr;
+    std::vector<OrbisNpMatching2AttributeId> attr_ids;
 };
 
 struct MmClientState {
@@ -263,16 +264,18 @@ void DispatchRequestComplete(const PendingRequest& pr, ShadNet::ErrorType error,
                    pr.req_event == ORBIS_NP_MATCHING2_REQUEST_EVENT_SEARCH_ROOM_A) {
             shadnet::SearchRoomReply reply;
             if (reply.ParseFromString(proto)) {
-                request_data = pr.a_variant ? BuildSearchRoomPayloadA(*ctx, payload, reply)
-                                            : BuildSearchRoomPayload(*ctx, payload, reply);
+                request_data = pr.a_variant
+                                   ? BuildSearchRoomPayloadA(*ctx, payload, reply, pr.attr_ids)
+                                   : BuildSearchRoomPayload(*ctx, payload, reply, pr.attr_ids);
             }
         } else if (pr.req_event == ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_DATA_EXTERNAL_LIST ||
                    pr.req_event == ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_DATA_EXTERNAL_LIST_A) {
             shadnet::GetRoomDataExternalListReply reply;
             if (reply.ParseFromString(proto)) {
-                request_data = pr.a_variant
-                                   ? BuildGetRoomDataExternalListPayloadA(*ctx, payload, reply)
-                                   : BuildGetRoomDataExternalListPayload(*ctx, payload, reply);
+                request_data =
+                    pr.a_variant
+                        ? BuildGetRoomDataExternalListPayloadA(*ctx, payload, reply, pr.attr_ids)
+                        : BuildGetRoomDataExternalListPayload(*ctx, payload, reply, pr.attr_ids);
             }
         } else if (pr.req_event ==
                        ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_EXTERNAL_LIST ||
@@ -284,7 +287,8 @@ void DispatchRequestComplete(const PendingRequest& pr, ShadNet::ErrorType error,
                     pr.a_variant ? BuildGetRoomMemberDataExternalListPayloadA(*ctx, payload, reply)
                                  : BuildGetRoomMemberDataExternalListPayload(*ctx, payload, reply);
             }
-        } else if (pr.req_event == ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_USER_INFO_LIST) {
+        } else if (pr.req_event == ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_USER_INFO_LIST ||
+                   pr.req_event == ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_USER_INFO_LIST_A) {
             shadnet::GetUserInfoListReply reply;
             if (reply.ParseFromString(proto)) {
                 request_data = pr.a_variant ? BuildGetUserInfoListPayloadA(*ctx, payload, reply)
@@ -317,19 +321,23 @@ void DispatchRequestComplete(const PendingRequest& pr, ShadNet::ErrorType error,
     }
 }
 
+// Members have a single internal attribute, and the firmware always reports it, with a null
+// data pointer until the member sets it.
 void AppendEventMemberBinAttrs(CallbackPayload& p, const MemberCache& mc) {
-    p.member_bin_attrs.resize(mc.bins.size());
-    p.bin_buffers.reserve(mc.bins.size());
-    u64 i = 0;
-    for (const auto& [attr_id, bin] : mc.bins) {
-        p.bin_buffers.emplace_back(bin.data.begin(), bin.data.end());
-        auto& buf = p.bin_buffers.back();
-        auto& dst = p.member_bin_attrs[i++];
-        dst = OrbisNpMatching2RoomMemberBinAttrInternal{};
-        dst.last_update.tick = bin.update_date;
-        dst.bin_attr.id = bin.id;
-        dst.bin_attr.data = buf.empty() ? nullptr : buf.data();
-        dst.bin_attr.data_size = buf.size();
+    constexpr auto attr_id = ORBIS_NP_MATCHING2_ROOMMEMBER_BIN_ATTR_INTERNAL_1_ID;
+    p.member_bin_attrs.resize(1);
+    auto& dst = p.member_bin_attrs.front();
+    dst = OrbisNpMatching2RoomMemberBinAttrInternal{};
+    dst.bin_attr.id = attr_id;
+    const auto bin_it = mc.bins.find(attr_id);
+    if (bin_it != mc.bins.end()) {
+        dst.last_update.tick = bin_it->second.update_date;
+        if (!bin_it->second.data.empty()) {
+            p.bin_buffers.reserve(p.bin_buffers.size() + 1);
+            auto& buf = p.bin_buffers.emplace_back(bin_it->second.data);
+            dst.bin_attr.data = buf.data();
+            dst.bin_attr.data_size = buf.size();
+        }
     }
 }
 
@@ -900,7 +908,7 @@ s32 MmContextStop(OrbisNpMatching2ContextId ctx_id) {
 
 s32 MmSubmitRequest(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req_id,
                     OrbisNpMatching2Event req_event, MmCommand cmd, const std::vector<u8>& payload,
-                    bool a_variant) {
+                    bool a_variant, std::vector<OrbisNpMatching2AttributeId> attr_ids) {
     std::shared_ptr<ShadNet::ShadNetClient> client;
     {
         std::lock_guard lock(g_mm.mutex);
@@ -962,8 +970,13 @@ s32 MmSubmitRequest(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId 
     const u64 pkt_id = client->SubmitRequest(static_cast<ShadNet::CommandType>(cmd), payload);
     {
         std::lock_guard lock(g_mm.pending_mutex);
-        g_mm.pending[pkt_id] = {ctx_id,        req_id, req_event, a_variant, request_cb.callback,
-                                request_cb.arg};
+        g_mm.pending[pkt_id] = {ctx_id,
+                                req_id,
+                                req_event,
+                                a_variant,
+                                request_cb.callback,
+                                request_cb.arg,
+                                std::move(attr_ids)};
     }
     LOG_DEBUG(Lib_NpMatching2, "submit cmd={} pkt_id={} ctx={} req_id={}", static_cast<u16>(cmd),
               pkt_id, ctx_id, req_id);
@@ -1203,7 +1216,8 @@ s32 MmSearchRoom(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req
     return MmSubmitRequest(ctx_id, req_id,
                            a_variant ? ORBIS_NP_MATCHING2_REQUEST_EVENT_SEARCH_ROOM_A
                                      : ORBIS_NP_MATCHING2_REQUEST_EVENT_SEARCH_ROOM,
-                           MmCommand::SearchRoom, MakeProtoPayload(req), a_variant);
+                           MmCommand::SearchRoom, MakeProtoPayload(req), a_variant,
+                           {request.attr, request.attr + request.attrs});
 }
 
 s32 MmGetRoomDataExternalList(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestId req_id,
@@ -1227,7 +1241,8 @@ s32 MmGetRoomDataExternalList(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2
                            a_variant
                                ? ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_DATA_EXTERNAL_LIST_A
                                : ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_DATA_EXTERNAL_LIST,
-                           MmCommand::GetRoomDataExternalList, MakeProtoPayload(req), a_variant);
+                           MmCommand::GetRoomDataExternalList, MakeProtoPayload(req), a_variant,
+                           {request.attr_id, request.attr_id + request.attr_id_num});
 }
 
 s32 MmGetRoomMemberDataExternalList(
@@ -1254,7 +1269,9 @@ s32 MmGetUserInfoList(OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2RequestI
     }
     req.set_option(request.option);
     LOG_DEBUG(Lib_NpMatching2, "np_n={} attr_n={}", request.np_id_num, request.attr_id_num);
-    return MmSubmitRequest(ctx_id, req_id, ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_USER_INFO_LIST,
+    return MmSubmitRequest(ctx_id, req_id,
+                           a_variant ? ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_USER_INFO_LIST_A
+                                     : ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_USER_INFO_LIST,
                            MmCommand::GetUserInfoList, MakeProtoPayload(req), a_variant);
 }
 

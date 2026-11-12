@@ -236,7 +236,7 @@ s32 sceNpTusAddAndGetVariableVUserAsync(
     s32 req_id, const OrbisNpTusVirtualUserId* target_virtual_user_id, s32 slot_id, s64 in_variable,
     const OrbisNpId* is_last_changed_author, const Rtc::OrbisRtcTick* is_last_changed_date,
     OrbisNpTusVariable* out_variable, u64 out_variable_size, void* option);
-s32 sceNpTusChangeModeForOtherSaveDataOwners();
+s32 sceNpTusChangeModeForOtherSaveDataOwners(s32 id, s32 mode);
 s32 sceNpTusCreateNpTitleCtx(OrbisNpServiceLabel service_label, OrbisNpId* np_id);
 s32 sceNpTusCreateNpTitleCtxA(OrbisNpServiceLabel service_label,
                               UserService::OrbisUserServiceUserId user_id);
@@ -591,7 +591,8 @@ s32 sceNpTusSetMultiSlotVariableVUserAsync(s32 req_id,
                                            s32* slot_ids, const s64* variables, s32 array_len,
                                            void* option);
 s32 sceNpTusSetThreadParam();
-s32 sceNpTusSetTimeout();
+s32 sceNpTusSetTimeout(s32 id, s32 resolve_retry, s32 resolve_timeout, s32 conn_timeout,
+                       s32 send_timeout, s32 recv_timeout);
 s32 sceNpTusTryAndSetVariable(s32 req_id, const OrbisNpId* target_np_id, s32 slot_id, s32 ope_type,
                               s64 variable, const s64* compare_value,
                               const OrbisNpId* is_last_changed_author,

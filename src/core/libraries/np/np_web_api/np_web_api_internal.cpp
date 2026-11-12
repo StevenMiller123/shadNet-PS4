@@ -1789,6 +1789,12 @@ s32 addHttpRequestHeaderInternal(s64 request_id, const char* field_name, const c
         releaseContext(context);
         return ORBIS_NP_WEBAPI_ERROR_REQUEST_NOT_FOUND;
     }
+    if (g_sdk_ver >= Common::ElfInfo::FW_250 && request->sent) {
+        releaseRequest(request);
+        releaseUserContext(user_context);
+        releaseContext(context);
+        return ORBIS_NP_WEBAPI_ERROR_AFTER_SEND;
+    }
     request->user_headers.emplace_back(field_name, value);
     releaseRequest(request);
     releaseUserContext(user_context);

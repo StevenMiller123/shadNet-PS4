@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <string>
 #include <vector>
 #include <pthread.h>
@@ -326,13 +327,17 @@ void* BuildLeaveRoomPayload(ContextObject& ctx, CallbackPayload& payload,
 void* BuildGetWorldInfoListPayload(ContextObject& ctx, CallbackPayload& payload,
                                    const shadnet::GetWorldInfoListReply& resp);
 void* BuildSearchRoomPayload(ContextObject& ctx, CallbackPayload& payload,
-                             const shadnet::SearchRoomReply& resp);
+                             const shadnet::SearchRoomReply& resp,
+                             std::span<const OrbisNpMatching2AttributeId> attr_ids);
 void* BuildSearchRoomPayloadA(ContextObject& ctx, CallbackPayload& payload,
-                              const shadnet::SearchRoomReply& resp);
+                              const shadnet::SearchRoomReply& resp,
+                              std::span<const OrbisNpMatching2AttributeId> attr_ids);
 void* BuildGetRoomDataExternalListPayload(ContextObject& ctx, CallbackPayload& payload,
-                                          const shadnet::GetRoomDataExternalListReply& resp);
+                                          const shadnet::GetRoomDataExternalListReply& resp,
+                                          std::span<const OrbisNpMatching2AttributeId> attr_ids);
 void* BuildGetRoomDataExternalListPayloadA(ContextObject& ctx, CallbackPayload& payload,
-                                           const shadnet::GetRoomDataExternalListReply& resp);
+                                           const shadnet::GetRoomDataExternalListReply& resp,
+                                           std::span<const OrbisNpMatching2AttributeId> attr_ids);
 void* BuildGetRoomMemberDataExternalListPayload(
     ContextObject& ctx, CallbackPayload& payload,
     const shadnet::GetRoomMemberDataExternalListReply& resp);
@@ -347,7 +352,7 @@ void* BuildGetRoomDataInternalPayload(ContextObject& ctx, CallbackPayload& paylo
                                       OrbisNpMatching2RoomId room_id);
 void* BuildGetRoomMemberDataInternalPayload(
     ContextObject& ctx, CallbackPayload& payload,
-    const OrbisNpMatching2GetRoomMemberDataInternalRequest& request);
+    const OrbisNpMatching2GetRoomMemberDataInternalRequest& request, bool a_variant);
 void* BuildRoomMessagePayload(CallbackPayload& p, bool a_variant,
                               OrbisNpMatching2CastType cast_type,
                               const std::vector<OrbisNpMatching2RoomMemberId>& dst_members,

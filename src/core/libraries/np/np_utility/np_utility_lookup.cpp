@@ -14,8 +14,12 @@ namespace Libraries::Np::NpUtility {
 std::mutex g_lookup_mutex;
 std::map<OrbisNpLookupTitleCtxId, RequestTitleCtx> g_lookup_title_ctxs;
 std::map<OrbisNpLookupRequestId, std::shared_ptr<RequestCtx>> g_lookup_requests;
-OrbisNpLookupTitleCtxId g_lookup_next_ctx_id = 1;
-OrbisNpLookupRequestId g_lookup_next_req_id = 1;
+
+constexpr OrbisNpLookupTitleCtxId LookupTitleCtxIdOffset = 0x4000000;
+constexpr OrbisNpLookupRequestId LookupRequestIdOffset = 0x2000000;
+
+OrbisNpLookupTitleCtxId g_lookup_next_ctx_id = LookupTitleCtxIdOffset + 1;
+OrbisNpLookupRequestId g_lookup_next_req_id = LookupRequestIdOffset + 1;
 
 s32 sceNpLookupCreateTitleCtx(const OrbisNpId* self_np_id) {
     if (self_np_id == nullptr) {
@@ -89,6 +93,9 @@ s32 sceNpLookupCreateRequest(OrbisNpLookupTitleCtxId title_ctx_id) {
 
 s32 sceNpLookupCreateAsyncRequest(OrbisNpLookupTitleCtxId title_ctx_id,
                                   const OrbisNpLookupCreateAsyncRequestParameter* param) {
+    if (param == nullptr || param->size != sizeof(OrbisNpLookupCreateAsyncRequestParameter)) {
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
     return CreateLookupRequest(title_ctx_id, true);
 }
 
@@ -130,11 +137,11 @@ s32 sceNpLookupNpId(OrbisNpLookupRequestId req_id, const OrbisNpOnlineId* online
     LOG_INFO(Lib_NpUtility, "req_id={} online_id='{}' np_id={} option={}", req_id,
              online_id != nullptr ? ViewNpOnlineId(*online_id) : std::string_view("(null)"),
              static_cast<const void*>(np_id), static_cast<const void*>(option));
-    if (option != nullptr) {
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
-    }
     if (online_id == nullptr || np_id == nullptr) {
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
+    }
+    if (option != nullptr) {
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
 
     std::shared_ptr<RequestCtx> req;
@@ -179,6 +186,9 @@ s32 sceNpLookupNpId(OrbisNpLookupRequestId req_id, const OrbisNpOnlineId* online
 }
 
 s32 sceNpLookupPollAsync(OrbisNpLookupRequestId req_id, s32* result) {
+    if (result == nullptr) {
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
     std::shared_ptr<RequestCtx> req;
     {
         std::lock_guard lock(g_lookup_mutex);
@@ -189,13 +199,14 @@ s32 sceNpLookupPollAsync(OrbisNpLookupRequestId req_id, s32* result) {
         }
         req = it->second;
     }
+    if (!req->is_async) {
+        return ORBIS_NP_AUTH_ERROR_INVALID_ID;
+    }
     std::lock_guard rlock(req->mutex);
     if (!req->result.has_value()) {
         return ORBIS_NP_LOOKUP_POLL_ASYNC_RET_RUNNING;
     }
-    if (result != nullptr) {
-        *result = *req->result;
-    }
+    *result = *req->result;
     return ORBIS_OK;
 }
 
@@ -245,6 +256,9 @@ s32 sceNpLookupSetTimeout(s32 id, s32 resolve_retry, u32 resolve_timeout, u32 co
 }
 
 s32 sceNpLookupWaitAsync(OrbisNpLookupRequestId req_id, s32* result) {
+    if (result == nullptr) {
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
     std::shared_ptr<RequestCtx> req;
     {
         std::lock_guard lock(g_lookup_mutex);
@@ -254,10 +268,10 @@ s32 sceNpLookupWaitAsync(OrbisNpLookupRequestId req_id, s32* result) {
         }
         req = it->second;
     }
-    const s32 r = req->Wait();
-    if (result != nullptr) {
-        *result = r;
+    if (!req->is_async) {
+        return ORBIS_NP_AUTH_ERROR_INVALID_ID;
     }
+    *result = req->Wait();
     return ORBIS_OK;
 }
 

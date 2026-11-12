@@ -244,7 +244,7 @@ s32 sceNpSignalingCreateContextA(s32 user_id, void* callback, void* callback_arg
         ctx.owner_online_id = owner_npid.handle;
         ctx.flags = 0x4 | 0x2;
         ctx.account_id = account_id;
-        ctx.platform_type = 0;
+        ctx.platform_type = static_cast<u32>(OrbisNpPlatformType::PS4);
         ctx.compiled_sdk_version = CaptureCompiledSdkVersion();
         ctx.activate_budget_us = kActivateBudgetMaxUs;
         ctx.activate_last_update_us = NowUs();

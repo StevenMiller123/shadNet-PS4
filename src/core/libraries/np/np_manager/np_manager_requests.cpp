@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <condition_variable>
 #include <mutex>
 #include <vector>
 
@@ -29,6 +30,7 @@ struct NpRequest {
 
 static s32 g_active_requests = 0;
 static std::mutex g_request_mutex;
+static std::condition_variable g_request_cv;
 static std::vector<NpRequest> g_requests;
 
 static s32 CreateNpRequest(bool async) {
@@ -86,6 +88,7 @@ static NpRequest* GetRequest(s32 req_id, s32* out_err) {
 static s32 CompleteRequest(NpRequest& req, s32 result) {
     req.state = NpRequestState::Complete;
     req.result = result;
+    g_request_cv.notify_all();
     if (result != ORBIS_OK && req.async) {
         return ORBIS_OK;
     }
@@ -276,6 +279,7 @@ s32 sceNpAbortRequest(s32 req_id) {
     }
 
     g_requests[req_index].state = NpRequestState::Aborted;
+    g_request_cv.notify_all();
     return ORBIS_OK;
 }
 
@@ -316,24 +320,39 @@ s32 sceNpWaitAsync(s32 req_id, s32* result) {
         return ORBIS_NP_ERROR_INVALID_ARGUMENT;
     }
 
-    std::scoped_lock lk{g_request_mutex};
+    std::unique_lock lk{g_request_mutex};
 
     s32 req_index = req_id - ORBIS_NP_MANAGER_REQUEST_ID_OFFSET - 1;
-    if (g_active_requests == 0 || req_index < 0 ||
-        req_index >= static_cast<s32>(g_requests.size()) ||
-        g_requests[req_index].state == NpRequestState::None) {
+    const auto find = [&]() -> NpRequest* {
+        if (g_active_requests == 0 || req_index < 0 ||
+            req_index >= static_cast<s32>(g_requests.size()) ||
+            g_requests[req_index].state == NpRequestState::None) {
+            return nullptr;
+        }
+        return &g_requests[req_index];
+    };
+    if (!find()) {
         return ORBIS_NP_ERROR_REQUEST_NOT_FOUND;
     }
-
-    if (!g_requests[req_index].async || g_requests[req_index].state == NpRequestState::Ready) {
+    if (!g_requests[req_index].async) {
         return ORBIS_NP_ERROR_INVALID_ID;
     }
+    if (g_requests[req_index].state == NpRequestState::Ready) {
+        if (GetFirmwareVersion() < Common::ElfInfo::FW_200) {
+            return ORBIS_NP_ERROR_INVALID_ID;
+        }
+        g_request_cv.wait(lk, [&] {
+            const NpRequest* req = find();
+            return !req || req->state != NpRequestState::Ready;
+        });
+        if (!find()) {
+            return ORBIS_NP_ERROR_REQUEST_NOT_FOUND;
+        }
+    }
 
-    // Since we're not actually performing any sort of network request here,
-    // we can just set result based on the request and return.
     *result = g_requests[req_index].result;
-    LOG_WARNING(Lib_NpManager, "called req_id = {:#x}, returning result = {:#x}", req_id,
-                static_cast<u32>(*result));
+    LOG_DEBUG(Lib_NpManager, "called req_id = {:#x}, returning result = {:#x}", req_id,
+              static_cast<u32>(*result));
     return ORBIS_OK;
 }
 
@@ -351,15 +370,16 @@ s32 sceNpPollAsync(s32 req_id, s32* result) {
         return ORBIS_NP_ERROR_REQUEST_NOT_FOUND;
     }
 
-    if (!g_requests[req_index].async || g_requests[req_index].state == NpRequestState::Ready) {
+    if (!g_requests[req_index].async) {
         return ORBIS_NP_ERROR_INVALID_ID;
     }
+    if (g_requests[req_index].state == NpRequestState::Ready) {
+        return GetFirmwareVersion() < Common::ElfInfo::FW_200 ? ORBIS_NP_ERROR_INVALID_ID : 1;
+    }
 
-    // Since we're not actually performing any sort of network request here,
-    // we can just set result based on the request and return.
     *result = g_requests[req_index].result;
-    LOG_WARNING(Lib_NpManager, "called req_id = {:#x}, returning result = {:#x}", req_id,
-                static_cast<u32>(*result));
+    LOG_DEBUG(Lib_NpManager, "called req_id = {:#x}, returning result = {:#x}", req_id,
+              static_cast<u32>(*result));
     return ORBIS_OK;
 }
 
@@ -377,6 +397,7 @@ s32 sceNpDeleteRequest(s32 req_id) {
 
     g_active_requests--;
     g_requests[req_index].state = NpRequestState::None;
+    g_request_cv.notify_all();
     return ORBIS_OK;
 }
 

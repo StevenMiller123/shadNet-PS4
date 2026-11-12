@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -96,7 +97,8 @@ std::string OnlineIdToString(const OrbisNpOnlineId& online_id) {
 }
 
 template <typename Reply>
-void ReserveExternalRoomPayloadStorage(CallbackPayload& p, const Reply& resp) {
+void ReserveExternalRoomPayloadStorage(CallbackPayload& p, const Reply& resp,
+                                       std::span<const OrbisNpMatching2AttributeId> attr_ids) {
     u64 groups = 0;
     u64 int_attrs = 0;
     u64 bin_attrs = 0;
@@ -106,11 +108,10 @@ void ReserveExternalRoomPayloadStorage(CallbackPayload& p, const Reply& resp) {
     for (s32 i = 0; i < resp.rooms_size(); ++i) {
         const auto& r = resp.rooms(i);
         groups += static_cast<u64>(r.groups_size());
-        int_attrs += static_cast<u64>(r.external_search_int_attrs_size());
-        const u64 room_bin_attrs = static_cast<u64>(r.external_search_bin_attrs_size()) +
-                                   static_cast<u64>(r.external_bin_attrs_size());
-        bin_attrs += room_bin_attrs;
-        bin_buffers += room_bin_attrs;
+        // Every requested id gets an entry, so this covers all of them.
+        int_attrs += attr_ids.size();
+        bin_attrs += attr_ids.size();
+        bin_buffers += attr_ids.size();
         if (!r.owner_npid().empty()) {
             ++owners;
         }
@@ -121,6 +122,68 @@ void ReserveExternalRoomPayloadStorage(CallbackPayload& p, const Reply& resp) {
     p.ext_bin_attrs.reserve(bin_attrs);
     p.bin_buffers.reserve(bin_buffers);
     p.ext_owner_npids.reserve(owners);
+}
+
+template <typename Room, typename Dst>
+void FillRequestedExternalAttrs(CallbackPayload& p, const Room& r, Dst& dst,
+                                std::span<const OrbisNpMatching2AttributeId> attr_ids) {
+    const auto requested = [&](OrbisNpMatching2AttributeId id) {
+        return static_cast<u64>(std::ranges::count(attr_ids, id));
+    };
+
+    OrbisNpMatching2IntAttr* first_int = nullptr;
+    u64 int_num = 0;
+    for (u16 id = ORBIS_NP_MATCHING2_ROOM_SEARCHABLE_INT_ATTR_EXTERNAL_1_ID;
+         id <= ORBIS_NP_MATCHING2_ROOM_SEARCHABLE_INT_ATTR_EXTERNAL_8_ID; ++id) {
+        for (u64 i = 0; i < requested(id); ++i) {
+            auto& ia = p.ext_int_attrs.emplace_back();
+            ia = OrbisNpMatching2IntAttr{};
+            ia.id = id;
+            if (i == 0) {
+                const auto& src = r.external_search_int_attrs();
+                const auto it = std::ranges::find_if(
+                    src, [id](const auto& attr) { return attr.attr_id() == id; });
+                if (it != src.end()) {
+                    ia.num = it->attr_value();
+                }
+            }
+            first_int = first_int ? first_int : &ia;
+            ++int_num;
+        }
+    }
+    dst.external_search_int_attr = first_int;
+    dst.external_search_int_attrs = int_num;
+
+    const auto fill_bins = [&](const auto& src, std::initializer_list<u16> ids,
+                               OrbisNpMatching2BinAttr*& out_ptr, u64& out_num) {
+        OrbisNpMatching2BinAttr* first = nullptr;
+        u64 num = 0;
+        for (const u16 id : ids) {
+            for (u64 i = 0; i < requested(id); ++i) {
+                auto& ba = p.ext_bin_attrs.emplace_back();
+                ba = OrbisNpMatching2BinAttr{};
+                ba.id = id;
+                const auto it = std::ranges::find_if(
+                    src, [id](const auto& attr) { return attr.attr_id() == id; });
+                if (i == 0 && it != src.end() && !it->data().empty()) {
+                    auto& buf = p.bin_buffers.emplace_back(it->data().begin(), it->data().end());
+                    ba.data = buf.data();
+                    ba.data_size = buf.size();
+                }
+                first = first ? first : &ba;
+                ++num;
+            }
+        }
+        out_ptr = first;
+        out_num = num;
+    };
+    fill_bins(r.external_search_bin_attrs(),
+              {ORBIS_NP_MATCHING2_ROOM_SEARCHABLE_BIN_ATTR_EXTERNAL_1_ID},
+              dst.external_search_bin_attr, dst.external_search_bin_attrs);
+    fill_bins(r.external_bin_attrs(),
+              {ORBIS_NP_MATCHING2_ROOM_BIN_ATTR_EXTERNAL_1_ID,
+               ORBIS_NP_MATCHING2_ROOM_BIN_ATTR_EXTERNAL_2_ID},
+              dst.external_bin_attr, dst.external_bin_attrs);
 }
 
 void BuildCreateJoinRoomPayloadCommon(ContextObject& ctx, CallbackPayload& p,
@@ -294,28 +357,29 @@ OrbisNpMatching2RoomGroup* FindPayloadGroup(CallbackPayload& p, OrbisNpMatching2
 }
 
 void ReserveMemberBinAttrs(CallbackPayload& p, const shadnet::CreateJoinRoomResponse& resp) {
-    u64 total = 0;
-    for (const auto& member : resp.members()) {
-        total += static_cast<u64>(member.bin_attrs_internal_size());
-    }
-    p.member_bin_attrs.reserve(total);
+    p.member_bin_attrs.reserve(static_cast<u64>(resp.members_size()));
+    p.bin_buffers.reserve(p.bin_buffers.size() + static_cast<u64>(resp.members_size()));
 }
 
 OrbisNpMatching2RoomMemberBinAttrInternal* AppendMemberBinAttrs(
     CallbackPayload& p, const shadnet::MatchingRoomMemberData& member, u64& count) {
-    const u64 first = p.member_bin_attrs.size();
-    count = static_cast<u64>(member.bin_attrs_internal_size());
-    for (const auto& a : member.bin_attrs_internal()) {
-        p.bin_buffers.emplace_back(a.data().begin(), a.data().end());
-        auto& buf = p.bin_buffers.back();
-        auto& dst = p.member_bin_attrs.emplace_back();
-        dst = OrbisNpMatching2RoomMemberBinAttrInternal{};
-        dst.last_update.tick = a.update_date();
-        dst.bin_attr.id = static_cast<OrbisNpMatching2AttributeId>(a.attr_id());
-        dst.bin_attr.data = buf.empty() ? nullptr : buf.data();
-        dst.bin_attr.data_size = buf.size();
+    constexpr auto attr_id = ORBIS_NP_MATCHING2_ROOMMEMBER_BIN_ATTR_INTERNAL_1_ID;
+    auto& dst = p.member_bin_attrs.emplace_back();
+    dst = OrbisNpMatching2RoomMemberBinAttrInternal{};
+    dst.bin_attr.id = attr_id;
+    const auto& attrs = member.bin_attrs_internal();
+    const auto it =
+        std::ranges::find_if(attrs, [](const auto& a) { return a.attr_id() == attr_id; });
+    if (it != attrs.end()) {
+        dst.last_update.tick = it->update_date();
+        if (!it->data().empty()) {
+            auto& buf = p.bin_buffers.emplace_back(it->data().begin(), it->data().end());
+            dst.bin_attr.data = buf.data();
+            dst.bin_attr.data_size = buf.size();
+        }
     }
-    return count == 0 ? nullptr : &p.member_bin_attrs[first];
+    count = 1;
+    return &dst;
 }
 
 void* BuildCreateJoinRoomPayload(ContextObject& ctx, CallbackPayload& p,
@@ -465,9 +529,10 @@ void* BuildGetWorldInfoListPayload(ContextObject& ctx, CallbackPayload& p,
 }
 
 void* BuildSearchRoomPayload(ContextObject& ctx, CallbackPayload& p,
-                             const shadnet::SearchRoomReply& resp) {
+                             const shadnet::SearchRoomReply& resp,
+                             std::span<const OrbisNpMatching2AttributeId> attr_ids) {
     p.Reset();
-    ReserveExternalRoomPayloadStorage(p, resp);
+    ReserveExternalRoomPayloadStorage(p, resp, attr_ids);
 
     const s32 room_count = resp.rooms_size();
     LOG_INFO(Lib_NpMatching2, "Search response rooms={}", room_count);
@@ -537,46 +602,7 @@ void* BuildSearchRoomPayload(ContextObject& ctx, CallbackPayload& p,
             dst.room_groups = static_cast<u64>(r.groups_size());
         }
 
-        if (r.external_search_int_attrs_size() > 0) {
-            OrbisNpMatching2IntAttr* first = nullptr;
-            for (s32 a = 0; a < r.external_search_int_attrs_size(); ++a) {
-                const auto& src = r.external_search_int_attrs(a);
-                auto& ia = p.ext_int_attrs.emplace_back();
-                ia = OrbisNpMatching2IntAttr{};
-                ia.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ia.num = src.attr_value();
-                if (!first) {
-                    first = &ia;
-                }
-            }
-            dst.external_search_int_attr = first;
-            dst.external_search_int_attrs = static_cast<u64>(r.external_search_int_attrs_size());
-        }
-
-        auto build_bin = [&](const auto& src_attrs, OrbisNpMatching2BinAttr*& out_ptr,
-                             u64& out_num) {
-            if (src_attrs.empty()) {
-                return;
-            }
-            OrbisNpMatching2BinAttr* first = nullptr;
-            for (const auto& src : src_attrs) {
-                p.bin_buffers.emplace_back(src.data().begin(), src.data().end());
-                auto& buf = p.bin_buffers.back();
-                auto& ba = p.ext_bin_attrs.emplace_back();
-                ba = OrbisNpMatching2BinAttr{};
-                ba.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ba.data = buf.empty() ? nullptr : buf.data();
-                ba.data_size = buf.size();
-                if (!first) {
-                    first = &ba;
-                }
-            }
-            out_ptr = first;
-            out_num = static_cast<u64>(src_attrs.size());
-        };
-        build_bin(r.external_search_bin_attrs(), dst.external_search_bin_attr,
-                  dst.external_search_bin_attrs);
-        build_bin(r.external_bin_attrs(), dst.external_bin_attr, dst.external_bin_attrs);
+        FillRequestedExternalAttrs(p, r, dst, attr_ids);
     }
 
     p.search_room_response = std::make_unique<OrbisNpMatching2SearchRoomResponse>();
@@ -592,9 +618,10 @@ void* BuildSearchRoomPayload(ContextObject& ctx, CallbackPayload& p,
 }
 
 void* BuildSearchRoomPayloadA(ContextObject& ctx, CallbackPayload& p,
-                              const shadnet::SearchRoomReply& resp) {
+                              const shadnet::SearchRoomReply& resp,
+                              std::span<const OrbisNpMatching2AttributeId> attr_ids) {
     p.Reset();
-    ReserveExternalRoomPayloadStorage(p, resp);
+    ReserveExternalRoomPayloadStorage(p, resp, attr_ids);
 
     const s32 room_count = resp.rooms_size();
     LOG_INFO(Lib_NpMatching2, "rooms={} range start={} total={} results={}", room_count,
@@ -667,46 +694,7 @@ void* BuildSearchRoomPayloadA(ContextObject& ctx, CallbackPayload& p,
             dst.room_groups = static_cast<u64>(r.groups_size());
         }
 
-        if (r.external_search_int_attrs_size() > 0) {
-            OrbisNpMatching2IntAttr* first = nullptr;
-            for (s32 a = 0; a < r.external_search_int_attrs_size(); ++a) {
-                const auto& src = r.external_search_int_attrs(a);
-                auto& ia = p.ext_int_attrs.emplace_back();
-                ia = OrbisNpMatching2IntAttr{};
-                ia.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ia.num = src.attr_value();
-                if (!first) {
-                    first = &ia;
-                }
-            }
-            dst.external_search_int_attr = first;
-            dst.external_search_int_attrs = static_cast<u64>(r.external_search_int_attrs_size());
-        }
-
-        auto build_bin = [&](const auto& src_attrs, OrbisNpMatching2BinAttr*& out_ptr,
-                             u64& out_num) {
-            if (src_attrs.empty()) {
-                return;
-            }
-            OrbisNpMatching2BinAttr* first = nullptr;
-            for (const auto& src : src_attrs) {
-                p.bin_buffers.emplace_back(src.data().begin(), src.data().end());
-                auto& buf = p.bin_buffers.back();
-                auto& ba = p.ext_bin_attrs.emplace_back();
-                ba = OrbisNpMatching2BinAttr{};
-                ba.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ba.data = buf.empty() ? nullptr : buf.data();
-                ba.data_size = buf.size();
-                if (!first) {
-                    first = &ba;
-                }
-            }
-            out_ptr = first;
-            out_num = static_cast<u64>(src_attrs.size());
-        };
-        build_bin(r.external_search_bin_attrs(), dst.external_search_bin_attr,
-                  dst.external_search_bin_attrs);
-        build_bin(r.external_bin_attrs(), dst.external_bin_attr, dst.external_bin_attrs);
+        FillRequestedExternalAttrs(p, r, dst, attr_ids);
     }
 
     p.search_room_response_a = std::make_unique<OrbisNpMatching2SearchRoomResponseA>();
@@ -722,9 +710,10 @@ void* BuildSearchRoomPayloadA(ContextObject& ctx, CallbackPayload& p,
 }
 
 void* BuildGetRoomDataExternalListPayload(ContextObject& ctx, CallbackPayload& p,
-                                          const shadnet::GetRoomDataExternalListReply& resp) {
+                                          const shadnet::GetRoomDataExternalListReply& resp,
+                                          std::span<const OrbisNpMatching2AttributeId> attr_ids) {
     p.Reset();
-    ReserveExternalRoomPayloadStorage(p, resp);
+    ReserveExternalRoomPayloadStorage(p, resp, attr_ids);
 
     const s32 room_count = resp.rooms_size();
     LOG_INFO(Lib_NpMatching2, "response rooms={}", room_count);
@@ -794,46 +783,7 @@ void* BuildGetRoomDataExternalListPayload(ContextObject& ctx, CallbackPayload& p
             dst.room_groups = static_cast<u64>(r.groups_size());
         }
 
-        if (r.external_search_int_attrs_size() > 0) {
-            OrbisNpMatching2IntAttr* first = nullptr;
-            for (s32 a = 0; a < r.external_search_int_attrs_size(); ++a) {
-                const auto& src = r.external_search_int_attrs(a);
-                auto& ia = p.ext_int_attrs.emplace_back();
-                ia = OrbisNpMatching2IntAttr{};
-                ia.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ia.num = src.attr_value();
-                if (!first) {
-                    first = &ia;
-                }
-            }
-            dst.external_search_int_attr = first;
-            dst.external_search_int_attrs = static_cast<u64>(r.external_search_int_attrs_size());
-        }
-
-        auto build_bin = [&](const auto& src_attrs, OrbisNpMatching2BinAttr*& out_ptr,
-                             u64& out_num) {
-            if (src_attrs.empty()) {
-                return;
-            }
-            OrbisNpMatching2BinAttr* first = nullptr;
-            for (const auto& src : src_attrs) {
-                p.bin_buffers.emplace_back(src.data().begin(), src.data().end());
-                auto& buf = p.bin_buffers.back();
-                auto& ba = p.ext_bin_attrs.emplace_back();
-                ba = OrbisNpMatching2BinAttr{};
-                ba.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ba.data = buf.empty() ? nullptr : buf.data();
-                ba.data_size = buf.size();
-                if (!first) {
-                    first = &ba;
-                }
-            }
-            out_ptr = first;
-            out_num = static_cast<u64>(src_attrs.size());
-        };
-        build_bin(r.external_search_bin_attrs(), dst.external_search_bin_attr,
-                  dst.external_search_bin_attrs);
-        build_bin(r.external_bin_attrs(), dst.external_bin_attr, dst.external_bin_attrs);
+        FillRequestedExternalAttrs(p, r, dst, attr_ids);
     }
 
     p.room_data_external_list_response =
@@ -848,9 +798,10 @@ void* BuildGetRoomDataExternalListPayload(ContextObject& ctx, CallbackPayload& p
 }
 
 void* BuildGetRoomDataExternalListPayloadA(ContextObject& ctx, CallbackPayload& p,
-                                           const shadnet::GetRoomDataExternalListReply& resp) {
+                                           const shadnet::GetRoomDataExternalListReply& resp,
+                                           std::span<const OrbisNpMatching2AttributeId> attr_ids) {
     p.Reset();
-    ReserveExternalRoomPayloadStorage(p, resp);
+    ReserveExternalRoomPayloadStorage(p, resp, attr_ids);
 
     const s32 room_count = resp.rooms_size();
     p.room_data_external_a.resize(room_count);
@@ -897,46 +848,7 @@ void* BuildGetRoomDataExternalListPayloadA(ContextObject& ctx, CallbackPayload& 
             dst.room_groups = static_cast<u64>(r.groups_size());
         }
 
-        if (r.external_search_int_attrs_size() > 0) {
-            OrbisNpMatching2IntAttr* first = nullptr;
-            for (s32 a = 0; a < r.external_search_int_attrs_size(); ++a) {
-                const auto& src = r.external_search_int_attrs(a);
-                auto& ia = p.ext_int_attrs.emplace_back();
-                ia = OrbisNpMatching2IntAttr{};
-                ia.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ia.num = src.attr_value();
-                if (!first) {
-                    first = &ia;
-                }
-            }
-            dst.external_search_int_attr = first;
-            dst.external_search_int_attrs = static_cast<u64>(r.external_search_int_attrs_size());
-        }
-
-        auto build_bin = [&](const auto& src_attrs, OrbisNpMatching2BinAttr*& out_ptr,
-                             u64& out_num) {
-            if (src_attrs.empty()) {
-                return;
-            }
-            OrbisNpMatching2BinAttr* first = nullptr;
-            for (const auto& src : src_attrs) {
-                p.bin_buffers.emplace_back(src.data().begin(), src.data().end());
-                auto& buf = p.bin_buffers.back();
-                auto& ba = p.ext_bin_attrs.emplace_back();
-                ba = OrbisNpMatching2BinAttr{};
-                ba.id = static_cast<OrbisNpMatching2AttributeId>(src.attr_id());
-                ba.data = buf.empty() ? nullptr : buf.data();
-                ba.data_size = buf.size();
-                if (!first) {
-                    first = &ba;
-                }
-            }
-            out_ptr = first;
-            out_num = static_cast<u64>(src_attrs.size());
-        };
-        build_bin(r.external_search_bin_attrs(), dst.external_search_bin_attr,
-                  dst.external_search_bin_attrs);
-        build_bin(r.external_bin_attrs(), dst.external_bin_attr, dst.external_bin_attrs);
+        FillRequestedExternalAttrs(p, r, dst, attr_ids);
     }
 
     p.room_data_external_list_response_a =
@@ -1207,7 +1119,7 @@ void* BuildGetRoomDataInternalPayload(ContextObject& ctx, CallbackPayload& p,
 
 void* BuildGetRoomMemberDataInternalPayload(
     ContextObject& ctx, CallbackPayload& p,
-    const OrbisNpMatching2GetRoomMemberDataInternalRequest& request) {
+    const OrbisNpMatching2GetRoomMemberDataInternalRequest& request, bool a_variant) {
     auto cache = LockCache(ctx.ctx_id);
     const auto room_it = cache->rooms.find(request.room_id);
     if (room_it == cache->rooms.end()) {
@@ -1248,7 +1160,7 @@ void* BuildGetRoomMemberDataInternalPayload(
         }
     }
 
-    if (ctx.a_variant) {
+    if (a_variant) {
         p.member_data_a.resize(1);
         auto& out_member = p.member_data_a.front();
         out_member = {};

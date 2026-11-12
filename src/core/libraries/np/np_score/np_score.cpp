@@ -147,9 +147,24 @@ struct ScoreTitleCtx {
 static std::mutex g_mutex;
 static std::map<OrbisNpScoreTitleCtxId, ScoreTitleCtx> g_title_ctxs;
 static std::map<OrbisNpScoreRequestId, std::shared_ptr<ScoreRequestCtx>> g_requests;
-static OrbisNpScoreTitleCtxId g_next_ctx_id = 1;
+
+constexpr OrbisNpScoreTitleCtxId ScoreFirstTitleCtxId = 0x10000001;
+constexpr OrbisNpScoreTitleCtxId ScoreLastTitleCtxId = 0x1fffffff;
+
+static OrbisNpScoreTitleCtxId g_next_ctx_id = ScoreFirstTitleCtxId;
 static OrbisNpScoreRequestId g_next_req_id = 1;
-static s32 g_firmware_version = -1;
+static s32 g_sdk_version = -1;
+
+// SDK 2.00 added the 32-object limit.
+static bool ObjectLimitApplies() {
+    return g_sdk_version >= Common::ElfInfo::FW_200;
+}
+
+static OrbisNpScoreTitleCtxId AllocTitleCtxId() {
+    const OrbisNpScoreTitleCtxId id = g_next_ctx_id;
+    g_next_ctx_id = id >= ScoreLastTitleCtxId ? ScoreFirstTitleCtxId : id + 1;
+    return id;
+}
 
 static ScoreTitleCtx* LookupTitleCtxUnlocked(OrbisNpScoreTitleCtxId id) {
     auto it = g_title_ctxs.find(id);
@@ -180,12 +195,13 @@ s32 sceNpScoreCreateNpTitleCtx(OrbisNpServiceLabel service_label, const OrbisNpI
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
     std::lock_guard lock(g_mutex);
-    if (static_cast<s32>(g_title_ctxs.size()) >= ORBIS_NP_SCORE_MAX_CTX_NUM) {
+    if (ObjectLimitApplies() &&
+        static_cast<s32>(g_title_ctxs.size()) >= ORBIS_NP_SCORE_MAX_CTX_NUM) {
         LOG_ERROR(Lib_NpScore, "too many title contexts");
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_OBJECTS;
     }
     const s32 user_id = NpHandler::GetInstance().GetUserIdByOnlineId(self_np_id->handle);
-    const OrbisNpScoreTitleCtxId id = g_next_ctx_id++;
+    const OrbisNpScoreTitleCtxId id = AllocTitleCtxId();
     g_title_ctxs[id] = ScoreTitleCtx{.service_label = service_label, .user_id = user_id};
     LOG_INFO(Lib_NpScore, "id={} service_label={} user_id={}", id, service_label, user_id);
     return id;
@@ -203,11 +219,12 @@ s32 sceNpScoreCreateNpTitleCtxA(OrbisNpServiceLabel np_service_label,
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
     std::lock_guard lock(g_mutex);
-    if (static_cast<s32>(g_title_ctxs.size()) >= ORBIS_NP_SCORE_MAX_CTX_NUM) {
+    if (ObjectLimitApplies() &&
+        static_cast<s32>(g_title_ctxs.size()) >= ORBIS_NP_SCORE_MAX_CTX_NUM) {
         LOG_ERROR(Lib_NpScore, "too many title contexts");
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_OBJECTS;
     }
-    const OrbisNpScoreTitleCtxId id = g_next_ctx_id++;
+    const OrbisNpScoreTitleCtxId id = AllocTitleCtxId();
     g_title_ctxs[id] = ScoreTitleCtx{.service_label = np_service_label, .user_id = self_id};
     LOG_INFO(Lib_NpScore, "id={} service_label={} user_id={}", id, np_service_label, self_id);
     return id;
@@ -240,7 +257,7 @@ s32 sceNpScoreCreateRequest(s32 title_ctx_id) {
         LOG_ERROR(Lib_NpScore, "invalid title context {}", title_ctx_id);
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
     }
-    if (static_cast<s32>(g_requests.size()) >= ORBIS_NP_SCORE_MAX_CTX_NUM) {
+    if (ObjectLimitApplies() && static_cast<s32>(g_requests.size()) >= ORBIS_NP_SCORE_MAX_CTX_NUM) {
         LOG_ERROR(Lib_NpScore, "too many requests");
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_OBJECTS;
     }
@@ -424,6 +441,30 @@ s32 sceNpScoreRecordScoreAsync(s32 req_id, OrbisNpScoreBoardId board_id, OrbisNp
     return ORBIS_OK;
 }
 
+static s32 ResolveRankArray(OrbisNpScoreRankData*& rank_array, OrbisNpScoreRankDataA*& a_rank_array,
+                            u64 rank_array_size, u64 array_num) {
+    void* out =
+        rank_array != nullptr ? static_cast<void*>(rank_array) : static_cast<void*>(a_rank_array);
+    if (g_sdk_version > Common::ElfInfo::FW_170 && (array_num == 0 || out == nullptr)) {
+        LOG_ERROR(Lib_NpScore, "invalid rank array");
+        return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
+    }
+    if (rank_array_size == array_num * sizeof(OrbisNpScoreRankData)) {
+        rank_array = static_cast<OrbisNpScoreRankData*>(out);
+        a_rank_array = nullptr;
+    } else if (rank_array_size == array_num * sizeof(OrbisNpScoreRankDataA)) {
+        rank_array = nullptr;
+        a_rank_array = static_cast<OrbisNpScoreRankDataA*>(out);
+    } else {
+        LOG_ERROR(Lib_NpScore, "invalid size {}", rank_array_size);
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
+    }
+    if (out != nullptr) {
+        std::memset(out, 0, rank_array_size);
+    }
+    return ORBIS_OK;
+}
+
 static s32 GetRankingByRangeImpl(
     s32 req_id, OrbisNpScoreBoardId board_id, OrbisNpScoreRankNumber start_serial_rank,
     OrbisNpScoreRankData* rank_array, OrbisNpScoreRankDataA* a_rank_array_in, u64 rank_array_size,
@@ -443,29 +484,11 @@ static s32 GetRankingByRangeImpl(
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
 
-    const bool is_a_variant = (a_rank_array_in != nullptr);
-    if (is_a_variant == (rank_array != nullptr)) {
-        LOG_ERROR(Lib_NpScore, "invalid rank array");
-        return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
+    if (const s32 ret = ResolveRankArray(rank_array, a_rank_array_in, rank_array_size, array_num);
+        ret < 0) {
+        return ret;
     }
-    if (array_num == 0) {
-        LOG_ERROR(Lib_NpScore, "invalid arrayNum");
-        return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
-    }
-
-    const u64 expected_size =
-        array_num * (is_a_variant ? sizeof(OrbisNpScoreRankDataA) : sizeof(OrbisNpScoreRankData));
-    if (rank_array_size != expected_size) {
-        LOG_ERROR(Lib_NpScore, "invalid size {}", rank_array_size);
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
-    }
-
-    // Zero whichever output buffer the caller supplied.
-    if (is_a_variant) {
-        std::memset(a_rank_array_in, 0, rank_array_size);
-    } else {
-        std::memset(rank_array, 0, rank_array_size);
-    }
+    const bool is_a_variant = a_rank_array_in != nullptr;
     if (comment_array != nullptr) {
         if (comment_array_size != array_num * sizeof(OrbisNpScoreComment)) {
             LOG_ERROR(Lib_NpScore, "invalid size");
@@ -703,9 +726,18 @@ s32 sceNpScoreGetRankingByNpIdAsync(s32 req_id, OrbisNpScoreBoardId board_id,
                                 true);
 }
 
-//***********************************
-// Ranking by AccountId functions
-//***********************************
+// SDK 5.50 added output clears
+static bool ClearsAccountRankOutputs() {
+    return g_sdk_version >= Common::ElfInfo::FW_550;
+}
+
+static s32 GetRankingByAccountIdPcIdImpl(
+    s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpScoreAccountIdPcId* id_array,
+    u64 id_array_size, OrbisNpScorePlayerRankDataA* rank_array, u64 rank_array_size,
+    OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
+    u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
+    OrbisNpScoreRankNumber* total_record, void* option, bool is_async);
+
 static s32 GetRankingByAccountIdImpl(
     s32 req_id, OrbisNpScoreBoardId board_id, const OrbisNpAccountId* account_id_array,
     u64 account_id_array_size, OrbisNpScorePlayerRankDataA* rank_array, u64 rank_array_size,
@@ -720,9 +752,16 @@ static s32 GetRankingByAccountIdImpl(
         LOG_ERROR(Lib_NpScore, "too many accountIds {}", array_num);
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_NPID;
     }
-    if (array_num == 0 || rank_array == nullptr || account_id_array == nullptr) {
+    if (rank_array == nullptr || account_id_array == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
+    }
+    if (account_id_array_size != array_num * sizeof(OrbisNpAccountId) &&
+        account_id_array_size == array_num * sizeof(OrbisNpScoreAccountIdPcId)) {
+        return GetRankingByAccountIdPcIdImpl(
+            req_id, board_id, reinterpret_cast<const OrbisNpScoreAccountIdPcId*>(account_id_array),
+            account_id_array_size, rank_array, rank_array_size, comment_array, comment_array_size,
+            info_array, info_array_size, array_num, last_sort_date, total_record, option, is_async);
     }
     if (account_id_array_size != array_num * sizeof(OrbisNpAccountId)) {
         LOG_ERROR(Lib_NpScore, "invalid size {}", account_id_array_size);
@@ -732,20 +771,26 @@ static s32 GetRankingByAccountIdImpl(
         LOG_ERROR(Lib_NpScore, "invalid size {}", rank_array_size);
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
     }
-    std::memset(rank_array, 0, rank_array_size);
+    if (ClearsAccountRankOutputs()) {
+        std::memset(rank_array, 0, rank_array_size);
+    }
     if (comment_array != nullptr) {
         if (comment_array_size != array_num * sizeof(OrbisNpScoreComment)) {
             LOG_ERROR(Lib_NpScore, "invalid size {}", comment_array_size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
         }
-        std::memset(comment_array, 0, comment_array_size);
+        if (ClearsAccountRankOutputs()) {
+            std::memset(comment_array, 0, comment_array_size);
+        }
     }
     if (info_array != nullptr) {
         if (info_array_size != array_num * sizeof(OrbisNpScoreGameInfo)) {
             LOG_ERROR(Lib_NpScore, "invalid size {}", info_array_size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
         }
-        std::memset(info_array, 0, info_array_size);
+        if (ClearsAccountRankOutputs()) {
+            std::memset(info_array, 0, info_array_size);
+        }
     }
 
     std::shared_ptr<ScoreRequestCtx> req;
@@ -832,25 +877,9 @@ static s32 GetFriendsRankingImpl(s32 req_id, OrbisNpScoreBoardId board_id, s32 i
                                  u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
                                  OrbisNpScoreRankNumber* total_record, void* option,
                                  bool is_async) {
-    const bool is_a_variant = (a_rank_array_in != nullptr);
-    if (is_a_variant == (rank_array != nullptr)) {
-        LOG_ERROR(Lib_NpScore, "invalid rank array");
-        return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
-    }
-    const u64 expected_size =
-        array_num * (is_a_variant ? sizeof(OrbisNpScoreRankDataA) : sizeof(OrbisNpScoreRankData));
-    if (rank_array_size != expected_size) {
-        LOG_ERROR(Lib_NpScore, "invalid size {}", rank_array_size);
-        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
-    }
     auto* opt = static_cast<OrbisNpScoreGetFriendRankingOptParam*>(option);
     u32 start_serial_rank = 1;
-    if (include_self == 0) {
-        if (opt != nullptr) {
-            LOG_ERROR(Lib_NpScore, "invalid option");
-            return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
-        }
-    } else if (opt != nullptr) {
+    if (opt != nullptr) {
         if (opt->size != sizeof(OrbisNpScoreGetFriendRankingOptParam)) {
             LOG_ERROR(Lib_NpScore, "invalid option size {}", opt->size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
@@ -867,16 +896,11 @@ static s32 GetFriendsRankingImpl(s32 req_id, OrbisNpScoreBoardId board_id, s32 i
         LOG_ERROR(Lib_NpScore, "invalid startSerialRank");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
-    if (array_num == 0) {
-        LOG_ERROR(Lib_NpScore, "invalid arrayNum");
-        return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
+    if (const s32 ret = ResolveRankArray(rank_array, a_rank_array_in, rank_array_size, array_num);
+        ret < 0) {
+        return ret;
     }
-
-    if (is_a_variant) {
-        std::memset(a_rank_array_in, 0, rank_array_size);
-    } else {
-        std::memset(rank_array, 0, rank_array_size);
-    }
+    const bool is_a_variant = a_rank_array_in != nullptr;
     if (comment_array != nullptr) {
         if (comment_array_size != array_num * sizeof(OrbisNpScoreComment)) {
             LOG_ERROR(Lib_NpScore, "invalid size");
@@ -941,10 +965,10 @@ s32 sceNpScoreGetFriendsRanking(s32 req_id, OrbisNpScoreBoardId board_id, s32 in
              req_id, board_id, include_self, PTR(rank_array), rank_array_size, PTR(comment_array),
              comment_array_size, PTR(info_array), info_array_size, array_num, PTR(last_sort_date),
              PTR(total_record), PTR(option));
-    return GetFriendsRankingImpl(req_id, board_id, include_self, rank_array,
-                                 /*aRankArrayIn=*/nullptr, rank_array_size, comment_array,
-                                 comment_array_size, info_array, info_array_size, array_num,
-                                 last_sort_date, total_record, option, false);
+    return GetFriendsRankingImpl(req_id, board_id, include_self, rank_array, nullptr,
+                                 rank_array_size, comment_array, comment_array_size, info_array,
+                                 info_array_size, array_num, last_sort_date, total_record, option,
+                                 false);
 }
 
 s32 sceNpScoreGetFriendsRankingAsync(s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
@@ -962,10 +986,10 @@ s32 sceNpScoreGetFriendsRankingAsync(s32 req_id, OrbisNpScoreBoardId board_id, s
              req_id, board_id, include_self, PTR(rank_array), rank_array_size, PTR(comment_array),
              comment_array_size, PTR(info_array), info_array_size, array_num, PTR(last_sort_date),
              PTR(total_record), PTR(option));
-    return GetFriendsRankingImpl(req_id, board_id, include_self, rank_array,
-                                 /*aRankArrayIn=*/nullptr, rank_array_size, comment_array,
-                                 comment_array_size, info_array, info_array_size, array_num,
-                                 last_sort_date, total_record, option, true);
+    return GetFriendsRankingImpl(req_id, board_id, include_self, rank_array, nullptr,
+                                 rank_array_size, comment_array, comment_array_size, info_array,
+                                 info_array_size, array_num, last_sort_date, total_record, option,
+                                 true);
 }
 s32 sceNpScoreGetFriendsRankingA(s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
                                  OrbisNpScoreRankDataA* rank_array, u64 rank_array_size,
@@ -982,7 +1006,7 @@ s32 sceNpScoreGetFriendsRankingA(s32 req_id, OrbisNpScoreBoardId board_id, s32 i
              req_id, board_id, include_self, PTR(rank_array), rank_array_size, PTR(comment_array),
              comment_array_size, PTR(info_array), info_array_size, array_num, PTR(last_sort_date),
              PTR(total_record), PTR(option));
-    return GetFriendsRankingImpl(req_id, board_id, include_self, /*rankArray=*/nullptr, rank_array,
+    return GetFriendsRankingImpl(req_id, board_id, include_self, nullptr, rank_array,
                                  rank_array_size, comment_array, comment_array_size, info_array,
                                  info_array_size, array_num, last_sort_date, total_record, option,
                                  false);
@@ -1003,7 +1027,7 @@ s32 sceNpScoreGetFriendsRankingAAsync(s32 req_id, OrbisNpScoreBoardId board_id, 
              req_id, board_id, include_self, PTR(rank_array), rank_array_size, PTR(comment_array),
              comment_array_size, PTR(info_array), info_array_size, array_num, PTR(last_sort_date),
              PTR(total_record), PTR(option));
-    return GetFriendsRankingImpl(req_id, board_id, include_self, /*rankArray=*/nullptr, rank_array,
+    return GetFriendsRankingImpl(req_id, board_id, include_self, nullptr, rank_array,
                                  rank_array_size, comment_array, comment_array_size, info_array,
                                  info_array_size, array_num, last_sort_date, total_record, option,
                                  true);
@@ -1023,7 +1047,7 @@ static s32 GetRankingByNpIdPcIdImpl(s32 req_id, OrbisNpScoreBoardId board_id,
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
 
-    if (id_array == nullptr || array_num == 0 || rank_array == nullptr) {
+    if (id_array == nullptr || rank_array == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -1036,20 +1060,26 @@ static s32 GetRankingByNpIdPcIdImpl(s32 req_id, OrbisNpScoreBoardId board_id,
         LOG_ERROR(Lib_NpScore, "invalid size {}", rank_array_size);
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
     }
-    std::memset(rank_array, 0, rank_array_size);
+    if (ClearsAccountRankOutputs()) {
+        std::memset(rank_array, 0, rank_array_size);
+    }
     if (comment_array != nullptr) {
         if (comment_array_size != array_num * sizeof(OrbisNpScoreComment)) {
             LOG_ERROR(Lib_NpScore, "invalid size {}", comment_array_size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
         }
-        std::memset(comment_array, 0, comment_array_size);
+        if (ClearsAccountRankOutputs()) {
+            std::memset(comment_array, 0, comment_array_size);
+        }
     }
     if (info_array != nullptr) {
         if (info_array_size != array_num * sizeof(OrbisNpScoreGameInfo)) {
             LOG_ERROR(Lib_NpScore, "invalid size {}", info_array_size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
         }
-        std::memset(info_array, 0, info_array_size);
+        if (ClearsAccountRankOutputs()) {
+            std::memset(info_array, 0, info_array_size);
+        }
     }
 
     std::shared_ptr<ScoreRequestCtx> req;
@@ -1136,9 +1166,16 @@ static s32 GetRankingByAccountIdPcIdImpl(
         LOG_ERROR(Lib_NpScore, "too many accountIds {}", array_num);
         return ORBIS_NP_COMMUNITY_ERROR_TOO_MANY_NPID;
     }
-    if (array_num == 0 || rank_array == nullptr || id_array == nullptr) {
+    if (rank_array == nullptr || id_array == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
+    }
+    if (id_array_size != array_num * sizeof(OrbisNpScoreAccountIdPcId) &&
+        id_array_size == array_num * sizeof(OrbisNpAccountId)) {
+        return GetRankingByAccountIdImpl(
+            req_id, board_id, reinterpret_cast<const OrbisNpAccountId*>(id_array), id_array_size,
+            rank_array, rank_array_size, comment_array, comment_array_size, info_array,
+            info_array_size, array_num, last_sort_date, total_record, option, is_async);
     }
     if (id_array_size != array_num * sizeof(OrbisNpScoreAccountIdPcId)) {
         LOG_ERROR(Lib_NpScore, "invalid size {}", id_array_size);
@@ -1148,20 +1185,26 @@ static s32 GetRankingByAccountIdPcIdImpl(
         LOG_ERROR(Lib_NpScore, "invalid size {}", rank_array_size);
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
     }
-    std::memset(rank_array, 0, rank_array_size);
+    if (ClearsAccountRankOutputs()) {
+        std::memset(rank_array, 0, rank_array_size);
+    }
     if (comment_array != nullptr) {
         if (comment_array_size != array_num * sizeof(OrbisNpScoreComment)) {
             LOG_ERROR(Lib_NpScore, "invalid size {}", comment_array_size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
         }
-        std::memset(comment_array, 0, comment_array_size);
+        if (ClearsAccountRankOutputs()) {
+            std::memset(comment_array, 0, comment_array_size);
+        }
     }
     if (info_array != nullptr) {
         if (info_array_size != array_num * sizeof(OrbisNpScoreGameInfo)) {
             LOG_ERROR(Lib_NpScore, "invalid size {}", info_array_size);
             return ORBIS_NP_COMMUNITY_ERROR_INVALID_ALIGNMENT;
         }
-        std::memset(info_array, 0, info_array_size);
+        if (ClearsAccountRankOutputs()) {
+            std::memset(info_array, 0, info_array_size);
+        }
     }
 
     std::shared_ptr<ScoreRequestCtx> req;
@@ -1245,8 +1288,7 @@ static s32 GetBoardInfoImpl(s32 req_id, OrbisNpScoreBoardId board_id,
         LOG_ERROR(Lib_NpScore, "invalid option");
         return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
     }
-    if (g_firmware_version >= 0 && g_firmware_version >= Common::ElfInfo::FW_250 &&
-        board_info == nullptr) {
+    if (g_sdk_version >= 0 && g_sdk_version >= Common::ElfInfo::FW_250 && board_info == nullptr) {
         LOG_ERROR(Lib_NpScore, "invalid argument");
         return ORBIS_NP_COMMUNITY_ERROR_INSUFFICIENT_ARGUMENT;
     }
@@ -1684,9 +1726,28 @@ s32 sceNpScoreSetPlayerCharacterId(s32 ctx_id, OrbisNpScorePcId pc_id) {
     return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
 }
 
-s32 sceNpScoreChangeModeForOtherSaveDataOwners() {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
+static bool IsTitleCtxId(s32 id) {
+    return id >= ScoreFirstTitleCtxId && id < ScoreLastTitleCtxId;
+}
+
+static s32 LookupScoreId(s32 id) {
+    std::lock_guard lock(g_mutex);
+    const bool found = IsTitleCtxId(id) ? LookupTitleCtxUnlocked(id) != nullptr
+                                        : LookupRequestUnlocked(id) != nullptr;
+    if (!found) {
+        LOG_ERROR(Lib_NpScore, "invalid id {}", id);
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ID;
+    }
     return ORBIS_OK;
+}
+
+s32 sceNpScoreChangeModeForOtherSaveDataOwners(s32 id, s32 mode) {
+    LOG_INFO(Lib_NpScore, "id={} mode={}", id, mode);
+    if (static_cast<u32>(mode) > 3) {
+        LOG_ERROR(Lib_NpScore, "invalid mode {}", mode);
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
+    return LookupScoreId(id);
 }
 
 s32 sceNpScoreCreateTitleCtx() {
@@ -1700,8 +1761,13 @@ s32 sceNpScoreGetFriendsRankingForCrossSave(
     OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
     u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
     OrbisNpScoreRankNumber* total_record, OrbisNpScoreGetFriendRankingOptParam* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetFriendsRankingImpl(req_id, board_id, include_self, nullptr,
+                                 reinterpret_cast<OrbisNpScoreRankDataA*>(rank_array),
+                                 rank_array_size, comment_array, comment_array_size, info_array,
+                                 info_array_size, array_num, last_sort_date, total_record, option,
+                                 false);
 }
 
 s32 sceNpScoreGetFriendsRankingForCrossSaveAsync(
@@ -1710,8 +1776,13 @@ s32 sceNpScoreGetFriendsRankingForCrossSaveAsync(
     OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
     u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
     OrbisNpScoreRankNumber* total_record, OrbisNpScoreGetFriendRankingOptParam* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetFriendsRankingImpl(req_id, board_id, include_self, nullptr,
+                                 reinterpret_cast<OrbisNpScoreRankDataA*>(rank_array),
+                                 rank_array_size, comment_array, comment_array_size, info_array,
+                                 info_array_size, array_num, last_sort_date, total_record, option,
+                                 true);
 }
 
 s32 sceNpScoreGetRankingByAccountIdForCrossSave(
@@ -1720,8 +1791,13 @@ s32 sceNpScoreGetRankingByAccountIdForCrossSave(
     u64 rank_array_size, OrbisNpScoreComment* comment_array, u64 comment_array_size,
     OrbisNpScoreGameInfo* info_array, u64 info_array_size, u64 array_num,
     Rtc::OrbisRtcTick* last_sort_date, OrbisNpScoreRankNumber* total_record, void* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetRankingByAccountIdImpl(req_id, board_id, account_id_array, account_id_array_size,
+                                     reinterpret_cast<OrbisNpScorePlayerRankDataA*>(rank_array),
+                                     rank_array_size, comment_array, comment_array_size, info_array,
+                                     info_array_size, array_num, last_sort_date, total_record,
+                                     option, false);
 }
 
 s32 sceNpScoreGetRankingByAccountIdForCrossSaveAsync(
@@ -1730,8 +1806,13 @@ s32 sceNpScoreGetRankingByAccountIdForCrossSaveAsync(
     u64 rank_array_size, OrbisNpScoreComment* comment_array, u64 comment_array_size,
     OrbisNpScoreGameInfo* info_array, u64 info_array_size, u64 array_num,
     Rtc::OrbisRtcTick* last_sort_date, OrbisNpScoreRankNumber* total_record, void* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetRankingByAccountIdImpl(req_id, board_id, account_id_array, account_id_array_size,
+                                     reinterpret_cast<OrbisNpScorePlayerRankDataA*>(rank_array),
+                                     rank_array_size, comment_array, comment_array_size, info_array,
+                                     info_array_size, array_num, last_sort_date, total_record,
+                                     option, true);
 }
 
 s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSave(
@@ -1740,8 +1821,13 @@ s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSave(
     OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
     u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
     OrbisNpScoreRankNumber* total_record, void* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetRankingByAccountIdPcIdImpl(req_id, board_id, id_array, id_array_size,
+                                         reinterpret_cast<OrbisNpScorePlayerRankDataA*>(rank_array),
+                                         rank_array_size, comment_array, comment_array_size,
+                                         info_array, info_array_size, array_num, last_sort_date,
+                                         total_record, option, false);
 }
 
 s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync(
@@ -1750,8 +1836,13 @@ s32 sceNpScoreGetRankingByAccountIdPcIdForCrossSaveAsync(
     OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
     u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
     OrbisNpScoreRankNumber* total_record, void* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetRankingByAccountIdPcIdImpl(req_id, board_id, id_array, id_array_size,
+                                         reinterpret_cast<OrbisNpScorePlayerRankDataA*>(rank_array),
+                                         rank_array_size, comment_array, comment_array_size,
+                                         info_array, info_array_size, array_num, last_sort_date,
+                                         total_record, option, true);
 }
 
 s32 sceNpScoreGetRankingByRangeForCrossSave(s32 req_id, OrbisNpScoreBoardId board_id,
@@ -1762,8 +1853,13 @@ s32 sceNpScoreGetRankingByRangeForCrossSave(s32 req_id, OrbisNpScoreBoardId boar
                                             OrbisNpScoreGameInfo* info_array, u64 info_array_size,
                                             u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
                                             OrbisNpScoreRankNumber* total_record, void* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetRankingByRangeImpl(req_id, board_id, start_serial_rank, nullptr,
+                                 reinterpret_cast<OrbisNpScoreRankDataA*>(rank_array),
+                                 rank_array_size, comment_array, comment_array_size, info_array,
+                                 info_array_size, array_num, last_sort_date, total_record, option,
+                                 false);
 }
 
 s32 sceNpScoreGetRankingByRangeForCrossSaveAsync(
@@ -1772,8 +1868,13 @@ s32 sceNpScoreGetRankingByRangeForCrossSaveAsync(
     OrbisNpScoreComment* comment_array, u64 comment_array_size, OrbisNpScoreGameInfo* info_array,
     u64 info_array_size, u64 array_num, Rtc::OrbisRtcTick* last_sort_date,
     OrbisNpScoreRankNumber* total_record, void* option) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore, "called, req_id={}, board_id={}, array_num={}", req_id, board_id,
+             array_num);
+    return GetRankingByRangeImpl(req_id, board_id, start_serial_rank, nullptr,
+                                 reinterpret_cast<OrbisNpScoreRankDataA*>(rank_array),
+                                 rank_array_size, comment_array, comment_array_size, info_array,
+                                 info_array_size, array_num, last_sort_date, total_record, option,
+                                 true);
 }
 
 s32 sceNpScoreSetThreadParam(s32 thread_priority, u64 cpu_affinity_mask) {
@@ -1783,12 +1884,22 @@ s32 sceNpScoreSetThreadParam(s32 thread_priority, u64 cpu_affinity_mask) {
 
 s32 sceNpScoreSetTimeout(s32 id, s32 resolve_retry, s32 resolve_timeout, s32 conn_timeout,
                          s32 send_timeout, s32 recv_timeout) {
-    LOG_ERROR(Lib_NpScore, "(STUBBED) called");
-    return ORBIS_OK;
+    LOG_INFO(Lib_NpScore,
+             "id={} resolve_retry={} resolve_timeout={} conn_timeout={} "
+             "send_timeout={} recv_timeout={}",
+             id, resolve_retry, resolve_timeout, conn_timeout, send_timeout, recv_timeout);
+    // Timeouts are in microseconds
+    const auto valid = [](s32 value, s32 minimum) { return value == 0 || value >= minimum; };
+    if (resolve_retry < 0 || !valid(resolve_timeout, 1000000) || !valid(conn_timeout, 10000000) ||
+        !valid(send_timeout, 10000000) || !valid(recv_timeout, 10000000)) {
+        LOG_ERROR(Lib_NpScore, "invalid timeout");
+        return ORBIS_NP_COMMUNITY_ERROR_INVALID_ARGUMENT;
+    }
+    return LookupScoreId(id);
 }
 
 void RegisterHooks() {
-    sceKernelGetCompiledSdkVersion(&g_firmware_version);
+    sceKernelGetCompiledSdkVersion(&g_sdk_version);
     return RegisterNpScoreHooks();
 }
 

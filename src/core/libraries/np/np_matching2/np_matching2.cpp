@@ -147,6 +147,11 @@ namespace Libraries::Np::NpMatching2 {
 
 static s32 g_sdk_version = 0;
 
+// A-variants share code with non-A-variants. This is used to determine which event type to use.
+static bool UsesAVariant(const ContextObject& ctx) {
+    return g_sdk_version >= Common::ElfInfo::FW_400 && ctx.a_variant;
+}
+
 s32 sceNpMatching2CreateContext(const OrbisNpMatching2CreateContextParameter* param,
                                 OrbisNpMatching2ContextId* ctx_id) {
     LOG_INFO(Lib_NpMatching2, "called, np_id = {}, service_label = {}, size = {}",
@@ -209,6 +214,10 @@ s32 sceNpMatching2CreateJoinRoom(OrbisNpMatching2ContextId ctx_id,
         LOG_ERROR(Lib_NpMatching2, "invalid context id");
         return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT_ID;
     }
+    if (UsesAVariant(*ctx)) {
+        LOG_ERROR(Lib_NpMatching2, "context {} needs the A variant", ctx_id);
+        return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT;
+    }
 
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
@@ -236,6 +245,10 @@ s32 sceNpMatching2JoinRoom(OrbisNpMatching2ContextId ctx_id,
     if (!ctx) {
         LOG_ERROR(Lib_NpMatching2, "invalid context id");
         return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT_ID;
+    }
+    if (UsesAVariant(*ctx)) {
+        LOG_ERROR(Lib_NpMatching2, "context {} needs the A variant", ctx_id);
+        return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT;
     }
 
     StoreRequestCallback(ctx, request_opt);
@@ -574,7 +587,7 @@ s32 sceNpMatching2SearchRoom(OrbisNpMatching2ContextId ctx_id,
     *request_id = req_id;
 
     const DispatchHold dispatch_hold;
-    MmSearchRoom(ctx_id, req_id, *request, ctx->a_variant);
+    MmSearchRoom(ctx_id, req_id, *request, UsesAVariant(*ctx));
     return ORBIS_OK;
 }
 
@@ -894,7 +907,7 @@ s32 sceNpMatching2GetRoomDataExternalList(OrbisNpMatching2ContextId ctx_id,
     *request_id = req_id;
 
     const DispatchHold dispatch_hold;
-    MmGetRoomDataExternalList(ctx_id, req_id, *request, ctx->a_variant);
+    MmGetRoomDataExternalList(ctx_id, req_id, *request, UsesAVariant(*ctx));
     return ORBIS_OK;
 }
 
@@ -971,7 +984,7 @@ s32 sceNpMatching2GetRoomMemberDataExternalList(
     *request_id = req_id;
 
     const DispatchHold dispatch_hold;
-    MmGetRoomMemberDataExternalList(ctx_id, req_id, *request, ctx->a_variant);
+    MmGetRoomMemberDataExternalList(ctx_id, req_id, *request, UsesAVariant(*ctx));
     return ORBIS_OK;
 }
 
@@ -1001,9 +1014,10 @@ s32 sceNpMatching2GetRoomMemberDataInternal(
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
 
+    const bool a_variant = UsesAVariant(*ctx);
     auto request_payload_owner = std::make_shared<CallbackPayload>();
     void* request_data =
-        BuildGetRoomMemberDataInternalPayload(*ctx, *request_payload_owner, *request);
+        BuildGetRoomMemberDataInternalPayload(*ctx, *request_payload_owner, *request, a_variant);
 
     PendingEvent ev{};
     ev.type = PendingEvent::REQUEST_CB;
@@ -1011,9 +1025,8 @@ s32 sceNpMatching2GetRoomMemberDataInternal(
     ev.context_owner = ctx;
     ev.fire_at = std::chrono::steady_clock::now();
     ev.req_id = req_id;
-    ev.req_event = g_sdk_version >= Common::ElfInfo::FW_400 && ctx->a_variant
-                       ? ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL_A
-                       : ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL;
+    ev.req_event = a_variant ? ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL_A
+                             : ORBIS_NP_MATCHING2_REQUEST_EVENT_GET_ROOM_MEMBER_DATA_INTERNAL;
     ev.error_code = 0;
     const RequestCallbackInfo request_cb = ConsumeRequestCallback(ctx);
     ev.request_cb = request_cb.callback;
@@ -1075,13 +1088,17 @@ s32 sceNpMatching2GetUserInfoList(OrbisNpMatching2ContextId ctx_id,
         LOG_ERROR(Lib_NpMatching2, "invalid context id");
         return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT_ID;
     }
+    if (UsesAVariant(*ctx)) {
+        LOG_ERROR(Lib_NpMatching2, "context {} needs the A variant", ctx_id);
+        return ORBIS_NP_MATCHING2_ERROR_INVALID_CONTEXT;
+    }
 
     StoreRequestCallback(ctx, request_opt);
     const OrbisNpMatching2RequestId req_id = AllocRequestId();
     *request_id = req_id;
 
     const DispatchHold dispatch_hold;
-    MmGetUserInfoList(ctx_id, req_id, *request, ctx->a_variant);
+    MmGetUserInfoList(ctx_id, req_id, *request, false);
     return ORBIS_OK;
 }
 

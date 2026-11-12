@@ -309,7 +309,7 @@ s32 sceNpScoreSanitizeComment(s32 req_id, const char* comment, char* sanitized_c
 s32 sceNpScoreSanitizeCommentAsync(s32 req_id, const char* comment, char* sanitized_comment,
                                    void* option);
 s32 sceNpScoreSetPlayerCharacterId(s32 ctx_id, OrbisNpScorePcId pc_id);
-s32 sceNpScoreChangeModeForOtherSaveDataOwners();
+s32 sceNpScoreChangeModeForOtherSaveDataOwners(s32 id, s32 mode);
 s32 sceNpScoreCreateTitleCtx();
 s32 sceNpScoreGetFriendsRankingForCrossSave(
     s32 req_id, OrbisNpScoreBoardId board_id, s32 include_self,
