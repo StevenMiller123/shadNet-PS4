@@ -5,9 +5,13 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <deque>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include "common/types.h"
 
 #include <miniupnpc.h>
@@ -27,7 +31,7 @@ public:
     std::string GetExternalIpString() const;
     u16 GetExternalPort() const;
 
-    void AddMapping(u16 port);
+    bool AddMapping(u16 port);
     void RemoveMapping(u16 port);
     void MapPortAsync(u16 port);
     void UnmapPort(u16 port);
@@ -39,6 +43,7 @@ private:
     UPnPClient& operator=(const UPnPClient&) = delete;
 
     void DiscoverThread();
+    void MapThread();
 
     std::atomic<bool> m_started{false};
     std::atomic<bool> m_p2p_features_enabled{true};
@@ -46,7 +51,6 @@ private:
     std::atomic<bool> m_available{false};
     std::atomic<u32> m_external_ip_nbo{0};
     std::atomic<u16> m_external_port{0};
-    std::atomic<u16> m_mapped_port{0};
     char m_external_ip_str[16]{};
 
     char m_lan_addr[64]{};
@@ -57,7 +61,12 @@ private:
     std::condition_variable m_cv;
     std::thread m_thread;
     std::mutex m_map_mutex;
+    std::condition_variable m_map_cv;
     std::thread m_map_thread;
+    bool m_map_stop = false;
+    std::deque<std::pair<u16, bool>> m_map_queue;
+    std::unordered_map<u16, u32> m_port_refs;
+    std::unordered_set<u16> m_mapped_ports;
 };
 
 } // namespace NetUtil

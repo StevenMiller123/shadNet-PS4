@@ -21,12 +21,18 @@ UPnPClient::~UPnPClient() {
     if (m_thread.joinable()) {
         m_thread.join();
     }
+    {
+        std::scoped_lock lock{m_map_mutex};
+        m_map_stop = true;
+    }
+    m_map_cv.notify_all();
     if (m_map_thread.joinable()) {
         m_map_thread.join();
     }
-    if (const u16 port = m_mapped_port.exchange(0); port != 0) {
+    for (const u16 port : m_mapped_ports) {
         RemoveMapping(port);
     }
+    m_mapped_ports.clear();
     if (m_available.load()) {
         FreeUPNPUrls(&m_urls);
     }
@@ -117,55 +123,91 @@ void UPnPClient::DiscoverThread() {
     m_cv.notify_all();
 }
 
-void UPnPClient::AddMapping(u16 port) {
+bool UPnPClient::AddMapping(u16 port) {
     if (!m_p2p_features_enabled.load()) {
-        return;
+        return false;
     }
 
     if (!m_available.load()) {
-        return;
+        return false;
     }
 
     const std::string port_str = std::to_string(port);
-    const int ret =
+    const s32 ret =
         UPNP_AddPortMapping(m_urls.controlURL, m_data.first.servicetype, port_str.c_str(),
                             port_str.c_str(), m_lan_addr, "shadPS4", "UDP", nullptr, "0");
 
+    m_external_port.store(port);
     if (ret == UPNPCOMMAND_SUCCESS) {
-        m_external_port.store(port);
         LOG_INFO(Lib_Net, "UPnP: mapped UDP port {}", port);
-    } else {
-        m_external_port.store(port);
-        LOG_WARNING(Lib_Net, "UPnP: failed to map port {} ({})", port, strupnperror(ret));
+        return true;
     }
+    LOG_WARNING(Lib_Net, "UPnP: failed to map port {} ({})", port, strupnperror(ret));
+    return false;
 }
 
 void UPnPClient::MapPortAsync(u16 port) {
-    std::scoped_lock lock{m_map_mutex};
-    if (m_map_thread.joinable()) {
-        m_map_thread.join();
+    if (port == 0) {
+        return;
     }
-    m_map_thread = std::thread([this, port] {
-        if (!WaitReady(10'000)) {
-            LOG_INFO(Lib_Net, "UPnP: no IGD, UDP port {} is not forwarded", port);
+    {
+        std::scoped_lock lock{m_map_mutex};
+        if (m_map_stop || m_port_refs[port]++ != 0) {
             return;
         }
-        const u16 previous = m_mapped_port.exchange(port);
-        if (previous != 0 && previous != port) {
-            RemoveMapping(previous);
+        m_map_queue.emplace_back(port, true);
+        if (!m_map_thread.joinable()) {
+            m_map_thread = std::thread(&UPnPClient::MapThread, this);
         }
-        AddMapping(port);
-    });
+    }
+    m_map_cv.notify_one();
 }
 
 void UPnPClient::UnmapPort(u16 port) {
-    std::scoped_lock lock{m_map_mutex};
-    if (m_map_thread.joinable()) {
-        m_map_thread.join();
+    {
+        std::scoped_lock lock{m_map_mutex};
+        const auto it = m_port_refs.find(port);
+        if (it == m_port_refs.end()) {
+            return;
+        }
+        if (--it->second != 0) {
+            return;
+        }
+        m_port_refs.erase(it);
+        m_map_queue.emplace_back(port, false);
     }
-    u16 expected = port;
-    if (m_mapped_port.compare_exchange_strong(expected, 0)) {
-        RemoveMapping(port);
+    m_map_cv.notify_one();
+}
+
+void UPnPClient::MapThread() {
+    for (;;) {
+        std::pair<u16, bool> op;
+        {
+            std::unique_lock lock{m_map_mutex};
+            m_map_cv.wait(lock, [this] { return m_map_stop || !m_map_queue.empty(); });
+            if (m_map_stop) {
+                return;
+            }
+            op = m_map_queue.front();
+            m_map_queue.pop_front();
+        }
+        const auto [port, add] = op;
+        if (!add) {
+            if (m_mapped_ports.erase(port) != 0) {
+                RemoveMapping(port);
+            }
+            continue;
+        }
+        if (m_mapped_ports.contains(port)) {
+            continue;
+        }
+        if (!WaitReady(10000)) {
+            LOG_INFO(Lib_Net, "UPnP: no IGD, UDP port {} is not forwarded", port);
+            continue;
+        }
+        if (AddMapping(port)) {
+            m_mapped_ports.insert(port);
+        }
     }
 }
 
@@ -178,7 +220,7 @@ void UPnPClient::RemoveMapping(u16 port) {
     UPNP_DeletePortMapping(m_urls.controlURL, m_data.first.servicetype, port_str.c_str(), "UDP",
                            nullptr);
 
-    LOG_INFO(Lib_Net, "UPnP: UDP port {}", port);
+    LOG_INFO(Lib_Net, "UPnP: unmapped UDP port {}", port);
 }
 
 } // namespace NetUtil
