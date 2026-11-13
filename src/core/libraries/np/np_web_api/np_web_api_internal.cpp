@@ -1215,8 +1215,8 @@ s32 createPushEventFilterInternal(OrbisNpWebApiContext* context,
             OrbisNpWebApiPushEventFilterParameter copy = OrbisNpWebApiPushEventFilterParameter{};
             std::memcpy(&copy, &filter_param[param_idx],
                         sizeof(OrbisNpWebApiPushEventFilterParameter));
-            LOG_INFO(Lib_NpWebApi, "  filter_param[{}] data_type='{}'", param_idx,
-                     copy.data_type.val);
+            LOG_DEBUG(Lib_NpWebApi, "  filter_param[{}] data_type='{}'", param_idx,
+                      copy.data_type.val);
             filter->filter_params.emplace_back(copy);
         }
     }
@@ -1369,8 +1369,8 @@ s32 createServicePushEventFilterInternal(
                 OrbisNpWebApiServicePushEventFilterParameter{};
             std::memcpy(&copy, &filter_param[param_idx],
                         sizeof(OrbisNpWebApiServicePushEventFilterParameter));
-            LOG_INFO(Lib_NpWebApi, "  filter_param[{}] data_type='{}'", param_idx,
-                     copy.data_type.val);
+            LOG_DEBUG(Lib_NpWebApi, "  filter_param[{}] data_type='{}'", param_idx,
+                      copy.data_type.val);
             filter->filter_params.emplace_back(copy);
         }
     }
@@ -1548,13 +1548,13 @@ s32 createExtendedPushEventFilterInternal(
                 OrbisNpWebApiExtdPushEventFilterParameter{};
             std::memcpy(&copy, &filter_param[param_idx],
                         sizeof(OrbisNpWebApiExtdPushEventFilterParameter));
-            LOG_INFO(Lib_NpWebApi, "  filter_param[{}] data_type='{}' extd_keys={}", param_idx,
-                     copy.data_type.val, copy.extd_data_key_num);
+            LOG_DEBUG(Lib_NpWebApi, "  filter_param[{}] data_type='{}' extd_keys={}", param_idx,
+                      copy.data_type.val, copy.extd_data_key_num);
             std::vector<std::string> keys;
             if (copy.extd_data_key != nullptr) {
                 for (u64 k = 0; k < copy.extd_data_key_num; k++) {
-                    LOG_INFO(Lib_NpWebApi, "    extd_data_key[{}]='{}'", k,
-                             copy.extd_data_key[k].val);
+                    LOG_DEBUG(Lib_NpWebApi, "    extd_data_key[{}]='{}'", k,
+                              copy.extd_data_key[k].val);
                     keys.emplace_back(
                         copy.extd_data_key[k].val,
                         strnlen(copy.extd_data_key[k].val, sizeof(copy.extd_data_key[k].val)));

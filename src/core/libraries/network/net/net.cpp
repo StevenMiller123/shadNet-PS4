@@ -96,8 +96,8 @@ s32 sceNetResolverConnect(OrbisNetResolverConnectInfo* rcinfo, const char* hostn
 }
 
 s32 sceNetSocket(const char* name, s32 family, s32 type, s32 protocol) {
-    LOG_INFO(Lib_Net, "called, name = {}, family = {}, type = {}, protocol = {}",
-             name ? name : "(null)", family, type, protocol);
+    LOG_DEBUG(Lib_Net, "called, name = {}, family = {}, type = {}, protocol = {}",
+              name ? name : "(null)", family, type, protocol);
     return SHADNET_HOOK_CONTINUE(sceNetSocket, name, family, type, protocol);
 }
 

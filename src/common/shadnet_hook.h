@@ -16,6 +16,7 @@
 
 #define SHADNET_HOOK64(name_space, name)                                                           \
     do {                                                                                           \
+        LOG_DEBUG(shadNet, "HOOK64() Create {}", #name);                                           \
         Detour_Construct((&(Detour_##name)), DetourMode_x64);                                      \
         if (!Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                             \
                                    (void*)((decltype(&name_space::name))(name##_hook)))) {         \
@@ -25,6 +26,7 @@
 
 #define SHADNET_HOOK32(name_space, name)                                                           \
     do {                                                                                           \
+        LOG_DEBUG(shadNet, "HOOK32() Create {}", #name);                                           \
         Detour_Construct((&(Detour_##name)), DetourMode_x32);                                      \
         if (!Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                             \
                                    (void*)((decltype(&name_space::name))(name##_hook)))) {         \
@@ -34,6 +36,7 @@
 
 #define SHADNET_HOOK16(name_space, name)                                                           \
     do {                                                                                           \
+        LOG_DEBUG(shadNet, "HOOK16() Create {}", #name);                                           \
         Detour_Construct((&(Detour_##name)), DetourMode_x16);                                      \
         if (!Detour_DetourFunction((&(Detour_##name)), (uint64_t)name,                             \
                                    (void*)((decltype(&name_space::name))(name##_hook)))) {         \

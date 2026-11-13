@@ -1267,7 +1267,7 @@ s32 sceNpMatching2SignalingGetPingInfo(OrbisNpMatching2ContextId ctx_id, const v
 }
 
 s32 sceNpMatching2SignalingCancelPeerNetInfo() {
-    LOG_INFO(Lib_NpMatching2, "called");
+    LOG_INFO(Lib_NpMatching2, "(STUBBED) called");
     return ORBIS_OK;
 }
 
@@ -1275,6 +1275,8 @@ s32 sceNpMatching2SignalingGetConnectionInfoA(OrbisNpMatching2ContextId ctx_id,
                                               OrbisNpMatching2RoomId room_id,
                                               OrbisNpMatching2RoomMemberId member_id, u32 info_type,
                                               void* conn_info) {
+    LOG_DEBUG(Lib_NpMatching2, "called, ctx_id = {}, room_id = {}, member_id = {}", ctx_id, room_id,
+              member_id);
     if (!IsInitialized()) {
         LOG_ERROR(Lib_NpMatching2, "not initialized");
         return ORBIS_NP_MATCHING2_ERROR_NOT_INITIALIZED;
@@ -1292,6 +1294,8 @@ s32 sceNpMatching2SignalingGetConnectionInfo(OrbisNpMatching2ContextId ctx_id,
                                              OrbisNpMatching2RoomId room_id,
                                              OrbisNpMatching2RoomMemberId member_id, u32 info_type,
                                              void* conn_info) {
+    LOG_DEBUG(Lib_NpMatching2, "called, ctx_id = {}, room_id = {}, member_id = {}", ctx_id, room_id,
+              member_id);
     if (!IsInitialized()) {
         LOG_ERROR(Lib_NpMatching2, "not initialized");
         return ORBIS_NP_MATCHING2_ERROR_NOT_INITIALIZED;
