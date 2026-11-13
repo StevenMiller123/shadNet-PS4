@@ -11,7 +11,9 @@
 #include "common/elf_info.h"
 #include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
+#include "common/logging/logger.h"
 #include "common/plugin_common.h"
+#include "common/scm_rev.h"
 #include "common/types.h"
 #include "core/file_format/npbind.h"
 #include "core/file_format/psf.h"
@@ -60,8 +62,28 @@ static bool AnyUserEnabled() {
 }
 
 extern "C" s32 client_start() {
-    LOG_INFO(shadNet, "Initializing shadNet Client");
+    // Retrieve basic app information
+    OrbisAppInfo app_info{};
+    s32 result = sceKernelGetAppInfo(getpid(), &app_info);
+    if (result != 0) {
+        return 1;
+    }
+
+    // Initialize elfinfo
+    auto& game_info = Common::ElfInfo::Instance();
+    sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
+    game_info.initialized = true;
+    game_info.game_serial = std::string{app_info.TitleId};
+
+    // Initialize logging
+    auto& logger = Logger::GetInstance();
+    logger.Initialize(game_info.game_serial);
+
     // Preload modules used by the plugin
+    const std::string remote_host = Common::GetRemoteNameFromLink();
+    LOG_NOTIFICATION(shadNet, "Starting shadNet-PS4 v{} {}/{} {}", Common::g_scm_app_version,
+                     remote_host, Common::g_scm_branch, Common::g_scm_desc);
+
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
@@ -106,21 +128,7 @@ extern "C" s32 client_start() {
     ShadNet::Settings::GetInstance().Initialize();
     Libraries::Pad::StartPolling();
 
-    // Initialize elfinfo
-    auto& game_info = Common::ElfInfo::Instance();
-
-    // Retrieve as much game metadata as we can
-    OrbisAppInfo app_info{};
-    s32 result = sceKernelGetAppInfo(getpid(), &app_info);
-    if (result != 0) {
-        LOG_ERROR(shadNet, "sceKernelGetAppInfo failed!");
-        return 1;
-    }
-
-    sceKernelGetCompiledSdkVersion(reinterpret_cast<s32*>(&game_info.sdk_ver));
-    game_info.initialized = true;
-    game_info.game_serial = std::string{app_info.TitleId};
-
+    // Load game metadata
     bool sandbox_psf = false;
     bool sandbox_npbind = false;
 

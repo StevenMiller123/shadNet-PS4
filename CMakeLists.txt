@@ -238,7 +238,6 @@ set(PLUGIN_LIBS
     -lSceNpUtility
     -lSceNpWebApi
     -lSceNpWebApi2
-    -lSceSysUtil
     -lSceSystemService
     -lSceUserService
     -lSceSigninDialog
@@ -252,6 +251,7 @@ file(MAKE_DIRECTORY "${SHADNET_PROTO_OUT}")
 set(COMMON_SOURCES src/common/libjbc/jailbreak.c
                    src/common/libjbc/kernelrw.c
                    src/common/libjbc/utils.c
+                   src/common/logging/logger.cpp
                    src/common/error.cpp
                    src/common/plugin_common.cpp
                    src/common/string_util.cpp

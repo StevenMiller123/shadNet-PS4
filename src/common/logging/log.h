@@ -4,10 +4,12 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <orbis/SysUtil.h>
 #include <orbis/libkernel.h>
 #include <pthread.h>
 #include <pthread_np.h>
+
+#include "common/logging/logger.h"
+#include "common/types.h"
 
 template <typename... Args>
 std::string FormatLog(char const* format, Args const&... args) {
@@ -21,7 +23,7 @@ std::string FormatLog(char const* format, Args const&... args) {
 }
 
 template <typename... Args>
-void PrintLog(char const* lib, char const* log_level, char const* file, unsigned int line_num,
+void PrintLog(char const* lib, char const* log_level, char const* file, u32 line_num,
               char const* function, char const* format, Args const&... args) {
     std::string message = FormatLog(format, args...);
     char thr_name[256];
@@ -29,7 +31,7 @@ void PrintLog(char const* lib, char const* log_level, char const* file, unsigned
     std::string lib_str{lib};
     std::replace(lib_str.begin(), lib_str.end(), '_', '.');
     std::string file_name{file};
-    size_t last_separator = file_name.find_last_of('/');
+    u64 last_separator = file_name.find_last_of('/');
     if (last_separator != std::string::npos && last_separator < file_name.size() - 1) {
         file_name = file_name.substr(last_separator + 1);
     }
@@ -41,11 +43,16 @@ void PrintLog(char const* lib, char const* log_level, char const* file, unsigned
         full_log = fmt::format("[{}] <{}> {}:{} {}: {}\n", lib_str, log_level, file_name, line_num,
                                function, message);
     }
-    sceKernelDebugOutText(0, full_log.c_str());
+
+    // Don't print debug or trace logs, since logging is expensive
+    if (strncmp(log_level, "Trace", 6) != 0 && strncmp(log_level, "Debug", 6) != 0) {
+        sceKernelDebugOutText(0, full_log.c_str());
+    }
+    Logger::GetInstance().Log(full_log.c_str());
 }
 
 template <typename... Args>
-void PrintLogN(char const* lib, char const* log_level, char const* file, unsigned int line_num,
+void PrintLogN(char const* lib, char const* log_level, char const* file, u32 line_num,
                char const* function, char const* format, Args const&... args) {
     PrintLog(lib, log_level, file, line_num, function, format, args...);
     std::string message = FormatLog(format, args...);
@@ -54,8 +61,7 @@ void PrintLogN(char const* lib, char const* log_level, char const* file, unsigne
         .targetId = -1,
     };
 
-    strncpy(request.message, message.c_str(), sizeof request.message);
-
+    strncpy(request.message, message.c_str(), sizeof(request.message));
     sceKernelSendNotificationRequest(NotificationRequest, &request, sizeof(request), 0);
 }
 
