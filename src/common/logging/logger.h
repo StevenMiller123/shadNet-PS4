@@ -17,3 +17,5 @@ private:
     Logger() = default;
     ~Logger() = default;
 };
+
+void TtyLogThread(int fd, char const* name);

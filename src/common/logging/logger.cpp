@@ -3,8 +3,9 @@
 
 #include <fstream>
 #include <mutex>
+#include <unistd.h>
 
-#include "common/logging/logger.h"
+#include "common/logging/log.h"
 #include "common/types.h"
 
 Logger& Logger::GetInstance() {
@@ -49,4 +50,23 @@ void Logger::Log(const char* log_string) {
     // LOG_ macros append a newline, so we don't need to add any here.
     file << log_string;
     file.flush();
+}
+
+void TtyLogThread(int fd, char const* name) {
+    pthread_set_name_np(pthread_self(), name);
+    LOG_DEBUG(shadNet, "Tty log thread started");
+    std::string line{};
+    char buf{};
+    while (read(fd, &buf, sizeof buf)) {
+        if (buf == '\n') {
+            LOG_INFO(Tty, "{}", line);
+            line = "";
+            continue;
+        }
+        line += buf;
+    }
+    if (line.size() > 1) {
+        LOG_DEBUG(Tty, "{}", line);
+    }
+    LOG_DEBUG(shadNet, "Tty log thread exited");
 }

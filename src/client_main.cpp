@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <fstream>
 #include <thread>
 
 #include <orbis/Sysmodule.h>
@@ -78,6 +79,33 @@ extern "C" s32 client_start() {
     // Initialize logging
     auto& logger = Logger::GetInstance();
     logger.Initialize(game_info.game_serial);
+
+    // on PS5, redirect stdout and stderr to log
+    if (Common::IsPs5()) {
+        int out_pipe[2], err_pipe[2];
+        if (pipe(out_pipe) < 0) {
+            LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
+        }
+        if (pipe(err_pipe) < 0) {
+            LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
+        }
+        bool use_daemon = false;
+        if (dup2(out_pipe[1], STDOUT_FILENO) < 0) {
+            use_daemon = Common::JailbreakViaDaemon();
+            if (dup2(out_pipe[1], STDOUT_FILENO) < 0) {
+                LOG_ERROR(Loader, "dup2 error {}", std::strerror(errno));
+            }
+        }
+        if (dup2(err_pipe[1], STDOUT_FILENO) < 0) {
+            LOG_ERROR(Loader, "dup2 error {}", std::strerror(errno));
+        }
+        if (use_daemon) {
+            Common::RejailViaDaemon();
+        }
+
+        std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
+        std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
+    }
 
     // Preload modules used by the plugin
     const std::string remote_host = Common::GetRemoteNameFromLink();
