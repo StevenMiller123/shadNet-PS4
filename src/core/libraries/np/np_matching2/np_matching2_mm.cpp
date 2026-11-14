@@ -105,12 +105,12 @@ std::string HexPreview(const void* data, u32 size, u32 max_bytes = 96) {
 }
 
 void LogBinAttr(std::string_view prefix, u64 index, const OrbisNpMatching2BinAttr& attr) {
-    LOG_INFO(Lib_NpMatching2, "{}[{}]: id={:#x} size={} data={}", prefix, index, attr.id,
+    LOG_DEBUG(Lib_NpMatching2, "{}[{}]: id={:#x} size={} data={}", prefix, index, attr.id,
              attr.data_size, HexPreview(attr.data, attr.data_size));
 }
 
 void LogIntAttr(std::string_view prefix, u64 index, const OrbisNpMatching2IntAttr& attr) {
-    LOG_INFO(Lib_NpMatching2, "{}[{}]: id={:#x} value={}", prefix, index, attr.id, attr.num);
+    LOG_DEBUG(Lib_NpMatching2, "{}[{}]: id={:#x} value={}", prefix, index, attr.id, attr.num);
 }
 
 void AppendBinAttr(shadnet::MatchingBinAttr* dst, const OrbisNpMatching2BinAttr& src) {
