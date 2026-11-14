@@ -127,6 +127,7 @@ project(${PLUGIN_NAME} LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 
 set(PLUGIN_HOST_EXE_SUFFIX "")
 set(PLUGIN_LLVM_HINTS "")
@@ -358,7 +359,7 @@ target_include_directories(plugin_objects PRIVATE
 )
 
 target_compile_options(plugin_objects PRIVATE
-    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -fcolor-diagnostics -Wall -mstackrealign -Wno-deprecated-literal-operator -Wunused-private-field
+    ${PLUGIN_DEBUG_FLAG} ${PLUGIN_LOG_TYPE} -Wall -mstackrealign -Wno-deprecated-literal-operator -Wunused-private-field
 )
 
 set(PROTOBUF_HOST_SOURCE_DIR "${EXTERNALS_DIR}/protobuf")
