@@ -901,25 +901,25 @@ struct OrbisNpMatching2JoinedSessionInfo {
 };
 
 // User information
-// from PS3 this was NpUserInfo2; setting addresses like our other A and nonA types TODO: confirm
 struct OrbisNpMatching2UserInfo {
     OrbisNpMatching2UserInfo* next;
     OrbisNpId np_id;
+    u8 padding[4];
     OrbisNpMatching2BinAttr* user_bin_attr;
     u64 user_bin_attr_num;
-    OrbisNpMatching2JoinedSessionInfo joined_session_info;
+    OrbisNpMatching2JoinedSessionInfo* joined_session_info;
     u64 joined_session_info_num;
 };
 
 // User information (account-id variant)
-// from PS3 this was NpUserInfo2; setting addresses like our other A and nonA types TODO: confirm
 struct OrbisNpMatching2UserInfoA {
     OrbisNpMatching2UserInfoA* next;
     OrbisNpPeerAddressA user;
     OrbisNpOnlineId user_online_id;
+    u8 padding[4];
     OrbisNpMatching2BinAttr* user_bin_attr;
     u64 user_bin_attr_num;
-    OrbisNpMatching2JoinedSessionInfo joined_session_info;
+    OrbisNpMatching2JoinedSessionInfo* joined_session_info;
     u64 joined_session_info_num;
 };
 
