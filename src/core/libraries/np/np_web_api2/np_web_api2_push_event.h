@@ -92,9 +92,8 @@ private:
 
 class PushEventFilter {
 public:
-    PushEventFilter(s32 new_id, const char* service_name, OrbisNpServiceLabel service_label,
-                    bool is_internal)
-        : id(new_id), np_service_label(service_label), internal(is_internal),
+    PushEventFilter(s32 new_id, const char* service_name, OrbisNpServiceLabel service_label, bool)
+        : id(new_id), np_service_label(service_label),
           np_service_name(service_name ? service_name : "") {}
 
     s32 Initialize(PushEventHandle* handle,
@@ -119,7 +118,7 @@ public:
 private:
     s32 id{};
     OrbisNpServiceLabel np_service_label{};
-    bool internal{};
+    // bool internal{};
     std::vector<OrbisNpWebApi2PushEventFilterParameter> filter_params{};
     std::vector<std::vector<OrbisNpWebApi2PushEventExtdDataKey>> data_key_copy_storage{};
     std::string np_service_name{};
@@ -135,8 +134,7 @@ struct PushEventCallback {
 
 class PushEventPushContext {
 public:
-    PushEventPushContext(u32 new_timeout, UserContext* user_ctx)
-        : timeout(new_timeout), parent_user_ctx(user_ctx) {}
+    PushEventPushContext(u32, UserContext*) {}
 
     void Initialize();
 
@@ -169,10 +167,10 @@ public:
 
 private:
     s32 state{};
-    u32 timeout{};
-    UserContext* parent_user_ctx{};
-    u64 end_time{};
-    u64 start_time{};
+    // u32 timeout{};
+    // UserContext* parent_user_ctx{};
+    // u64 end_time{};
+    // u64 start_time{};
     OrbisNpWebApi2PushEventPushContextId id{};
     bool started{};
 };
