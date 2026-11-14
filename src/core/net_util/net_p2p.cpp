@@ -79,6 +79,12 @@ s32 P2PTransport::BindSocket(u16 udp_port) {
         rc = sceNetBind(sock, reinterpret_cast<const OrbisNetSockaddr*>(&sa), sizeof(sa));
         return rc >= 0;
     });
+    if (rc < 0) {
+        // bind shouldn't fail at this point, and there's nothing more we can do.
+        LOG_ERROR(Lib_Net, "sceNetBind on UDP port {} vport {:#x} failed with error {:#x}",
+                  udp_port, SignalingVport, static_cast<u32>(rc));
+        sceNetSocketClose(sock);
+    }
 
     return rc >= 0 ? sock : rc;
 }
