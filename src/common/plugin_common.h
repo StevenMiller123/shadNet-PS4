@@ -134,11 +134,11 @@ auto RetryPrivilegedImpl(F func, Args... args) {
 }
 template <typename F, typename... Args>
 auto RetryPrivileged(F func, Args... args) {
-    RunPrivilegedImpl<false>(func, args...);
+    RetryPrivilegedImpl<false>(func, args...);
 }
 template <typename F, typename... Args>
 auto RetryPrivilegedRoot(F func, Args... args) {
-    RunPrivilegedImpl<true>(func, args...);
+    RetryPrivilegedImpl<true>(func, args...);
 }
 
 } // namespace Common
