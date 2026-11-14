@@ -67,7 +67,7 @@ auto RunPrivilegedImpl(F func, Args... args) -> decltype(func(args...)) {
     const bool use_daemon = !use_libjbc && !skip_daemon;
 
     // todo there's no logic for leaving the root as is on the PS5!
-    bool const daemon_success = Common::JailbreakViaDaemon();
+    bool const daemon_success = use_daemon && Common::JailbreakViaDaemon();
     if (skip_daemon) {
         LOG_DEBUG(shadNet, "Daemon jailbreak skipped by the no_jailbreak flag");
     } else if (use_daemon) {
