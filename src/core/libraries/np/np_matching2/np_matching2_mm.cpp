@@ -106,7 +106,7 @@ std::string HexPreview(const void* data, u32 size, u32 max_bytes = 96) {
 
 void LogBinAttr(std::string_view prefix, u64 index, const OrbisNpMatching2BinAttr& attr) {
     LOG_DEBUG(Lib_NpMatching2, "{}[{}]: id={:#x} size={} data={}", prefix, index, attr.id,
-             attr.data_size, HexPreview(attr.data, attr.data_size));
+              attr.data_size, HexPreview(attr.data, attr.data_size));
 }
 
 void LogIntAttr(std::string_view prefix, u64 index, const OrbisNpMatching2IntAttr& attr) {
