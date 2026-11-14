@@ -14,12 +14,7 @@ SHADNET_HOOK_DECLARE(Libraries::AppContent, sceAppContentAppParamGetInt);
 SHADNET_HOOK_DECLARE(Libraries::AppContent, sceAppContentGetGameTrialsFlag);
 
 static void RegisterAppContentHooks() {
-    s32 sdk_ver = 0;
-    sceKernelGetCompiledSdkVersion(&sdk_ver);
-    if (sdk_ver >= Common::ElfInfo::FW_1050) {
-        // This function was added in firmware 10.50, only hook it for games that could call it.
-        SHADNET_HOOK16(Libraries::AppContent, sceAppContentGetGameTrialsFlag);
-    }
+    SHADNET_HOOK16(Libraries::AppContent, sceAppContentGetGameTrialsFlag);
     SHADNET_HOOK16(Libraries::AppContent, sceAppContentAppParamGetInt);
 }
 
