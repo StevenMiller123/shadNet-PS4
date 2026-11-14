@@ -3,12 +3,12 @@
 
 // From https://github.com/GoldHEN/GoldHEN_Plugins_Repository/blob/main/common/plugin_common.c
 
+#include "plugin_common.h"
 #include <Common.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include "plugin_common.h"
 
 // Thanks to OSM
 // https://github.com/OSM-Made/PS4-Notify/blob/c6d259bc5bd4aa519f5b0ce4f5e27ef7cb01ffdd/Notify.cpp

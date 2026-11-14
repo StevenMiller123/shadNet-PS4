@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "common/libjbc/jailbreak.h"
+
 #include <Common.h>
 #include "git_ver.h"
 #include "shadnet_hook.h"
@@ -56,6 +58,89 @@ bool IsPs5();
 bool DebugFlagSet(const char* name);
 bool JailbreakViaDaemon();
 void RejailViaDaemon();
+
+template <bool change_root, typename F, typename... Args>
+auto RunPrivilegedImpl(F func, Args... args) -> decltype(func(args...)) {
+    using ret_type = decltype(func(args...));
+    const bool use_libjbc = !Common::IsPs5();
+    const bool skip_daemon = !use_libjbc && Common::DebugFlagSet("no_jailbreak");
+    const bool use_daemon = !use_libjbc && !skip_daemon;
+
+    // todo there's no logic for leaving the root as is on the PS5!
+    bool const daemon_success = Common::JailbreakViaDaemon();
+    if (skip_daemon) {
+        LOG_DEBUG(shadNet, "Daemon jailbreak skipped by the no_jailbreak flag");
+    } else if (use_daemon) {
+        LOG_DEBUG(shadNet, "PS5 jailbreak through the daemon {}",
+                  daemon_success ? "succeeded" : "failed");
+    }
+    jbc_cred cred;
+    if (use_libjbc) {
+        if constexpr (change_root) {
+            jbc_get_cred(&cred);
+            jbc_cred root_cred = cred;
+            jbc_jailbreak_cred(&root_cred);
+            root_cred.cdir = cred.rdir;
+            jbc_set_cred(&root_cred);
+        } else {
+            jbc_get_cred(&cred);
+            // Hardcoded cred values come from libjbc's jbc_jailbreak_cred call.
+            // jbc_jailbreak_cred also changes the process's root directory, we do not want that.
+            jbc_cred root_cred = cred;
+            root_cred.sceProcCap = 0xffffffffffffffff;
+            root_cred.sceProcType = 0x3801000000000013;
+            root_cred.sonyCred = 0xffffffffffffffff;
+            jbc_set_cred(&root_cred);
+        }
+    }
+
+    std::conditional_t<std::is_void_v<ret_type>, u8, ret_type> ret;
+    if constexpr (std::is_void_v<ret_type>) {
+        func(args...);
+    } else {
+        ret = func(args...);
+    }
+
+    // Un-jailbreak the process by restoring the original cred.
+    if (use_libjbc) {
+        jbc_set_cred(&cred);
+    } else if (daemon_success) {
+        Common::RejailViaDaemon();
+    }
+
+    if constexpr (std::is_void_v<decltype(func(args...))>) {
+        return;
+    } else {
+        return ret;
+    }
+}
+
+template <typename F, typename... Args>
+auto RunPrivileged(F func, Args... args) -> decltype(func(args...)) {
+    return RunPrivilegedImpl<false>(func, args...);
+}
+
+template <typename F, typename... Args>
+auto RunPrivilegedRoot(F func, Args... args) -> decltype(func(args...)) {
+    return RunPrivilegedImpl<true>(func, args...);
+}
+
+template <bool change_root, typename F, typename... Args>
+auto RetryPrivilegedImpl(F func, Args... args) {
+    if (func(args...)) {
+        return;
+    }
+    RunPrivilegedImpl<change_root>(func, args...);
+}
+template <typename F, typename... Args>
+auto RetryPrivileged(F func, Args... args) {
+    RunPrivilegedImpl<false>(func, args...);
+}
+template <typename F, typename... Args>
+auto RetryPrivilegedRoot(F func, Args... args) {
+    RunPrivilegedImpl<true>(func, args...);
+}
+
 } // namespace Common
 #endif
 

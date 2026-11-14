@@ -10,7 +10,6 @@
 
 #include "client_main.h"
 #include "common/elf_info.h"
-#include "common/libjbc/jailbreak.h"
 #include "common/logging/log.h"
 #include "common/logging/logger.h"
 #include "common/plugin_common.h"
@@ -81,31 +80,19 @@ extern "C" s32 client_start() {
     logger.Initialize(game_info.game_serial);
 
     // on PS5, redirect stdout and stderr to log
-    if (Common::IsPs5()) {
-        int out_pipe[2], err_pipe[2];
-        if (pipe(out_pipe) < 0) {
-            LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
-        }
-        if (pipe(err_pipe) < 0) {
-            LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
-        }
-        bool use_daemon = false;
-        if (dup2(out_pipe[1], STDOUT_FILENO) < 0) {
-            use_daemon = Common::JailbreakViaDaemon();
-            if (dup2(out_pipe[1], STDOUT_FILENO) < 0) {
-                LOG_ERROR(Loader, "dup2 error {}", std::strerror(errno));
-            }
-        }
-        if (dup2(err_pipe[1], STDOUT_FILENO) < 0) {
-            LOG_ERROR(Loader, "dup2 error {}", std::strerror(errno));
-        }
-        if (use_daemon) {
-            Common::RejailViaDaemon();
-        }
-
-        std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
-        std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
+    int out_pipe[2], err_pipe[2];
+    if (pipe(out_pipe) < 0) {
+        LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
     }
+    if (pipe(err_pipe) < 0) {
+        LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
+    }
+    Common::RetryPrivileged([&out_pipe, &err_pipe]() {
+        return dup2(out_pipe[1], STDOUT_FILENO) >= 0 && dup2(err_pipe[1], STDERR_FILENO) >= 0;
+    });
+
+    std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
+    std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
 
     // Preload modules used by the plugin
     const std::string remote_host = Common::GetRemoteNameFromLink();
@@ -204,24 +191,7 @@ extern "C" s32 client_start() {
 
     // Sandbox doesn't contain our files, jailbreak this process and look in the correct places.
     if (!sandbox_psf || !sandbox_npbind) {
-        const bool use_libjbc = !Common::IsPs5();
-        const bool skip_daemon = !use_libjbc && Common::DebugFlagSet("no_jailbreak");
-        const bool use_daemon = !use_libjbc && !skip_daemon && Common::JailbreakViaDaemon();
-        if (skip_daemon) {
-            LOG_INFO(shadNet, "Daemon jailbreak skipped by the no_jailbreak flag");
-        } else if (!use_libjbc) {
-            LOG_INFO(shadNet, "PS5 jailbreak through the daemon {}",
-                     use_daemon ? "succeeded" : "failed");
-        }
-        jbc_cred cred{};
-        if (use_libjbc) {
-            jbc_get_cred(&cred);
-            jbc_cred root_cred = cred;
-            jbc_jailbreak_cred(&root_cred);
-            root_cred.cdir = cred.rdir;
-            jbc_set_cred(&root_cred);
-        }
-
+        Common::RunPrivilegedRoot([&]() {
         // Check files in appmeta
         std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
         if (!sandbox_psf) {
@@ -242,13 +212,7 @@ extern "C" s32 client_start() {
                 LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
             }
         }
-
-        // Un-jailbreak the process by restoring the original cred.
-        if (use_libjbc) {
-            jbc_set_cred(&cred);
-        } else if (use_daemon) {
-            Common::RejailViaDaemon();
-        }
+        });
     }
 
     // Log the important info we retrieve
