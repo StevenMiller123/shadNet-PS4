@@ -83,7 +83,7 @@ void UPnPClient::DiscoverThread() {
     UPNPDev* devlist = upnpDiscover(2000, nullptr, nullptr, UPNP_LOCAL_PORT_ANY, 0, 2, &error);
 
     if (!devlist) {
-        LOG_INFO(Lib_Net, "UPnP: no IGD found (error={})", error);
+        LOG_NOTIFICATION(Lib_Net, "UPnP: no IGD found (error={})", error);
         m_done = true;
         m_cv.notify_all();
         return;
@@ -95,7 +95,7 @@ void UPnPClient::DiscoverThread() {
     freeUPNPDevlist(devlist);
 
     if (ret != 1) {
-        LOG_INFO(Lib_Net, "UPnP: no valid IGD (ret={})", ret);
+        LOG_NOTIFICATION(Lib_Net, "UPnP: no valid IGD (ret={})", ret);
         m_done = true;
         m_cv.notify_all();
         return;
@@ -104,7 +104,7 @@ void UPnPClient::DiscoverThread() {
     char external_ip[40]{};
     if (UPNP_GetExternalIPAddress(m_urls.controlURL, m_data.first.servicetype, external_ip) !=
         UPNPCOMMAND_SUCCESS) {
-        LOG_WARNING(Lib_Net, "UPnP: IGD found but failed to get external IP");
+        LOG_NOTIFICATION(Lib_Net, "UPnP: IGD found but failed to get external IP");
         FreeUPNPUrls(&m_urls);
         m_done = true;
         m_cv.notify_all();
@@ -117,7 +117,7 @@ void UPnPClient::DiscoverThread() {
     std::strncpy(m_external_ip_str, external_ip, sizeof(m_external_ip_str) - 1);
     m_available = true;
 
-    LOG_INFO(Lib_Net, "UPnP: IGD found - external IP={} lan={}", external_ip, m_lan_addr);
+    LOG_NOTIFICATION(Lib_Net, "UPnP: IGD found - external IP={} lan={}", external_ip, m_lan_addr);
 
     m_done = true;
     m_cv.notify_all();
