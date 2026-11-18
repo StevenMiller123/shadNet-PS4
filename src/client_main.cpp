@@ -79,18 +79,6 @@ extern "C" s32 client_start() {
     auto& logger = Logger::GetInstance();
     logger.Initialize(game_info.game_serial);
 
-    // Redirect stdout and stderr to log
-    s32 out_pipe[2], err_pipe[2];
-    if (pipe(out_pipe) < 0) {
-        LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
-    }
-    if (pipe(err_pipe) < 0) {
-        LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
-    }
-    Common::RetryPrivileged([&out_pipe, &err_pipe]() {
-        return dup2(out_pipe[1], STDOUT_FILENO) >= 0 && dup2(err_pipe[1], STDERR_FILENO) >= 0;
-    });
-
     // Preload modules used by the plugin
     const std::string remote_host = Common::GetRemoteNameFromLink();
     LOG_NOTIFICATION(shadNet, "Starting shadNet-PS4 v{} {}/{} {}", Common::g_scm_app_version,
@@ -257,6 +245,16 @@ extern "C" s32 client_start() {
     Libraries::SigninDialog::RegisterHooks();
 
     // Start up TTY logging. This needs to happen after all hooks are registered.
+    s32 out_pipe[2], err_pipe[2];
+    if (pipe(out_pipe) < 0) {
+        LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
+    }
+    if (pipe(err_pipe) < 0) {
+        LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
+    }
+    Common::RetryPrivileged([&out_pipe, &err_pipe]() {
+        return dup2(out_pipe[1], STDOUT_FILENO) >= 0 && dup2(err_pipe[1], STDERR_FILENO) >= 0;
+    });
     std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
     std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
 
