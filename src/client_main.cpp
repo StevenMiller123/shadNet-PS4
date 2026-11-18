@@ -189,26 +189,26 @@ extern "C" s32 client_start() {
     // Sandbox doesn't contain our files, jailbreak this process and look in the correct places.
     if (!sandbox_psf || !sandbox_npbind) {
         Common::RunPrivilegedRoot([&]() {
-        // Check files in appmeta
-        std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
-        if (!sandbox_psf) {
-            if (std::filesystem::exists(meta_path + "/param.sfo")) {
-                if (!load_psf(meta_path + "/param.sfo")) {
-                    LOG_WARNING(shadNet, "Failed to load param.sfo from system_data");
+            // Check files in appmeta
+            std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
+            if (!sandbox_psf) {
+                if (std::filesystem::exists(meta_path + "/param.sfo")) {
+                    if (!load_psf(meta_path + "/param.sfo")) {
+                        LOG_WARNING(shadNet, "Failed to load param.sfo from system_data");
+                    }
+                } else {
+                    LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
                 }
-            } else {
-                LOG_WARNING(shadNet, "no param.sfo in {}", meta_path);
             }
-        }
-        if (!sandbox_npbind) {
-            if (std::filesystem::exists(meta_path + "/npbind.dat")) {
-                if (!load_npbind(meta_path + "/npbind.dat")) {
-                    LOG_WARNING(shadNet, "Failed to load npbind.dat from system_data");
+            if (!sandbox_npbind) {
+                if (std::filesystem::exists(meta_path + "/npbind.dat")) {
+                    if (!load_npbind(meta_path + "/npbind.dat")) {
+                        LOG_WARNING(shadNet, "Failed to load npbind.dat from system_data");
+                    }
+                } else {
+                    LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
                 }
-            } else {
-                LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
             }
-        }
         });
     }
 
