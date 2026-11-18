@@ -79,8 +79,8 @@ extern "C" s32 client_start() {
     auto& logger = Logger::GetInstance();
     logger.Initialize(game_info.game_serial);
 
-    // on PS5, redirect stdout and stderr to log
-    int out_pipe[2], err_pipe[2];
+    // Redirect stdout and stderr to log
+    s32 out_pipe[2], err_pipe[2];
     if (pipe(out_pipe) < 0) {
         LOG_ERROR(Loader, "pipe error {}", std::strerror(errno));
     }
@@ -90,9 +90,6 @@ extern "C" s32 client_start() {
     Common::RetryPrivileged([&out_pipe, &err_pipe]() {
         return dup2(out_pipe[1], STDOUT_FILENO) >= 0 && dup2(err_pipe[1], STDERR_FILENO) >= 0;
     });
-
-    std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
-    std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
 
     // Preload modules used by the plugin
     const std::string remote_host = Common::GetRemoteNameFromLink();
@@ -258,5 +255,10 @@ extern "C" s32 client_start() {
     Libraries::GameCustomDataDialog::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
     Libraries::SigninDialog::RegisterHooks();
+
+    // Start up TTY logging. This needs to happen after all hooks are registered.
+    std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
+    std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
+
     return 0;
 }
