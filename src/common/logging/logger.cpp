@@ -57,7 +57,7 @@ void TtyLogThread(int fd, char const* name) {
     LOG_DEBUG(shadNet, "Tty log thread started");
     std::string line{};
     char buf{};
-    while (read(fd, &buf, sizeof buf)) {
+    while (read(fd, &buf, sizeof(buf)) > 0) {
         if (buf == '\n') {
             LOG_INFO(Tty, "{}", line);
             line = "";
