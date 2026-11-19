@@ -131,7 +131,7 @@ u16 P2PTransport::StartLocked(u16 udp_port, bool allow_fallback) {
 
 void P2PTransport::StopLocked() {
     if (m_socket >= 0) {
-        sceNetSocketClose(m_socket);
+        ::sceNetSocketClose(m_socket);
         LOG_INFO(Lib_Net, "P2P transport on UDP port {} stopped", m_bound_port);
         UPnPClient::Instance().UnmapPort(m_bound_port);
     }
@@ -159,9 +159,9 @@ void P2PTransport::DrainLocked() {
     for (;;) {
         OrbisNetSockaddrIn from{};
         OrbisNetSocklen_t from_len = sizeof(from);
-        const s32 rc = sceNetRecvfrom(m_socket, buf, sizeof(buf),
-                                      Libraries::Network::Net::ORBIS_NET_MSG_DONTWAIT,
-                                      reinterpret_cast<OrbisNetSockaddr*>(&from), &from_len);
+        const s32 rc = ::sceNetRecvfrom(m_socket, buf, sizeof(buf),
+                                        Libraries::Network::Net::ORBIS_NET_MSG_DONTWAIT,
+                                        reinterpret_cast<OrbisNetSockaddr*>(&from), &from_len);
         if (rc < 0) {
             if (rc != ORBIS_NET_ERROR_EAGAIN) {
                 LOG_DEBUG(Lib_Net, "sceNetRecvfrom failed with error {:#x}", static_cast<u32>(rc));
@@ -254,8 +254,8 @@ s32 P2PTransport::SendTo(const void* data, u32 len, u32 dest_addr, u16 dest_port
     }
 
     const OrbisNetSockaddrIn to = MakeSockaddr(dest_addr, dest_port);
-    const s32 rc = sceNetSendto(m_socket, data, len, 0,
-                                reinterpret_cast<const OrbisNetSockaddr*>(&to), sizeof(to));
+    const s32 rc = ::sceNetSendto(m_socket, data, len, 0,
+                                  reinterpret_cast<const OrbisNetSockaddr*>(&to), sizeof(to));
     return rc >= 0 ? static_cast<s32>(len) : -1;
 }
 

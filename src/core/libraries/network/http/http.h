@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "common/types.h"
 
 enum OrbisHttpMethod : s32 {
@@ -31,7 +33,14 @@ s32 sceHttpCreateTemplate(s32 libhttp_ctx_id, const char* user_agent, s32 http_v
                           s32 is_auto_proxy_conf);
 s32 sceHttpDeleteConnection(s32 conn_id);
 s32 sceHttpDeleteRequest(s32 req_id);
+s32 sceHttpSendRequest(s32 req_id, const void* post_data, u64 size);
 s32 sceHttpGetStatusCode(s32 req_id, s32* status_code);
+s32 sceHttpGetResponseContentLength(s32 req_id, s32* result, u64* content_length);
+s32 sceHttpGetAllResponseHeaders(s32 req_id, char** header, u64* header_size);
+s32 sceHttpReadData(s32 req_id, void* data, u32 size);
+
+// Used by resolver hooks to report hostnames they lookup.
+void NoteResolvedHost(std::string_view host);
 
 void RegisterHooks();
 }; // namespace Libraries::Network::Http

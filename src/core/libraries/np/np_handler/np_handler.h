@@ -5,17 +5,26 @@
 
 #include <atomic>
 #include <map>
+#include <span>
 
 #include "common/singleton.h"
 #include "common/types.h"
-#include "core/libraries/np/np_auth/np_auth_ctx.h"
+#include "core/libraries/kernel/ipmi/np_auth_ctx.h"
 #include "core/libraries/np/np_manager/np_manager.h"
+#include "core/libraries/np/np_matching2/np_matching2.h"
+#include "core/libraries/np/np_matching2/np_matching2_internal.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_score/np_score_ctx.h"
 #include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_tus/np_tus_ctx.h"
 #include "core/libraries/np/np_types.h"
 #include "shadnet/client.h"
+
+namespace shadnet {
+class CreateRoomReply;
+class SearchRoomReply;
+class GetRoomDataExternalListReply;
+} // namespace shadnet
 
 namespace Libraries::Np {
 
@@ -62,13 +71,40 @@ public:
     std::string GetBearerToken(s32 user_id) const;
     s32 RequestAuthorizationCode(s32 user_id, const std::string& client_id,
                                  const std::string& scope,
-                                 std::shared_ptr<NpAuth::AuthRequestCtx> ctx);
+                                 std::shared_ptr<Kernel::Ipmi::AuthRequestCtx> ctx);
     u64 GetAccountId(s32 user_id) const;
     s32 GetUserIdByAccountId(u64 account_id) const;
     s32 GetUserIdByOnlineId(const OrbisNpOnlineId& online_id) const;
     void ResolveOnlineId(
         s32 user_id, const std::string& online_id,
         std::function<void(s32 result, u64 account_id, const std::string& canonical_online_id)>
+            on_result);
+
+    // Matching2
+    void StartMatching2Context(s32 user_id);
+    void GetWorldInfoList(
+        s32 user_id, const NpMatching2::OrbisNpMatching2GetWorldInfoListRequest& request,
+        std::function<void(s32 result, std::span<const NpMatching2::OrbisNpMatching2World> worlds)>
+            on_result);
+    void CreateJoinRoom(
+        s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
+        const NpMatching2::CreateJoinRoomParams& params,
+        std::function<void(s32 result, const shadnet::CreateRoomReply& reply)> on_result);
+    void SetRoomDataExternal(s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
+                             const NpMatching2::OrbisNpMatching2SetRoomDataExternalRequest& request,
+                             std::function<void(s32 result)> on_result);
+    void LeaveRoom(s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
+                   const NpMatching2::OrbisNpMatching2LeaveRoomRequest& request,
+                   std::function<void(s32 result)> on_result);
+    void SetRoomDataInternal(s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
+                             const NpMatching2::OrbisNpMatching2SetRoomDataInternalRequest& request,
+                             std::function<void(s32 result)> on_result);
+    void SearchRoom(
+        s32 user_id, const NpMatching2::OrbisNpMatching2SearchRoomRequest& request,
+        std::function<void(s32 result, const shadnet::SearchRoomReply& reply)> on_result);
+    void GetRoomDataExternalList(
+        s32 user_id, const NpMatching2::OrbisNpMatching2GetRoomDataExternalListRequest& request,
+        std::function<void(s32 result, const shadnet::GetRoomDataExternalListReply& reply)>
             on_result);
 
     // NpTrophy Requests
@@ -377,7 +413,7 @@ private:
 
     // Auth callbacks
     struct PendingAuthRequest {
-        std::shared_ptr<NpAuth::AuthRequestCtx> req;
+        std::shared_ptr<Kernel::Ipmi::AuthRequestCtx> req;
         s32 user_id = -1;
     };
     mutable std::mutex m_mutex_pending_auth;
@@ -440,6 +476,16 @@ private:
     std::map<u64, PendingLookupRequest> m_pending_lookup;
     void OnLookupReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id, ShadNet::ErrorType error,
                        const std::vector<u8>& body);
+
+    // Matching2
+    using Matching2ReplyHandler = std::function<void(s32 result, const std::vector<u8>& body)>;
+    mutable std::mutex m_mutex_pending_matching2;
+    std::map<u64, Matching2ReplyHandler> m_pending_matching2;
+    s32 SubmitMatching2Request(s32 user_id,
+                               const std::function<u64(ShadNet::ShadNetClient&)>& submit,
+                               Matching2ReplyHandler on_reply);
+    void OnMatching2Reply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
+                          ShadNet::ErrorType error, const std::vector<u8>& body);
 
     // TUS state
     struct PendingTusRequest {

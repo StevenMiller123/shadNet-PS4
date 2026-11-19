@@ -1064,4 +1064,440 @@ u64 ShadNetClient::GetLE64(const u8* p) {
     return v;
 }
 
+// Matching2
+
+namespace {
+
+using namespace Libraries::Np::NpMatching2;
+
+std::string HexPreview(const void* data, u32 size, u32 max_bytes = 96) {
+    if (!data || size == 0) {
+        return {};
+    }
+
+    const auto* bytes = static_cast<const u8*>(data);
+    const u32 count = std::min(size, max_bytes);
+    std::string out;
+    out.reserve(count * 3 + 16);
+    for (u32 i = 0; i < count; ++i) {
+        if (!out.empty()) {
+            out.push_back(' ');
+        }
+        out += fmt::format("{:02x}", bytes[i]);
+    }
+    if (count < size) {
+        out += " ...";
+    }
+    return out;
+}
+
+void LogBinAttr(std::string_view prefix, u64 index, const OrbisNpMatching2BinAttr& attr) {
+    LOG_DEBUG(Lib_NpMatching2, "{}[{}]: id={:#x} size={} data={}", prefix, index, attr.id,
+              attr.data_size, HexPreview(attr.data, attr.data_size));
+}
+
+void LogIntAttr(std::string_view prefix, u64 index, const OrbisNpMatching2IntAttr& attr) {
+    LOG_DEBUG(Lib_NpMatching2, "{}[{}]: id={:#x} value={}", prefix, index, attr.id, attr.num);
+}
+
+std::string OnlineIdToString(const Libraries::Np::OrbisNpOnlineId& online_id) {
+    return std::string(Libraries::Np::ViewNpOnlineId(online_id));
+}
+
+void AppendBinAttr(shadnet::MatchingBinAttr* dst, const OrbisNpMatching2BinAttr& src) {
+    dst->set_attr_id(src.id);
+    if (src.data && src.data_size > 0) {
+        dst->set_data(src.data, src.data_size);
+    }
+}
+
+void AppendCreateRoomBinAttrById(shadnet::CreateRoomRequest& req,
+                                 const OrbisNpMatching2BinAttr& src, std::string_view source) {
+    switch (src.id) {
+    case ORBIS_NP_MATCHING2_ROOM_BIN_ATTR_INTERNAL_1_ID:
+    case ORBIS_NP_MATCHING2_ROOM_BIN_ATTR_INTERNAL_2_ID:
+        AppendBinAttr(req.add_internal_bin_attrs(), src);
+        LOG_INFO(Lib_NpMatching2, "routed bin attr id={:#x} from {} to internal size={}", src.id,
+                 source, src.data_size);
+        break;
+    case ORBIS_NP_MATCHING2_ROOM_BIN_ATTR_EXTERNAL_1_ID:
+    case ORBIS_NP_MATCHING2_ROOM_BIN_ATTR_EXTERNAL_2_ID:
+        AppendBinAttr(req.add_external_bin_attrs(), src);
+        LOG_INFO(Lib_NpMatching2, "routed bin attr id={:#x} from {} to external size={}", src.id,
+                 source, src.data_size);
+        break;
+    case ORBIS_NP_MATCHING2_ROOM_SEARCHABLE_BIN_ATTR_EXTERNAL_1_ID:
+        AppendBinAttr(req.add_external_search_bin_attrs(), src);
+        LOG_INFO(Lib_NpMatching2, "routed bin attr id={:#x} from {} to search external size={}",
+                 src.id, source, src.data_size);
+        break;
+    default:
+        LOG_WARNING(Lib_NpMatching2, "unexpected bin attr id={:#x} from {} size={}", src.id, source,
+                    src.data_size);
+        break;
+    }
+}
+
+void AppendIntAttr(shadnet::MatchingIntAttr* dst, const OrbisNpMatching2IntAttr& src) {
+    dst->set_attr_id(src.id);
+    dst->set_attr_value(src.num);
+}
+
+void AppendRoomGroupConfig(shadnet::MatchingRoomGroupConfig* dst,
+                           const OrbisNpMatching2RoomGroupConfig& src) {
+    dst->set_slot_count(src.slots);
+    dst->set_has_label(src.has_label);
+    dst->set_has_passwd(src.has_password);
+    if (src.has_label) {
+        dst->set_label(src.label.data, sizeof(src.label.data));
+    }
+}
+
+void AppendCreateJoinRoomCommon(shadnet::CreateRoomRequest& req, const void* room_passwd,
+                                const OrbisNpMatching2RoomPasswordSlotMask* passwd_slot_mask,
+                                const void* group_config, u64 group_configs,
+                                const void* join_group_label) {
+    if (room_passwd) {
+        const auto* password = static_cast<const OrbisNpMatching2SessionPassword*>(room_passwd);
+        req.set_room_password(password->data, sizeof(password->data));
+    }
+    if (passwd_slot_mask) {
+        req.set_has_passwd_slot_mask(true);
+        req.set_passwd_slot_mask(*passwd_slot_mask);
+    }
+    if (group_config) {
+        const auto* groups = static_cast<const OrbisNpMatching2RoomGroupConfig*>(group_config);
+        for (u64 i = 0; i < group_configs; ++i) {
+            AppendRoomGroupConfig(req.add_group_configs(), groups[i]);
+        }
+    }
+    if (join_group_label) {
+        const auto* label = static_cast<const OrbisNpMatching2GroupLabel*>(join_group_label);
+        req.set_join_group_label(label->data, sizeof(label->data));
+    }
+}
+
+// Fields shared by both create and join room request variants.
+template <typename Request>
+void SetCreateJoinRoomCommon(shadnet::CreateRoomRequest& req, OrbisNpMatching2RequestId req_id,
+                             const Request& request) {
+    req.set_req_id(req_id);
+    req.set_max_slots(request.max_slot);
+    req.set_team_id(request.team_id);
+    // Real world IDs contain the server ID, mask that out.
+    req.set_world_id(request.world_id & 0xffff);
+    req.set_lobby_id(static_cast<u32>(request.lobby_id));
+    req.set_flags(request.flags);
+    req.set_group_config_count(static_cast<u32>(request.group_configs));
+    req.set_allowed_user_count(static_cast<u32>(request.allowed_users));
+    req.set_blocked_user_count(static_cast<u32>(request.blocked_users));
+    req.set_internal_bin_attr_count(static_cast<u32>(request.internal_bin_attrs));
+    LOG_INFO(Lib_NpMatching2,
+             "req_id={} max_slot={} world={} lobby={} flags={:#x} "
+             "internal_bin={} search_int={} search_bin={} ext_bin={} member_bin={}",
+             req_id, request.max_slot, request.world_id, request.lobby_id, request.flags,
+             request.internal_bin_attrs, request.external_search_int_attrs,
+             request.external_search_bin_attrs, request.external_bin_attrs,
+             request.member_internal_bin_attrs);
+    AppendCreateJoinRoomCommon(req, request.room_passwd, request.passwd_slot_mask,
+                               request.group_config, request.group_configs,
+                               request.join_group_label);
+    for (u64 i = 0; i < request.internal_bin_attrs; ++i) {
+        LogBinAttr("  createInternalBin", i, request.internal_bin_attr[i]);
+        AppendCreateRoomBinAttrById(req, request.internal_bin_attr[i], "internalBinAttr");
+    }
+    for (u64 i = 0; i < request.external_search_int_attrs; ++i) {
+        LogIntAttr("  createExternalSearchInt", i, request.external_search_int_attr[i]);
+        AppendIntAttr(req.add_external_search_int_attrs(), request.external_search_int_attr[i]);
+    }
+    for (u64 i = 0; i < request.external_search_bin_attrs; ++i) {
+        LogBinAttr("  createExternalSearchBin", i, request.external_search_bin_attr[i]);
+        AppendCreateRoomBinAttrById(req, request.external_search_bin_attr[i],
+                                    "externalSearchBinAttr");
+    }
+    for (u64 i = 0; i < request.external_bin_attrs; ++i) {
+        LogBinAttr("  createExternalBin", i, request.external_bin_attr[i]);
+        AppendCreateRoomBinAttrById(req, request.external_bin_attr[i], "externalBinAttr");
+    }
+    for (u64 i = 0; i < request.member_internal_bin_attrs; ++i) {
+        LogBinAttr("  createMemberInternalBin", i, request.member_internal_bin_attr[i]);
+        AppendBinAttr(req.add_member_bin_attrs(), request.member_internal_bin_attr[i]);
+    }
+    req.set_join_group_label_present(request.join_group_label != nullptr);
+    req.set_room_password_present(request.room_passwd != nullptr);
+    if (request.signaling_param) {
+        req.set_sig_type(request.signaling_param->type);
+        req.set_sig_flag(request.signaling_param->flag);
+        req.set_sig_main_member(request.signaling_param->member_id);
+    }
+}
+
+template <typename Request>
+void SetJoinRoomCommon(shadnet::JoinRoomRequest& req, OrbisNpMatching2RequestId req_id,
+                       const Request& request) {
+    req.set_room_id(request.room_id);
+    req.set_req_id(req_id);
+    req.set_team_id(request.team_id);
+    req.set_join_flags(request.flags);
+    req.set_blocked_user_count(static_cast<u32>(request.blocked_users));
+    for (u64 i = 0; i < request.room_member_bin_internal_attr_num; ++i) {
+        AppendBinAttr(req.add_member_bin_attrs(), request.room_member_bin_internal_attr[i]);
+    }
+    req.set_room_password_present(request.room_passwd != nullptr);
+    req.set_join_group_label_present(request.join_group_label != nullptr);
+}
+
+} // namespace
+
+u64 ShadNetClient::ContextStart(NpMatching2::OrbisNpMatching2ContextId ctx_id) {
+    shadnet::ContextStartRequest req;
+    req.set_ctx_id(ctx_id);
+    return SubmitRequest(CommandType::ContextStart, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::ContextStop(NpMatching2::OrbisNpMatching2ContextId ctx_id) {
+    shadnet::ContextStopRequest req;
+    req.set_ctx_id(ctx_id);
+    return SubmitRequest(CommandType::ContextStop, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::CreateJoinRoom(
+    NpMatching2::OrbisNpMatching2RequestId req_id,
+    const NpMatching2::OrbisNpMatching2CreateJoinRoomRequest& request) {
+    shadnet::CreateRoomRequest req;
+    SetCreateJoinRoomCommon(req, req_id, request);
+    req.set_user_id_kind(shadnet::MATCHING_USER_ID_ONLINE_ID);
+    for (u64 i = 0; request.allowed_user && i < request.allowed_users; ++i) {
+        req.add_allowed_online_ids(OnlineIdToString(request.allowed_user[i]));
+    }
+    for (u64 i = 0; request.blocked_user && i < request.blocked_users; ++i) {
+        req.add_blocked_online_ids(OnlineIdToString(request.blocked_user[i]));
+    }
+    return SubmitRequest(CommandType::CreateRoom, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::CreateJoinRoomA(
+    NpMatching2::OrbisNpMatching2RequestId req_id,
+    const NpMatching2::OrbisNpMatching2CreateJoinRoomRequestA& request) {
+    shadnet::CreateRoomRequest req;
+    SetCreateJoinRoomCommon(req, req_id, request);
+    req.set_user_id_kind(shadnet::MATCHING_USER_ID_ACCOUNT_ID);
+    for (u64 i = 0; request.allowed_user && i < request.allowed_users; ++i) {
+        req.add_allowed_account_ids(request.allowed_user[i]);
+    }
+    for (u64 i = 0; request.blocked_user && i < request.blocked_users; ++i) {
+        req.add_blocked_account_ids(request.blocked_user[i]);
+    }
+    return SubmitRequest(CommandType::CreateRoom, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::JoinRoom(NpMatching2::OrbisNpMatching2RequestId req_id,
+                            const NpMatching2::OrbisNpMatching2JoinRoomRequest& request) {
+    shadnet::JoinRoomRequest req;
+    SetJoinRoomCommon(req, req_id, request);
+    req.set_user_id_kind(shadnet::MATCHING_USER_ID_ONLINE_ID);
+    for (u64 i = 0; request.blocked_user && i < request.blocked_users; ++i) {
+        req.add_blocked_online_ids(OnlineIdToString(request.blocked_user[i]));
+    }
+    return SubmitRequest(CommandType::JoinRoom, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::JoinRoomA(NpMatching2::OrbisNpMatching2RequestId req_id,
+                             const NpMatching2::OrbisNpMatching2JoinRoomRequestA& request) {
+    shadnet::JoinRoomRequest req;
+    SetJoinRoomCommon(req, req_id, request);
+    req.set_user_id_kind(shadnet::MATCHING_USER_ID_ACCOUNT_ID);
+    for (u64 i = 0; request.blocked_user && i < request.blocked_users; ++i) {
+        req.add_blocked_account_ids(request.blocked_user[i]);
+    }
+    return SubmitRequest(CommandType::JoinRoom, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::LeaveRoom(NpMatching2::OrbisNpMatching2RequestId req_id,
+                             const NpMatching2::OrbisNpMatching2LeaveRoomRequest& request) {
+    shadnet::LeaveRoomRequest req;
+    req.set_room_id(request.room_id);
+    req.set_req_id(req_id);
+    return SubmitRequest(CommandType::LeaveRoom, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::GetWorldInfoList(
+    const NpMatching2::OrbisNpMatching2GetWorldInfoListRequest& request) {
+    shadnet::GetWorldInfoListRequest req;
+    req.set_server_id(request.server_id);
+    return SubmitRequest(CommandType::GetWorldInfoList, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::SearchRoom(const NpMatching2::OrbisNpMatching2SearchRoomRequest& request) {
+    shadnet::SearchRoomRequest req;
+    // Real world IDs contain the server ID, mask that out.
+    req.set_world_id(request.world_id & 0xffff);
+    req.set_lobby_id(request.lobby_id);
+    req.set_range_filter_start(request.range_filter.start);
+    req.set_range_filter_max(request.range_filter.max);
+    req.set_flag_filter(request.flags1);
+    req.set_flag_attr(request.flags2);
+    LOG_DEBUG(Lib_NpMatching2,
+              "search world={} lobby={} range={}+{} flags={:#x}/{:#x} int_n={} bin_n={} attr_n={}",
+              request.world_id, request.lobby_id, request.range_filter.start,
+              request.range_filter.max, request.flags1, request.flags2, request.int_filters,
+              request.bin_filters, request.attrs);
+    for (u64 i = 0; i < request.int_filters; ++i) {
+        const auto& f = request.int_filter[i];
+        auto* dst = req.add_int_filters();
+        dst->set_op(f.search_operator);
+        dst->set_attr_id(f.attr.id);
+        dst->set_attr_value(f.attr.num);
+    }
+    for (u64 i = 0; i < request.bin_filters; ++i) {
+        const auto& f = request.bin_filter[i];
+        auto* dst = req.add_bin_filters();
+        dst->set_op(f.search_operator);
+        dst->set_attr_id(f.attr.id);
+        if (f.attr.data && f.attr.data_size > 0) {
+            dst->set_data(f.attr.data, f.attr.data_size);
+        }
+    }
+    for (u64 i = 0; i < request.attrs; ++i) {
+        req.add_attr_ids(request.attr[i]);
+    }
+    return SubmitRequest(CommandType::SearchRoom, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::GetRoomDataExternalList(
+    const NpMatching2::OrbisNpMatching2GetRoomDataExternalListRequest& request) {
+    shadnet::GetRoomDataExternalListRequest req;
+    for (u64 i = 0; i < request.room_id_num; ++i) {
+        req.add_room_ids(request.room_id[i]);
+    }
+    for (u64 i = 0; i < request.attr_id_num; ++i) {
+        req.add_attr_ids(request.attr_id[i]);
+    }
+    LOG_DEBUG(Lib_NpMatching2, "room_n={} attr_n={}", request.room_id_num, request.attr_id_num);
+    return SubmitRequest(CommandType::GetRoomDataExternalList, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::GetRoomMemberDataExternalList(
+    const NpMatching2::OrbisNpMatching2GetRoomMemberDataExternalListRequest& request) {
+    shadnet::GetRoomMemberDataExternalListRequest req;
+    req.set_room_id(request.room_id);
+    return SubmitRequest(CommandType::GetRoomMemberDataExternalList, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::GetUserInfoList(
+    const NpMatching2::OrbisNpMatching2GetUserInfoListRequest& request) {
+    shadnet::GetUserInfoListRequest req;
+    for (u64 i = 0; i < request.np_id_num; ++i) {
+        req.add_npids(OnlineIdToString(request.np_id[i].handle));
+    }
+    for (u64 i = 0; i < request.attr_id_num; ++i) {
+        req.add_attr_ids(request.attr_id[i]);
+    }
+    req.set_option(request.option);
+    return SubmitRequest(CommandType::GetUserInfoList, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::SetUserInfo(const NpMatching2::OrbisNpMatching2SetUserInfoRequest& request) {
+    shadnet::SetUserInfoRequest req;
+    req.set_server_id(request.server_id);
+    for (u64 i = 0; request.user_bin_attr && i < request.user_bin_attrs; ++i) {
+        AppendBinAttr(req.add_user_bin_attrs(), request.user_bin_attr[i]);
+    }
+    return SubmitRequest(CommandType::SetUserInfo, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::SendRoomMessage(
+    const NpMatching2::OrbisNpMatching2SendRoomMessageRequest& request) {
+    shadnet::SendRoomMessageRequest req;
+    req.set_room_id(request.room_id);
+    req.set_cast_type(request.cast_type);
+    req.set_option(request.option);
+    if (request.cast_type == ORBIS_NP_MATCHING2_CASTTYPE_UNICAST) {
+        req.add_dst_member_ids(request.dst.unicast_target);
+    } else if (request.cast_type == ORBIS_NP_MATCHING2_CASTTYPE_MULTICAST &&
+               request.dst.multicast_target.member_id) {
+        for (u64 i = 0; i < request.dst.multicast_target.member_id_num; ++i) {
+            req.add_dst_member_ids(request.dst.multicast_target.member_id[i]);
+        }
+    }
+    if (request.msg && request.msg_len > 0) {
+        req.set_msg(request.msg, request.msg_len);
+    }
+    return SubmitRequest(CommandType::SendRoomMessage, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::SetRoomDataInternal(
+    NpMatching2::OrbisNpMatching2RequestId req_id,
+    const NpMatching2::OrbisNpMatching2SetRoomDataInternalRequest& request) {
+    shadnet::SetRoomDataInternalRequest req;
+    req.set_req_id(req_id);
+    req.set_room_id(request.room_id);
+    req.set_flag_filter(request.flag_filter);
+    req.set_flag_attr(request.flag_attr);
+    for (u64 i = 0; i < request.room_bin_attr_internal_num; ++i) {
+        LogBinAttr("  internalBin", i, request.room_bin_attr_internal[i]);
+        AppendBinAttr(req.add_bin_attrs(), request.room_bin_attr_internal[i]);
+    }
+    if (request.password_slot_mask) {
+        req.set_has_passwd_mask(true);
+        req.set_passwd_slot_mask(*request.password_slot_mask);
+    }
+    return SubmitRequest(CommandType::SetRoomDataInternal, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::SetRoomMemberDataInternal(
+    NpMatching2::OrbisNpMatching2RequestId req_id,
+    const NpMatching2::OrbisNpMatching2SetRoomMemberDataInternalRequest& request) {
+    shadnet::SetRoomMemberDataInternalRequest req;
+    req.set_req_id(req_id);
+    req.set_room_id(request.room_id);
+    req.set_member_id(request.member_id);
+    req.set_team_id(request.team_id);
+    req.set_flag_filter(request.flag_filter);
+    req.set_flag_attr(request.flag_attr);
+    for (u64 i = 0; i < request.room_member_bin_attr_internal_num; ++i) {
+        LogBinAttr("  memberInternalBin", i, request.room_member_bin_attr_internal[i]);
+        AppendBinAttr(req.add_bin_attrs(), request.room_member_bin_attr_internal[i]);
+    }
+    return SubmitRequest(CommandType::SetRoomMemberDataInternal, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::SetRoomDataExternal(
+    NpMatching2::OrbisNpMatching2RequestId req_id,
+    const NpMatching2::OrbisNpMatching2SetRoomDataExternalRequest& request) {
+    shadnet::SetRoomDataExternalRequest req;
+    req.set_req_id(req_id);
+    req.set_room_id(request.room_id);
+    for (u64 i = 0; i < request.room_searchable_int_attr_external_num; ++i) {
+        LogIntAttr("  externalSearchInt", i, request.room_searchable_int_attr_external[i]);
+        AppendIntAttr(req.add_search_int_attrs(), request.room_searchable_int_attr_external[i]);
+    }
+    for (u64 i = 0; i < request.room_searchable_bin_attr_external_num; ++i) {
+        LogBinAttr("  externalSearchBin", i, request.room_searchable_bin_attr_external[i]);
+        AppendBinAttr(req.add_search_bin_attrs(), request.room_searchable_bin_attr_external[i]);
+    }
+    for (u64 i = 0; i < request.room_bin_attr_external_num; ++i) {
+        LogBinAttr("  externalBin", i, request.room_bin_attr_external[i]);
+        AppendBinAttr(req.add_ext_bin_attrs(), request.room_bin_attr_external[i]);
+    }
+    return SubmitRequest(CommandType::SetRoomDataExternal, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::KickoutRoomMember(
+    NpMatching2::OrbisNpMatching2RequestId req_id,
+    const NpMatching2::OrbisNpMatching2KickoutRoomMemberRequest& request) {
+    shadnet::KickoutRoomMemberRequest req;
+    req.set_req_id(req_id);
+    req.set_room_id(request.room_id);
+    req.set_target_member_id(request.member_id);
+    req.set_block_kick_flag(request.block_kick_flag);
+    return SubmitRequest(CommandType::KickoutRoomMember, MakeProtoPayload(req));
+}
+
+u64 ShadNetClient::RequestSignalingInfos(const std::string& target_npid) {
+    shadnet::RequestSignalingInfosRequest req;
+    req.set_target_npid(target_npid);
+    return SubmitRequest(CommandType::RequestSignalingInfos, MakeProtoPayload(req));
+}
+
 } // namespace ShadNet

@@ -9,7 +9,9 @@
 #include <vector>
 
 #include <map>
+#include <optional>
 #include "bit_field.h"
+#include "core/file_format/nptitle.h"
 #include "singleton.h"
 #include "types.h"
 
@@ -74,6 +76,7 @@ public:
     std::vector<u8> splash_data{};
     std::filesystem::path game_folder{};
     std::vector<std::string> np_comm_ids{};
+    std::optional<NpTitleFile> np_title{};
     std::map<s32, std::string> trophy_index_map{};
 
     static constexpr u32 FW_100 = 0x1000000;
@@ -143,6 +146,10 @@ public:
 
     [[nodiscard]] const std::vector<std::string>& GetNpCommIds() const {
         return np_comm_ids;
+    }
+
+    [[nodiscard]] const std::optional<NpTitleFile>& GetNpTitle() const {
+        return np_title;
     }
 };
 

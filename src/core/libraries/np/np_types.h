@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstring>
 #include <string_view>
 
@@ -20,6 +21,23 @@ struct OrbisNpTitleId {
 };
 
 struct OrbisNpTitleSecret {
+    u8 data[128];
+};
+
+struct OrbisNpTitleToken {
+    char token[1025];
+    u8 padding[7];
+    u64 expiration_time;
+};
+
+struct OrbisNpCommunicationId {
+    char data[9];
+    char term;
+    u8 num;
+    char dummy;
+};
+
+struct OrbisNpCommunicationPassphrase {
     u8 data[128];
 };
 
@@ -50,9 +68,14 @@ inline std::string_view ViewNpOnlineId(const OrbisNpOnlineId& id) {
     return std::string_view(id.data, strnlen(id.data, ORBIS_NP_ONLINEID_MAX_LENGTH));
 }
 
+// Hardcoded JID domain and region code for all NpIds, some libraries check for this.
+constexpr std::array<u8, 8> ORBIS_NP_ID_OPT = {'a', '1', 'u', 's'};
+
 inline void SetNpId(OrbisNpId& dst, std::string_view online_id) {
     dst = {};
     SetNpOnlineId(dst.handle, online_id);
+    std::memcpy(dst.opt, ORBIS_NP_ID_OPT.data(), sizeof(dst.opt));
+    dst.reserved[0] = 1;
 }
 
 struct OrbisNpClientId {
@@ -75,6 +98,22 @@ struct OrbisNpIdToken {
     u8 padding[7];
 };
 
+struct OrbisNpAccessToken {
+    char token[256];
+    u64 expiration_time;
+};
+
+struct OrbisNpGameAccessToken {
+    char token[4097];
+    u8 padding[7];
+    u64 expiration_time;
+};
+
+struct OrbisNpScope {
+    char scope[513];
+    u8 padding[7];
+};
+
 using OrbisNpServiceLabel = u32;
 constexpr s32 ORBIS_NP_INVALID_SERVICE_LABEL = 0xFFFFFFFF;
 
@@ -89,6 +128,13 @@ enum class OrbisNpState : s32 {
     NotSignedUp = 0,
     SignedOut = 1,
     SignedIn = 2,
+};
+
+enum class OrbisNpSigninState : s32 {
+    Invalid = 0,
+    NotSignedUp = 1,
+    SignedOut = 2,
+    SignedIn = 3,
 };
 
 enum class OrbisNpReachabilityState : s32 {

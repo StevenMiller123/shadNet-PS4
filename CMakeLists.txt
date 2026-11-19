@@ -242,6 +242,7 @@ set(PLUGIN_LIBS
     -lSceSystemService
     -lSceUserService
     -lSceSigninDialog
+    -lSceRtc
     -lSceHttp
     -lSceHttp2
 )
@@ -261,24 +262,56 @@ set(COMMON_SOURCES src/common/libjbc/jailbreak.c
 )
 
 set(CORE_SOURCES src/core/file_format/npbind.cpp
+                 src/core/file_format/nptitle.cpp
                  src/core/file_format/psf.cpp
                  src/core/libraries/app_content/app_content.cpp
                  src/core/libraries/game_custom_data_dialog/game_custom_data_dialog_ui.cpp
                  src/core/libraries/game_custom_data_dialog/game_custom_data_dialog.cpp
                  src/core/libraries/invitation_dialog/invitation_dialog_ui.cpp
                  src/core/libraries/invitation_dialog/invitation_dialog.cpp
+                 src/core/libraries/kernel/ipmi/ipmi_server.cpp
+                 src/core/libraries/kernel/ipmi/np_mgr_ipc.cpp
+                 src/core/libraries/kernel/ipmi/np_service/asm_client/asm_client.cpp
+                 src/core/libraries/kernel/ipmi/np_service/asm_client/service_base_url_cache.cpp
+                 src/core/libraries/kernel/ipmi/np_service/asm_client/title_token_cache.cpp
+                 src/core/libraries/kernel/ipmi/np_service/basic_presence/basic_presence.cpp
+                 src/core/libraries/kernel/ipmi/np_service/id_mapper/id_mapper.cpp
+                 src/core/libraries/kernel/ipmi/np_service/in_game_msg/in_game_msg.cpp
+                 src/core/libraries/kernel/ipmi/np_service/match2_sig/match2_sig.cpp
+                 src/core/libraries/kernel/ipmi/np_service/np_service.cpp
+                 src/core/libraries/kernel/ipmi/np_service/request_table.cpp
+                 src/core/libraries/kernel/ipmi/np_service/presence/presence.cpp
+                 src/core/libraries/kernel/ipmi/np_service/push/push.cpp
+                 src/core/libraries/kernel/ipmi/np_service/push2/push2.cpp
+                 src/core/libraries/kernel/ipmi/np_service/score/score.cpp
+                 src/core/libraries/kernel/ipmi/np_service/signaling/signaling.cpp
+                 src/core/libraries/kernel/ipmi/np_service/sns/sns.cpp
+                 src/core/libraries/kernel/ipmi/np_service/tpip/tpip.cpp
+                 src/core/libraries/kernel/ipmi/np_service/tus/tus.cpp
+                 src/core/libraries/kernel/ipmi/np_service/web_api2/web_api2.cpp
+                 src/core/libraries/kernel/ipmi/np_service_server.cpp
+                 src/core/libraries/kernel/ipmi/np_ticket/np_ticket.cpp
+                 src/core/libraries/kernel/kernel_ipmi.cpp
                  src/core/libraries/kernel/kernel_socket.cpp
                  src/core/libraries/kernel/kernel.cpp
+                 src/core/libraries/network/fake_psn/fake_matching2.cpp
+                 src/core/libraries/network/fake_psn/fake_psn.cpp
+                 src/core/libraries/network/fake_psn/fake_signaling.cpp
+                 src/core/libraries/network/fake_psn/fake_stun.cpp
                  src/core/libraries/network/http/http.cpp
                  src/core/libraries/network/http2/http2.cpp
                  src/core/libraries/network/net/net.cpp
                  src/core/libraries/network/net_ctl/net_ctl_callbacks.cpp
                  src/core/libraries/network/net_ctl/net_ctl.cpp
+                 src/core/libraries/network/ssl/ssl.cpp
                  src/core/libraries/np/np_auth/np_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_auth.cpp
                  src/core/libraries/np/np_handler/np_handler_friends.cpp
                  src/core/libraries/np/np_handler/np_handler_game_custom_data.cpp
                  src/core/libraries/np/np_handler/np_handler_invitation.cpp
+                 src/core/libraries/np/np_matching2/np_matching2.cpp
+                 src/core/libraries/np/np_matching2/np_matching2_internal.cpp
+                 src/core/libraries/np/np_handler/np_handler_matching2.cpp
                  src/core/libraries/np/np_handler/np_handler_lookup.cpp
                  src/core/libraries/np/np_handler/np_handler_score.cpp
                  src/core/libraries/np/np_handler/np_handler_trophy.cpp
@@ -289,19 +322,10 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_manager/np_manager_in_game_message.cpp
                  src/core/libraries/np/np_manager/np_manager_requests.cpp
                  src/core/libraries/np/np_manager/np_manager.cpp
-                 src/core/libraries/np/np_matching2/np_matching2_internal.cpp
-                 src/core/libraries/np/np_matching2/np_matching2_mm.cpp
-                 src/core/libraries/np/np_matching2/np_matching2_signaling.cpp
-                 src/core/libraries/np/np_matching2/np_matching2.cpp
                  src/core/libraries/np/np_partner/np_partner.cpp
                  src/core/libraries/np/np_profile_dialog/np_profile_dialog_ui.cpp
                  src/core/libraries/np/np_profile_dialog/np_profile_dialog.cpp
                  src/core/libraries/np/np_score/np_score.cpp
-                 src/core/libraries/np/np_signaling/np_signaling_handler.cpp
-                 src/core/libraries/np/np_signaling/np_signaling_helpers.cpp
-                 src/core/libraries/np/np_signaling/np_signaling_state.cpp
-                 src/core/libraries/np/np_signaling/np_signaling_transport.cpp
-                 src/core/libraries/np/np_signaling/np_signaling.cpp
                  src/core/libraries/np/np_trophy/np_trophy.cpp
                  src/core/libraries/np/np_tus/np_tus.cpp
                  src/core/libraries/np/np_utility/np_utility_lookup.cpp

@@ -1069,146 +1069,15 @@ struct OrbisNpMatching2SignalingParam {
     u8 pad[4];
 };
 
-s32 sceNpMatching2CreateContext(const OrbisNpMatching2CreateContextParameter* param,
-                                OrbisNpMatching2ContextId* ctx_id);
-s32 sceNpMatching2CreateContextA(const OrbisNpMatching2CreateContextParameterA* param,
-                                 OrbisNpMatching2ContextId* ctx_id);
 s32 sceNpMatching2CreateJoinRoom(OrbisNpMatching2ContextId ctx_id,
-                                 OrbisNpMatching2CreateJoinRoomRequest* request,
-                                 OrbisNpMatching2RequestOptParam* request_opt,
-                                 OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2JoinRoom(OrbisNpMatching2ContextId ctx_id,
-                           OrbisNpMatching2JoinRoomRequest* request,
-                           OrbisNpMatching2RequestOptParam* request_opt,
-                           OrbisNpMatching2RequestId* request_id);
+                                 const OrbisNpMatching2CreateJoinRoomRequest* request,
+                                 const OrbisNpMatching2RequestOptParam* opt_param,
+                                 OrbisNpMatching2RequestId* req_id);
 s32 sceNpMatching2CreateJoinRoomA(OrbisNpMatching2ContextId ctx_id,
-                                  OrbisNpMatching2CreateJoinRoomRequestA* request,
-                                  OrbisNpMatching2RequestOptParam* request_opt,
-                                  OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2RegisterContextCallback(OrbisNpMatching2ContextCallback callback, void* userdata);
-s32 sceNpMatching2RegisterLobbyEventCallback(OrbisNpMatching2ContextId ctx_id,
-                                             OrbisNpMatching2LobbyEventCallback callback,
-                                             void* userdata);
-s32 sceNpMatching2RegisterRoomEventCallback(OrbisNpMatching2ContextId ctx_id,
-                                            OrbisNpMatching2RoomEventCallback callback,
-                                            void* userdata);
-s32 sceNpMatching2RegisterSignalingCallback(OrbisNpMatching2ContextId ctx_id,
-                                            OrbisNpMatching2SignalingCallback callback,
-                                            void* userdata);
-s32 sceNpMatching2ContextStart(OrbisNpMatching2ContextId ctx_id, u64 timeout);
-s32 sceNpMatching2ContextStop(OrbisNpMatching2ContextId ctx_id);
-s32 sceNpMatching2Initialize(OrbisNpMatching2InitializeParameter* param);
-s32 sceNpMatching2Terminate();
-s32 sceNpMatching2SetDefaultRequestOptParam(OrbisNpMatching2ContextId ctx_id,
-                                            OrbisNpMatching2RequestOptParam* request_opt);
-s32 sceNpMatching2GetServerId(OrbisNpMatching2ContextId ctx_id,
-                              OrbisNpMatching2ServerId* server_id);
-s32 sceNpMatching2GetWorldInfoList(OrbisNpMatching2ContextId ctx_id,
-                                   OrbisNpMatching2GetWorldInfoListRequest* request,
-                                   OrbisNpMatching2RequestOptParam* request_opt,
-                                   OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2LeaveRoom(OrbisNpMatching2ContextId ctx_id,
-                            OrbisNpMatching2LeaveRoomRequest* request,
-                            OrbisNpMatching2RequestOptParam* request_opt,
-                            OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SearchRoom(OrbisNpMatching2ContextId ctx_id,
-                             OrbisNpMatching2SearchRoomRequest* request,
-                             OrbisNpMatching2RequestOptParam* request_opt,
-                             OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SetUserInfo(OrbisNpMatching2ContextId ctx_id,
-                              OrbisNpMatching2SetUserInfoRequest* request,
-                              OrbisNpMatching2RequestOptParam* request_opt,
-                              OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SendRoomMessage(OrbisNpMatching2ContextId ctx_id, void* request,
-                                  OrbisNpMatching2RequestOptParam* request_opt,
-                                  OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SetRoomDataExternal(OrbisNpMatching2ContextId ctx_id,
-                                      OrbisNpMatching2SetRoomDataExternalRequest* request,
-                                      OrbisNpMatching2RequestOptParam* request_opt,
-                                      OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SetRoomDataInternal(OrbisNpMatching2ContextId ctx_id,
-                                      OrbisNpMatching2SetRoomDataInternalRequest* request,
-                                      OrbisNpMatching2RequestOptParam* request_opt,
-                                      OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SignalingGetConnectionStatus(OrbisNpMatching2ContextId ctx_id,
-                                               OrbisNpMatching2RoomId room_id,
-                                               OrbisNpMatching2RoomMemberId member_id,
-                                               s32* conn_status, void* peer_addr, u16* peer_port);
-s32 sceNpMatching2AbortContextStart(OrbisNpMatching2ContextId ctx_id);
-s32 sceNpMatching2DestroyContext(OrbisNpMatching2ContextId ctx_id);
-s32 sceNpMatching2RegisterLobbyMessageCallback(OrbisNpMatching2ContextId ctx_id,
-                                               OrbisNpMatching2LobbyMessageCallback callback,
-                                               void* userdata);
-s32 sceNpMatching2RegisterRoomMessageCallback(OrbisNpMatching2ContextId ctx_id,
-                                              OrbisNpMatching2RoomMessageCallback callback,
-                                              void* userdata);
-s32 sceNpMatching2GetMemoryInfo();
-s32 sceNpMatching2GetSslMemoryInfo();
-s32 sceNpMatching2GetRoomMemberIdListLocal();
-s32 sceNpMatching2GetRoomPasswordLocal();
-s32 sceNpMatching2GetSignalingOptParamLocal();
-s32 sceNpMatching2GetLobbyInfoList();
-s32 sceNpMatching2GetLobbyMemberDataInternal();
-s32 sceNpMatching2GetLobbyMemberDataInternalList();
-s32 sceNpMatching2GetRoomDataExternalList(OrbisNpMatching2ContextId ctx_id,
-                                          OrbisNpMatching2GetRoomDataExternalListRequest* request,
-                                          OrbisNpMatching2RequestOptParam* request_opt,
-                                          OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2GetRoomDataInternal(OrbisNpMatching2ContextId ctx_id,
-                                      OrbisNpMatching2GetRoomDataInternalRequest* request,
-                                      OrbisNpMatching2RequestOptParam* request_opt,
-                                      OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2GetRoomMemberDataExternalList(
-    OrbisNpMatching2ContextId ctx_id, OrbisNpMatching2GetRoomMemberDataExternalListRequest* request,
-    OrbisNpMatching2RequestOptParam* request_opt, OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2GetRoomMemberDataInternal(
-    OrbisNpMatching2ContextId ctx_id,
-    const OrbisNpMatching2GetRoomMemberDataInternalRequest* request,
-    const OrbisNpMatching2RequestOptParam* request_opt, OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2GetUserInfoListA(OrbisNpMatching2ContextId ctx_id,
-                                   OrbisNpMatching2GetUserInfoListRequest* request,
-                                   OrbisNpMatching2RequestOptParam* request_opt,
-                                   OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2GetUserInfoList(OrbisNpMatching2ContextId ctx_id,
-                                  OrbisNpMatching2GetUserInfoListRequest* request,
-                                  OrbisNpMatching2RequestOptParam* request_opt,
-                                  OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2GrantRoomOwner(OrbisNpMatching2ContextId ctx_id, void* req_param, void* opt_param,
-                                 s32* req_id);
-s32 sceNpMatching2JoinLobby(OrbisNpMatching2ContextId ctx_id, void* req_param, void* opt_param,
-                            s32* req_id);
-s32 sceNpMatching2JoinRoomA(OrbisNpMatching2ContextId ctx_id,
-                            OrbisNpMatching2JoinRoomRequestA* request,
-                            OrbisNpMatching2RequestOptParam* request_opt,
-                            OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2KickoutRoomMember(OrbisNpMatching2ContextId ctx_id,
-                                    OrbisNpMatching2KickoutRoomMemberRequest* request,
-                                    OrbisNpMatching2RequestOptParam* request_opt,
-                                    OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2LeaveLobby();
-s32 sceNpMatching2SendLobbyChatMessage();
-s32 sceNpMatching2SendRoomChatMessage(OrbisNpMatching2ContextId ctx_id, void* req_param,
-                                      void* opt_param, s32* req_id);
-s32 sceNpMatching2SetLobbyMemberDataInternal();
-s32 sceNpMatching2SetRoomMemberDataInternal(
-    OrbisNpMatching2ContextId ctx_id,
-    const OrbisNpMatching2SetRoomMemberDataInternalRequest* request,
-    const OrbisNpMatching2RequestOptParam* request_opt, OrbisNpMatching2RequestId* request_id);
-s32 sceNpMatching2SetSignalingOptParam();
-s32 sceNpMatching2SignalingGetPeerNetInfo();
-s32 sceNpMatching2SignalingGetPingInfo(OrbisNpMatching2ContextId ctx_id, const void* req_param,
-                                       const void* opt_param, s32* req_id);
-s32 sceNpMatching2SignalingCancelPeerNetInfo();
-s32 sceNpMatching2SignalingGetConnectionInfoA(OrbisNpMatching2ContextId ctx_id,
-                                              OrbisNpMatching2RoomId room_id,
-                                              OrbisNpMatching2RoomMemberId member_id, u32 info_type,
-                                              void* conn_info);
-s32 sceNpMatching2SignalingGetConnectionInfo(OrbisNpMatching2ContextId ctx_id,
-                                             OrbisNpMatching2RoomId room_id,
-                                             OrbisNpMatching2RoomMemberId member_id, u32 info_type,
-                                             void* conn_info);
-s32 sceNpMatching2SignalingGetLocalNetInfo(void* info);
-s32 sceNpMatching2SignalingGetPeerNetInfoResult();
+                                  const OrbisNpMatching2CreateJoinRoomRequestA* request,
+                                  const OrbisNpMatching2RequestOptParam* opt_param,
+                                  OrbisNpMatching2RequestId* req_id);
 
 void RegisterHooks();
+
 } // namespace Libraries::Np::NpMatching2

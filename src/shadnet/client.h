@@ -21,8 +21,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "common/types.h"
+#include "core/libraries/np/np_matching2/np_matching2.h"
 
 namespace ShadNet {
+
+namespace NpMatching2 = Libraries::Np::NpMatching2;
 
 // Protocol constants
 static constexpr u32 SHAD_HEADER_SIZE = 15;
@@ -347,6 +350,39 @@ public:
     u64 SetAppearOffline(bool enable);
     u64 LookupOnlineId(const std::string& npid);
     u64 GetAuthorizationCode(const std::string& client_id, const std::string& scope);
+
+    // Matching2
+    u64 ContextStart(NpMatching2::OrbisNpMatching2ContextId ctx_id);
+    u64 ContextStop(NpMatching2::OrbisNpMatching2ContextId ctx_id);
+    u64 CreateJoinRoom(NpMatching2::OrbisNpMatching2RequestId req_id,
+                       const NpMatching2::OrbisNpMatching2CreateJoinRoomRequest& request);
+    u64 CreateJoinRoomA(NpMatching2::OrbisNpMatching2RequestId req_id,
+                        const NpMatching2::OrbisNpMatching2CreateJoinRoomRequestA& request);
+    u64 JoinRoom(NpMatching2::OrbisNpMatching2RequestId req_id,
+                 const NpMatching2::OrbisNpMatching2JoinRoomRequest& request);
+    u64 JoinRoomA(NpMatching2::OrbisNpMatching2RequestId req_id,
+                  const NpMatching2::OrbisNpMatching2JoinRoomRequestA& request);
+    u64 LeaveRoom(NpMatching2::OrbisNpMatching2RequestId req_id,
+                  const NpMatching2::OrbisNpMatching2LeaveRoomRequest& request);
+    u64 GetWorldInfoList(const NpMatching2::OrbisNpMatching2GetWorldInfoListRequest& request);
+    u64 SearchRoom(const NpMatching2::OrbisNpMatching2SearchRoomRequest& request);
+    u64 GetRoomDataExternalList(
+        const NpMatching2::OrbisNpMatching2GetRoomDataExternalListRequest& request);
+    u64 GetRoomMemberDataExternalList(
+        const NpMatching2::OrbisNpMatching2GetRoomMemberDataExternalListRequest& request);
+    u64 GetUserInfoList(const NpMatching2::OrbisNpMatching2GetUserInfoListRequest& request);
+    u64 SetUserInfo(const NpMatching2::OrbisNpMatching2SetUserInfoRequest& request);
+    u64 SendRoomMessage(const NpMatching2::OrbisNpMatching2SendRoomMessageRequest& request);
+    u64 SetRoomDataInternal(NpMatching2::OrbisNpMatching2RequestId req_id,
+                            const NpMatching2::OrbisNpMatching2SetRoomDataInternalRequest& request);
+    u64 SetRoomMemberDataInternal(
+        NpMatching2::OrbisNpMatching2RequestId req_id,
+        const NpMatching2::OrbisNpMatching2SetRoomMemberDataInternalRequest& request);
+    u64 SetRoomDataExternal(NpMatching2::OrbisNpMatching2RequestId req_id,
+                            const NpMatching2::OrbisNpMatching2SetRoomDataExternalRequest& request);
+    u64 KickoutRoomMember(NpMatching2::OrbisNpMatching2RequestId req_id,
+                          const NpMatching2::OrbisNpMatching2KickoutRoomMemberRequest& request);
+    u64 RequestSignalingInfos(const std::string& target_npid);
 
 private:
     void ConnectThread();

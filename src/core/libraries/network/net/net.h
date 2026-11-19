@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <orbis/_types/net.h>
+
 #include "common/types.h"
 
 namespace Libraries::Network::Net {
@@ -84,8 +86,47 @@ enum OrbisNetFlags : u32 {
     ORBIS_NET_MSG_PEEKLEN = (0x00400000 | ORBIS_NET_MSG_PEEK),
 };
 
+enum OrbisNetEpollFlags : u32 {
+    ORBIS_NET_EPOLLIN = 0x00000001,
+    ORBIS_NET_EPOLLOUT = 0x00000002,
+    ORBIS_NET_EPOLLERR = 0x00000008,
+    ORBIS_NET_EPOLLHUP = 0x00000010,
+};
+
+enum OrbisNetEpollOp : s32 {
+    ORBIS_NET_EPOLL_CTL_ADD = 1,
+    ORBIS_NET_EPOLL_CTL_MOD = 2,
+    ORBIS_NET_EPOLL_CTL_DEL = 3,
+};
+
+union OrbisNetEpollData {
+    void* ptr;
+    u32 data_u32;
+    s32 fd;
+    u64 data_u64;
+};
+
+struct OrbisNetEpollEvent {
+    u32 events;
+    u32 reserved;
+    u64 ident;
+    OrbisNetEpollData data;
+};
+static_assert(sizeof(OrbisNetEpollEvent) == 0x18);
+
 // Socket functions
 s32 sceNetSocket(const char* name, s32 family, s32 type, s32 protocol);
+s32 sceNetSocketClose(s32 s);
+s32 sceNetConnect(s32 s, const OrbisNetSockaddr* addr, u32 addrlen);
+s32 sceNetSend(s32 s, const void* msg, u64 len, s32 flags);
+s32 sceNetRecv(s32 s, void* buf, u64 len, s32 flags);
+s32 sceNetSendto(s32 s, const void* msg, u64 len, s32 flags, const OrbisNetSockaddr* to, u32 tolen);
+s32 sceNetRecvfrom(s32 s, void* buf, u64 len, s32 flags, OrbisNetSockaddr* from, u32* fromlen);
+
+// Epoll functions
+s32 sceNetEpollControl(s32 eid, s32 op, s32 id, OrbisNetEpollEvent* event);
+s32 sceNetEpollWait(s32 eid, OrbisNetEpollEvent* events, s32 maxevents, s32 timeout);
+s32 sceNetEpollDestroy(s32 eid);
 
 // Resolver functions
 s32 sceNetResolverStartNtoa(s32 rid, const char* hostname, OrbisNetInAddr* addr, s32 timeout,

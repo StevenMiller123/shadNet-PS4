@@ -6,9 +6,9 @@
 
 #include "common/elf_info.h"
 #include "common/logging/log.h"
+#include "core/libraries/network/fake_psn/fake_matching2.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
-#include "core/libraries/np/np_matching2/np_matching2_mm.h"
 #include "core/libraries/np/np_web_api/np_web_api.h"
 #include "core/net_util/net_upnp.h"
 #include "shadnet/client.h"
@@ -138,6 +138,9 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
     client->on_web_api_push_event = [this, user_id](const ShadNet::NotifyWebApiPushEvent& n) {
         OnWebApiPushEvent(user_id, n);
     };
+    client->on_room_event = [user_id](const ShadNet::NotifyRoomEvent& n) {
+        Network::FakeMatching2::Instance().OnRoomEvent(user_id, n);
+    };
     client->on_service_unavailable = [this, user_id](const ShadNet::NotifyServiceUnavailable& n) {
         OnServiceUnavailable(user_id, n);
     };
@@ -198,17 +201,11 @@ bool NpHandler::ConnectUser(s32 user_id, const std::string& host, u16 port, cons
         NetUtil::UPnPClient::Instance().Start();
     }
 
-    NpMatching2::SetMmShadNetClient(client, host, port);
-
     // Build OrbisNpId
     {
         OrbisNpId np_id{};
-        const u64 id_len = std::min<u64>(npid.length(), 16);
+        SetNpId(np_id, npid);
         std::lock_guard lock(m_mutex_clients);
-        if (id_len > 0) {
-            std::memcpy(np_id.handle.data, npid.data(), id_len);
-        }
-        np_id.reserved[0] = 1;
         m_np_ids[user_id] = np_id;
         m_clients[user_id] = std::move(client);
     }
@@ -488,7 +485,7 @@ void NpHandler::OnAsyncReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
     if (cmd_val >= 30 && cmd_val < 39) {
         OnScoreReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 100 && cmd_val <= 200) {
-        NpMatching2::OnMatching2Reply(cmd, pkt_id, error, body);
+        OnMatching2Reply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 201 && cmd_val <= 300) {
         OnTusReply(user_id, cmd, pkt_id, error, body);
     } else if (cmd_val >= 301 && cmd_val <= 400) {

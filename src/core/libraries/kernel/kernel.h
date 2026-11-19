@@ -19,5 +19,6 @@ s32 _sendmsg(s32 s, const void* msg, s32 flags);
 s32 _sendto(s32 s, const void* msg, u64 len, s32 flags, const void* to, u32 tolen);
 
 void RegisterSocketHooks();
+void RegisterIpmiHooks();
 void RegisterHooks();
 } // namespace Libraries::Kernel

@@ -90,7 +90,7 @@ static void MapP2PPort(s32 s, const void* addr = nullptr, u32 addrlen = 0) {
         }
         it->second = port;
     }
-    LOG_INFO(Lib_Kernel, "mapping udp port {} for p2p socket {}", port, s);
+    LOG_DEBUG(Lib_Kernel, "mapping udp port {} for p2p socket {}", port, s);
     auto& upnp = NetUtil::UPnPClient::Instance();
     upnp.Start();
     upnp.MapPortAsync(port);
@@ -159,7 +159,7 @@ static constexpr void UnmapP2PPort(s32 s) {
         }
     }
     if (port != 0) {
-        LOG_INFO(Lib_Kernel, "unmapping udp port {} for p2p socket {}", port, s);
+        LOG_DEBUG(Lib_Kernel, "unmapping udp port {} for p2p socket {}", port, s);
         NetUtil::UPnPClient::Instance().UnmapPort(port);
     }
 }

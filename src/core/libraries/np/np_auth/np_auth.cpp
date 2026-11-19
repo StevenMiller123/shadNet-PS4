@@ -10,8 +10,8 @@
 
 #include "common/logging/log.h"
 #include "common/shadnet_hook.h"
+#include "core/libraries/kernel/ipmi/np_auth_ctx.h"
 #include "core/libraries/np/np_auth/np_auth.h"
-#include "core/libraries/np/np_auth/np_auth_ctx.h"
 #include "core/libraries/np/np_error.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_types.h"
@@ -64,6 +64,8 @@ static void RegisterNpAuthHooks() {
 }
 
 namespace Libraries::Np::NpAuth {
+
+using Kernel::Ipmi::AuthRequestCtx;
 
 static bool g_shadnet_enabled = false;
 static std::mutex g_auth_request_mutex;

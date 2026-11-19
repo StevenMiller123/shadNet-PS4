@@ -6,7 +6,6 @@
 #include "common/logging/log.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_profile_dialog/np_profile_dialog_ui.h"
-#include "core/libraries/np/np_signaling/np_signaling_handler.h"
 
 namespace Libraries::Np::NpProfileDialog {
 
@@ -79,10 +78,6 @@ std::string NpProfileDialogUi::ResolveOnlineId() {
     auto& np_handler = NpHandler::Instance();
     if (m_state->account_id == np_handler.GetAccountId(m_state->user_id)) {
         return ToString(np_handler.GetNpId(m_state->user_id).handle);
-    }
-    OrbisNpId np_id{};
-    if (NpSignaling::FindMatching2MemberNpId(m_state->account_id, &np_id)) {
-        return ToString(np_id.handle);
     }
     LOG_WARNING(Lib_NpProfileDialog, "Could not retrieve online id for account id {:#x}",
                 m_state->account_id);

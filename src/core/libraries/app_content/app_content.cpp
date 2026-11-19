@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <orbis/AppContent.h>
-#include <orbis/libkernel.h>
 
 #include "common/elf_info.h"
 #include "common/shadnet_hook.h"

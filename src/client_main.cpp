@@ -16,6 +16,7 @@
 #include "common/scm_rev.h"
 #include "common/types.h"
 #include "core/file_format/npbind.h"
+#include "core/file_format/nptitle.h"
 #include "core/file_format/psf.h"
 #include "core/libraries/app_content/app_content.h"
 #include "core/libraries/game_custom_data_dialog/game_custom_data_dialog.h"
@@ -25,6 +26,7 @@
 #include "core/libraries/network/http2/http2.h"
 #include "core/libraries/network/net/net.h"
 #include "core/libraries/network/net_ctl/net_ctl.h"
+#include "core/libraries/network/ssl/ssl.h"
 #include "core/libraries/np/np_auth/np_auth.h"
 #include "core/libraries/np/np_handler/np_handler.h"
 #include "core/libraries/np/np_manager/np_manager.h"
@@ -32,7 +34,7 @@
 #include "core/libraries/np/np_partner/np_partner.h"
 #include "core/libraries/np/np_profile_dialog/np_profile_dialog.h"
 #include "core/libraries/np/np_score/np_score.h"
-#include "core/libraries/np/np_signaling/np_signaling.h"
+#include "core/libraries/np/np_trace/np_trace.h"
 #include "core/libraries/np/np_trophy/np_trophy.h"
 #include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_utility/np_utility.h"
@@ -87,31 +89,20 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NETCTL);
-    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYS_UTIL);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
-    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_MANAGER);
-    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API);
-    sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NP_WEB_API2);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_HTTP2);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_COMMON_DIALOG);
     sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_PAD);
 
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SCORE_RANKING);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_AUTH);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SIGNALING);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_MATCHING2);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_UTILITY);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TUS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_APP_CONTENT);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_MESSAGE_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_IME_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_INVITATION_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PROFILE_DIALOG);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_GAME_CUSTOM_DATA_DIALOG);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
-    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TROPHY);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_MATCHING2);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_SIGNIN_DIALOG);
 
     // Init system and network library hooks
@@ -119,9 +110,9 @@ extern "C" s32 client_start() {
     Libraries::UserService::RegisterHooks();
     Libraries::AppContent::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
-    Libraries::Network::NetCtl::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
     Libraries::Network::Http2::RegisterHooks();
+    Libraries::Network::Ssl::RegisterHooks();
     Libraries::SystemService::RegisterHooks();
 
     // Init config backend
@@ -131,6 +122,7 @@ extern "C" s32 client_start() {
     // Load game metadata
     bool sandbox_psf = false;
     bool sandbox_npbind = false;
+    bool sandbox_nptitle = false;
 
     // Define helpers for loading these files, since we're checking multiple paths.
     auto load_psf = [&](std::string path) {
@@ -156,6 +148,13 @@ extern "C" s32 client_start() {
         game_info.np_comm_ids = npbind.GetNpCommIds();
         return true;
     };
+    auto load_nptitle = [&](std::string path) {
+        // Kept even when invalid, so its users can tell a malformed file from a missing one.
+        NpTitleFile nptitle;
+        const bool loaded = nptitle.Load(path);
+        game_info.np_title = nptitle;
+        return loaded;
+    };
 
     // Start by checking within the sandbox.
     // Mounted PKGs won't mount these files here, but unpacked dumps usually contain them.
@@ -173,9 +172,15 @@ extern "C" s32 client_start() {
             LOG_WARNING(shadNet, "Failed to load npbind.dat from sandbox");
         }
     }
+    if (sceKernelStat("/app0/sce_sys/nptitle.dat", &statbuf) == 0) {
+        sandbox_nptitle = load_nptitle("/app0/sce_sys/nptitle.dat");
+        if (!sandbox_nptitle) {
+            LOG_WARNING(shadNet, "Failed to load nptitle.dat from sandbox");
+        }
+    }
 
     // Sandbox doesn't contain our files, jailbreak this process and look in the correct places.
-    if (!sandbox_psf || !sandbox_npbind) {
+    if (!sandbox_psf || !sandbox_npbind || !sandbox_nptitle) {
         Common::RunPrivilegedRoot([&]() {
             // Check files in appmeta
             std::string meta_path = "/system_data/priv/appmeta/" + std::string(app_info.TitleId);
@@ -195,6 +200,15 @@ extern "C" s32 client_start() {
                     }
                 } else {
                     LOG_WARNING(shadNet, "no npbind.dat in {}", meta_path);
+                }
+            }
+            if (!sandbox_nptitle) {
+                if (std::filesystem::exists(meta_path + "/nptitle.dat")) {
+                    if (!load_nptitle(meta_path + "/nptitle.dat")) {
+                        LOG_WARNING(shadNet, "Failed to load nptitle.dat from system_data");
+                    }
+                } else {
+                    LOG_WARNING(shadNet, "no nptitle.dat in {}", meta_path);
                 }
             }
         });
@@ -227,18 +241,9 @@ extern "C" s32 client_start() {
         return 0;
     }
 
-    // Init NP library hooks
-    Libraries::Np::NpManager::RegisterHooks();
-    Libraries::Np::NpScore::RegisterHooks();
-    Libraries::Np::NpWebApi::RegisterHooks();
-    Libraries::Np::NpWebApi2::RegisterHooks();
-    Libraries::Np::NpAuth::RegisterHooks();
-    Libraries::Np::NpSignaling::RegisterHooks();
-    Libraries::Np::NpMatching2::RegisterHooks();
-    Libraries::Np::NpUtility::RegisterHooks();
-    Libraries::Np::NpTus::RegisterHooks();
-    Libraries::Np::NpPartner::RegisterHooks();
+    // Init other library hooks
     Libraries::Np::NpTrophy::RegisterHooks();
+    Libraries::Np::NpMatching2::RegisterHooks();
     Libraries::Np::NpProfileDialog::RegisterHooks();
     Libraries::GameCustomDataDialog::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
@@ -257,6 +262,9 @@ extern "C" s32 client_start() {
     });
     std::jthread{TtyLogThread, out_pipe[0], "stdout"}.detach();
     std::jthread{TtyLogThread, err_pipe[0], "stderr"}.detach();
+
+    // Start signing users in to shadNet, after hooks that register NpHandler callbacks.
+    Libraries::Np::NpHandler::Instance().Initialize();
 
     return 0;
 }

@@ -7,6 +7,17 @@
 
 namespace Libraries::SystemService {
 
+enum class OrbisLncAppType : u32 {
+    Invalid = 0,
+    ShellUi = 1,
+    Daemon = 2,
+    Cdlg = 3,
+    MiniApp = 4,
+    BigApp = 5,
+    ShellCore = 6,
+    ShellApp = 7,
+};
+
 enum OrbisSystemServiceEventType : s32 {
     SessionInvitation = 0x10000002,
     GameCustomData = 0x10000004,

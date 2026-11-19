@@ -59,7 +59,7 @@ void TtyLogThread(int fd, char const* name) {
     char buf{};
     while (read(fd, &buf, sizeof(buf)) > 0) {
         if (buf == '\n') {
-            LOG_INFO(Tty, "{}", line);
+            LOG_DEBUG(Tty, "{}", line);
             line = "";
             continue;
         }

@@ -27,7 +27,7 @@ s32 AuthErrorFromReply(ShadNet::ErrorType error) {
 
 s32 NpHandler::RequestAuthorizationCode(s32 user_id, const std::string& client_id,
                                         const std::string& scope,
-                                        std::shared_ptr<NpAuth::AuthRequestCtx> ctx) {
+                                        std::shared_ptr<Kernel::Ipmi::AuthRequestCtx> ctx) {
     std::shared_ptr<ShadNet::ShadNetClient> client;
     {
         std::lock_guard lock(m_mutex_clients);
@@ -52,7 +52,7 @@ s32 NpHandler::RequestAuthorizationCode(s32 user_id, const std::string& client_i
 
 void NpHandler::OnAuthReply(s32 user_id, ShadNet::CommandType cmd, u64 pkt_id,
                             ShadNet::ErrorType error, const std::vector<u8>& body) {
-    std::shared_ptr<NpAuth::AuthRequestCtx> req;
+    std::shared_ptr<Kernel::Ipmi::AuthRequestCtx> req;
     {
         std::lock_guard lock(m_mutex_pending_auth);
         auto it = m_pending_auth.find(pkt_id);

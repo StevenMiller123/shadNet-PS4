@@ -12,5 +12,6 @@ namespace Libraries::Kernel {
 void RegisterHooks() {
     RegisterKernelHooks();
     RegisterSocketHooks();
+    RegisterIpmiHooks();
 }
 } // namespace Libraries::Kernel
