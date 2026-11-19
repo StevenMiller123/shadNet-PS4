@@ -34,7 +34,6 @@
 #include "core/libraries/np/np_partner/np_partner.h"
 #include "core/libraries/np/np_profile_dialog/np_profile_dialog.h"
 #include "core/libraries/np/np_score/np_score.h"
-#include "core/libraries/np/np_trace/np_trace.h"
 #include "core/libraries/np/np_trophy/np_trophy.h"
 #include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_utility/np_utility.h"
