@@ -152,8 +152,8 @@ s32 IdMapperService::GetAccountIdResult(std::span<const IpmiDataInfo> in,
     }
     const Lookup& lookup = it->second;
     const u64 count = std::min<u64>(std::max(input->count, 0), lookup.account_ids.size());
-    WriteOutput(out[0], lookup.account_ids.data(), count * sizeof(u64));
-    return WriteOutput(out[1], &lookup.result, sizeof(lookup.result));
+    WriteOutput(out[0], &lookup.result, sizeof(lookup.result));
+    return WriteOutput(out[1], lookup.account_ids.data(), count * sizeof(u64));
 }
 
 s32 IdMapperService::OnAbortRequest(s32 request_id) {
