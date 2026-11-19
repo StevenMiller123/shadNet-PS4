@@ -43,6 +43,7 @@ enum class Opcode : u16 {
     GetWorldInfoList = 0x1008,
     SearchRoom = 0x1200,
     PublishRoom = 0x1202,
+    JoinedRoom = 0x1203,
     SetRoomDataExternal = 0x1207,
     GetRoomDataExternalList = 0x1208,
     GetRoomServer = 0x1209,
@@ -51,6 +52,7 @@ enum class Opcode : u16 {
     SearchRoomA = 0x120c,
     RoomServerSignIn = 0x2001,
     CreateJoinRoom = 0x3200,
+    JoinRoom = 0x3201,
     LeaveRoom = 0x3202,
     SetRoomDataInternal = 0x3204,
     SendRoomMessage = 0x320a,
@@ -250,10 +252,19 @@ struct WorldItem {
     World world;
 };
 
+struct RoomServerKeyData {
+    u16_be room_number;
+    u16 reserved;
+    u32_be sign_in_id;
+    std::array<u8, 8> reserved2;
+};
+static_assert(sizeof(RoomServerKeyData) == 0x10);
+
 struct RoomServerKey {
     PayloadHeader header;
-    std::array<u8, 0x10> key;
+    RoomServerKeyData key;
 };
+static_assert(sizeof(RoomServerKey) == 0x14);
 
 struct RoomGroup {
     u8 group_id;
@@ -658,6 +669,35 @@ std::vector<u8> BuildCreateJoinRoomReply(const shadnet::CreateRoomReply& reply,
     return out;
 }
 
+std::vector<u8> BuildJoinRoomReply(const shadnet::JoinRoomReply& reply) {
+    const auto& details = reply.details();
+
+    // shadNet doesn't keep the room's signaling parameters, members signal each other directly.
+    Np::NpMatching2::OrbisNpMatching2SignalingOptParam signaling_param{};
+    signaling_param.type = Np::NpMatching2::ORBIS_NP_MATCHING2_SIGNALING_TYPE_MESH;
+
+    std::vector<u8> out;
+    AppendMemberId(out, details.me_member_id());
+    // Keys for the room, we keep these blank since we're not using encryption.
+    static constexpr std::array<u8, 0x10> RoomKey{};
+    AppendBlob(out, AttributeId::RoomKey, RoomKey);
+    AppendBlob(out, AttributeId::RoomData1, RoomKey);
+    AppendBlob(out, AttributeId::RoomData2, RoomKey);
+    AppendRoomData(out, details, &signaling_param);
+
+    // Joining lists every member.
+    const u64 list_offset = BeginPayload(out, AttributeId::List);
+    ListHeader list{};
+    list.item_id = static_cast<u16>(AttributeId::RoomMemberDataInternal);
+    list.count = static_cast<u16>(details.members_size());
+    AppendBytes(out, list);
+    for (const auto& member : details.members()) {
+        AppendRoomMemberData(out, member);
+    }
+    EndPayload(out, list_offset);
+    return out;
+}
+
 void AppendServerList(std::vector<u8>& out) {
     const std::string server_url = ShadNet::Settings::GetInstance().GetServerUrl();
     const u64 colon = server_url.rfind(':');
@@ -790,7 +830,7 @@ FakeMatching2& FakeMatching2::Instance() {
 }
 
 const FakeMatching2::OpcodeHandler* FakeMatching2::FindOpcode(u16 opcode) {
-    static constexpr std::array<OpcodeHandler, 16> Opcodes = {{
+    static constexpr std::array<OpcodeHandler, 18> Opcodes = {{
         {static_cast<u16>(Opcode::Connect), "connect", &FakeMatching2::Connect},
         {static_cast<u16>(Opcode::SignIn), "sign in", &FakeMatching2::SignIn},
         {static_cast<u16>(Opcode::GetRoomServer), "get room server", &FakeMatching2::GetRoomServer},
@@ -803,7 +843,9 @@ const FakeMatching2::OpcodeHandler* FakeMatching2::FindOpcode(u16 opcode) {
          &FakeMatching2::GetWorldInfoList},
         {static_cast<u16>(Opcode::CreateJoinRoom), "create join room",
          &FakeMatching2::CreateJoinRoom},
+        {static_cast<u16>(Opcode::JoinRoom), "join room", &FakeMatching2::JoinRoom},
         {static_cast<u16>(Opcode::PublishRoom), "publish room", &FakeMatching2::PublishRoom},
+        {static_cast<u16>(Opcode::JoinedRoom), "joined room", &FakeMatching2::JoinedRoom},
         {static_cast<u16>(Opcode::SetRoomDataExternal), "set room data external",
          &FakeMatching2::SetRoomDataExternal},
         {static_cast<u16>(Opcode::GetRoomDataExternalList), "get room data external list",
@@ -1409,11 +1451,15 @@ void FakeMatching2::GetRoomServer(Connection& connection, const RequestHeader& h
     std::vector<u8> reply;
     RoomServerKey key{};
     key.header = MakePayloadHeader(AttributeId::RoomServerKey, sizeof(key.key));
+    key.key.room_number = room_number ? static_cast<u16>(*room_number) : 0;
+    key.key.sign_in_id = header.sign_in_id;
     AppendBytes(reply, key);
     AppendServerList(reply);
 
-    // Joining a room already has the room's number.
+    // Return the room number when joining
     if (room_number) {
+        AppendBytes(reply, MakePayloadHeader(AttributeId::RoomNumber, sizeof(*room_number)));
+        AppendBytes(reply, *room_number);
         QueueReply(connection, header, 0, std::span<const u8>{reply});
         return;
     }
@@ -1669,9 +1715,84 @@ void FakeMatching2::CreateJoinRoom(Connection& connection, const RequestHeader& 
     m_created_rooms.erase(it);
 }
 
+void FakeMatching2::JoinRoom(Connection& connection, const RequestHeader& header,
+                             std::span<const u8> payload) {
+    // The room and user are in the room server key we gave out for this room.
+    const auto key = ReadPayload<RoomServerKeyData>(payload, AttributeId::RoomServerKey);
+    if (!key || key->room_number == 0) {
+        LOG_ERROR(Lib_NpMatching2, "matching2 join room has no room server key for a room");
+        QueueReply(connection, header, ORBIS_NP_MATCHING2_SERVER_ERROR_BAD_REQUEST,
+                   std::span<const u8>{});
+        return;
+    }
+    const u16 room_number = key->room_number;
+
+    // shadNet only needs to know whether a password or group label was given.
+    static Np::NpMatching2::OrbisNpMatching2SessionPassword password{};
+    static Np::NpMatching2::OrbisNpMatching2GroupLabel group_label{};
+    Np::NpMatching2::OrbisNpMatching2JoinRoomRequest request{};
+
+    // shadNet's room ids are used as room numbers.
+    request.room_id = room_number;
+    request.team_id = ReadPayload<u8>(payload, AttributeId::TeamId).value_or(0);
+    if (FindPayload(payload, AttributeId::RoomPassword)) {
+        request.room_passwd = &password;
+    }
+    if (FindPayload(payload, AttributeId::JoinGroupLabel)) {
+        request.join_group_label = &group_label;
+    }
+    LOG_INFO(Lib_NpMatching2, "matching2 join room {}", request.room_id);
+
+    const s32 user_id = static_cast<s32>(static_cast<u32>(key->sign_in_id));
+    Np::NpHandler::Instance().JoinRoom(
+        user_id, header.request_id, request,
+        [this, socket = connection.socket, header, user_id](s32 result,
+                                                            const shadnet::JoinRoomReply& room) {
+            if (result < 0) {
+                QueueLateReply(socket, header, result, {});
+                return;
+            }
+            const auto& details = room.details();
+            const u64 room_id = details.room_data().room_id();
+            {
+                std::scoped_lock lk{m_mutex};
+                const auto it = m_connections.find(socket);
+                if (it == m_connections.end()) {
+                    return;
+                }
+                Connection& joined = it->second;
+                joined.user_id = user_id;
+                joined.room_id = room_id;
+                joined.member_id = static_cast<u16>(details.me_member_id());
+                joined.members.clear();
+                for (const auto& member : details.members()) {
+                    joined.members[MemberSlot(member.member_id())] =
+                        static_cast<u16>(member.member_id());
+                }
+            }
+            // Members already in the room signal with us
+            for (const auto& member : details.members()) {
+                if (member.member_id() != details.me_member_id()) {
+                    FakeSignaling::Instance().OnMemberJoined(
+                        room_id, static_cast<u16>(member.member_id()), member.addr(),
+                        static_cast<u16>(member.port()));
+                }
+            }
+            LOG_INFO(Lib_NpMatching2, "matching2 joined room {} as member {} with {} members",
+                     room_id, details.me_member_id(), details.members_size());
+            QueueLateReply(socket, header, 0, BuildJoinRoomReply(room));
+        });
+}
+
 void FakeMatching2::PublishRoom(Connection& connection, const RequestHeader& header,
                                 std::span<const u8> payload) {
-    LOG_DEBUG(Lib_NpMatching2, "matching2 publish room payload: {}", HexDump(payload));
+    // Reply values are ignored
+    QueueReply(connection, header, 0, std::span<const u8>{});
+}
+
+void FakeMatching2::JoinedRoom(Connection& connection, const RequestHeader& header,
+                               std::span<const u8> payload) {
+    // Reply values are ignored
     QueueReply(connection, header, 0, std::span<const u8>{});
 }
 

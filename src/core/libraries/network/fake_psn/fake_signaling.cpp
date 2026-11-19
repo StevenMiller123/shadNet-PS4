@@ -29,6 +29,8 @@ enum class Field : u16 {
     CandidateKind = 0x06,
     CandidateAddress = 0x07,
     CandidatePort = 0x08,
+    CandidateMappedAddress = 0x09,
+    CandidateMappedPort = 0x0a,
     TransactionId = 0x11,
     Result = 0x12,
     Unknown14 = 0x14,
@@ -388,6 +390,32 @@ std::vector<FakeSignaling::Message> FakeSignaling::OnMessage(u64 room_id, u16 sr
         LOG_INFO(Lib_NpMatching2, "signaling request from peer {} to member {}:{}", dst_member_id,
                  src_member_id, Describe(request));
         replies.push_back({dst_member_id, src_member_id, std::move(request)});
+        break;
+    }
+    case MessageType::ConnectResult: {
+        // The console only activates the connection once the peer sends its result too.
+        std::vector<u8> result;
+        AppendU32(result, Field::MessageType, static_cast<u32>(MessageType::ConnectResult));
+        AppendU32(result, Field::TransactionId, NextTransactionId());
+        AppendU16(result, Field::SourceConnection, peer.peer_connection);
+        AppendU16(result, Field::DestinationConnection, peer.console_connection);
+        AppendField(result, Field::Nonce, peer.nonce);
+
+        std::vector<u8> candidate;
+        AppendU32(candidate, Field::CandidateKind, 1);
+        AppendField(candidate, Field::CandidateAddress,
+                    {reinterpret_cast<const u8*>(&peer.console_addr), sizeof(peer.console_addr)});
+        AppendField(candidate, Field::CandidatePort,
+                    {reinterpret_cast<const u8*>(&peer.console_port), sizeof(peer.console_port)});
+        AppendField(candidate, Field::CandidateMappedAddress,
+                    {reinterpret_cast<const u8*>(&peer.addr), sizeof(peer.addr)});
+        AppendField(candidate, Field::CandidateMappedPort,
+                    {reinterpret_cast<const u8*>(&peer.port), sizeof(peer.port)});
+        AppendField(result, Field::Candidate, candidate);
+
+        LOG_INFO(Lib_NpMatching2, "signaling result from peer {} to member {}:{}", dst_member_id,
+                 src_member_id, Describe(result));
+        replies.push_back({dst_member_id, src_member_id, std::move(result)});
         break;
     }
     case MessageType::Disconnect:

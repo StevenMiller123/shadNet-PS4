@@ -120,6 +120,9 @@ private:
                           std::span<const u8> payload);
     void CreateJoinRoom(Connection& connection, const RequestHeader& header,
                         std::span<const u8> payload);
+    void JoinRoom(Connection& connection, const RequestHeader& header, std::span<const u8> payload);
+    void JoinedRoom(Connection& connection, const RequestHeader& header,
+                    std::span<const u8> payload);
     void PublishRoom(Connection& connection, const RequestHeader& header,
                      std::span<const u8> payload);
     void SetRoomDataExternal(Connection& connection, const RequestHeader& header,

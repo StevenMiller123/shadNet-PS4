@@ -22,6 +22,7 @@
 
 namespace shadnet {
 class CreateRoomReply;
+class JoinRoomReply;
 class SearchRoomReply;
 class GetRoomDataExternalListReply;
 } // namespace shadnet
@@ -90,6 +91,9 @@ public:
         s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
         const NpMatching2::CreateJoinRoomParams& params,
         std::function<void(s32 result, const shadnet::CreateRoomReply& reply)> on_result);
+    void JoinRoom(s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
+                  const NpMatching2::OrbisNpMatching2JoinRoomRequest& request,
+                  std::function<void(s32 result, const shadnet::JoinRoomReply& reply)> on_result);
     void SetRoomDataExternal(s32 user_id, NpMatching2::OrbisNpMatching2RequestId req_id,
                              const NpMatching2::OrbisNpMatching2SetRoomDataExternalRequest& request,
                              std::function<void(s32 result)> on_result);

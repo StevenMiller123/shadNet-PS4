@@ -168,6 +168,25 @@ void NpHandler::CreateJoinRoom(
     }
 }
 
+void NpHandler::JoinRoom(
+    s32 user_id, OrbisNpMatching2RequestId req_id, const OrbisNpMatching2JoinRoomRequest& request,
+    std::function<void(s32 result, const shadnet::JoinRoomReply& reply)> on_result) {
+    const auto on_reply = [on_result](s32 result, const std::vector<u8>& body) {
+        shadnet::JoinRoomReply reply;
+        if (result >= 0 && !ParseReply(body, reply)) {
+            LOG_WARNING(NpHandler, "could not parse the joined room");
+            result = ORBIS_NP_MATCHING2_SERVER_ERROR_INTERNAL_SERVER_ERROR;
+        }
+        on_result(result, reply);
+    };
+    const s32 result = SubmitMatching2Request(
+        user_id, [&](ShadNet::ShadNetClient& client) { return client.JoinRoom(req_id, request); },
+        on_reply);
+    if (result < 0) {
+        on_result(result, shadnet::JoinRoomReply{});
+    }
+}
+
 void NpHandler::SetRoomDataExternal(s32 user_id, OrbisNpMatching2RequestId req_id,
                                     const OrbisNpMatching2SetRoomDataExternalRequest& request,
                                     std::function<void(s32)> on_result) {
