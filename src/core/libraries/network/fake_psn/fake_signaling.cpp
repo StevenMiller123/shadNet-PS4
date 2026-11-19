@@ -336,8 +336,8 @@ std::vector<FakeSignaling::Message> FakeSignaling::OnMessage(u64 room_id, u16 sr
     const auto fields = ParseFields(data);
     const auto type = ReadU32(fields, Field::MessageType);
     const auto transaction_id = ReadU32(fields, Field::TransactionId);
-    LOG_INFO(Lib_NpMatching2, "signaling message {} from member {} to member {} in room {}:{}",
-             type ? *type : 0, src_member_id, dst_member_id, room_id, Describe(data));
+    LOG_DEBUG(Lib_NpMatching2, "signaling message {} from member {} to member {} in room {}:{}",
+              type ? *type : 0, src_member_id, dst_member_id, room_id, Describe(data));
     if (!type || !transaction_id || *type == static_cast<u32>(MessageType::Ack)) {
         return {};
     }
@@ -387,8 +387,8 @@ std::vector<FakeSignaling::Message> FakeSignaling::OnMessage(u64 room_id, u16 sr
                     {reinterpret_cast<const u8*>(&peer.port), sizeof(peer.port)});
         AppendField(request, Field::Candidate, candidate);
 
-        LOG_INFO(Lib_NpMatching2, "signaling request from peer {} to member {}:{}", dst_member_id,
-                 src_member_id, Describe(request));
+        LOG_DEBUG(Lib_NpMatching2, "signaling request from peer {} to member {}:{}", dst_member_id,
+                  src_member_id, Describe(request));
         replies.push_back({dst_member_id, src_member_id, std::move(request)});
         break;
     }
@@ -413,8 +413,8 @@ std::vector<FakeSignaling::Message> FakeSignaling::OnMessage(u64 room_id, u16 sr
                     {reinterpret_cast<const u8*>(&peer.port), sizeof(peer.port)});
         AppendField(result, Field::Candidate, candidate);
 
-        LOG_INFO(Lib_NpMatching2, "signaling result from peer {} to member {}:{}", dst_member_id,
-                 src_member_id, Describe(result));
+        LOG_DEBUG(Lib_NpMatching2, "signaling result from peer {} to member {}:{}", dst_member_id,
+                  src_member_id, Describe(result));
         replies.push_back({dst_member_id, src_member_id, std::move(result)});
         break;
     }
