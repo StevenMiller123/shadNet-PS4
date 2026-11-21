@@ -33,5 +33,10 @@ s32 sceHttpDeleteConnection(s32 conn_id);
 s32 sceHttpDeleteRequest(s32 req_id);
 s32 sceHttpGetStatusCode(s32 req_id, s32* status_code);
 
+int sceHttpsDisableOption(int id, u32 sslFlags);
+int sceHttpsDisableOptionPrivate(int id, u32 sslFlags);
+int sceHttpsEnableOption(int id, u32 sslFlags);
+int sceHttpsEnableOptionPrivate(int id, u32 sslFlags);
+
 void RegisterHooks();
 }; // namespace Libraries::Network::Http

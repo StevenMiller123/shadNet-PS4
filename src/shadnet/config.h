@@ -39,10 +39,11 @@ struct ServerSettings {
     Setting<s32> shadnet_p2p_port{3658};
     Setting<std::string> shadnet_server{"srv.shadps4.net:31313"};
     Setting<std::string> shadnet_webapi_server{"http://srv.shadps4.net:31315"};
+    Setting<bool> disable_https{false};
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ServerSettings, shadnet_enable_upnp, shadnet_p2p_port,
-                                   shadnet_server, shadnet_webapi_server)
+                                   shadnet_server, shadnet_webapi_server, disable_https)
 
 struct UserSettings {
     Setting<bool> shadnet_appear_offline{false};
@@ -79,6 +80,10 @@ public:
     std::string GetWebApiServerUrl() {
         return m_server.shadnet_webapi_server.get();
     };
+
+    bool IsHttpsDisabled() {
+        return m_server.disable_https.get();
+    }
 
     bool IsAppearOfflineEnabled(s32 user_id) {
         return m_user[user_id].shadnet_appear_offline.get();

@@ -10,6 +10,8 @@
 #include "common/shadnet_hook.h"
 #include "common/types.h"
 #include "core/libraries/network/http/http.h"
+#include "host_override.h"
+#include "shadnet/config.h"
 
 SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpCreateConnection);
 SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpCreateConnectionWithURL);
@@ -21,6 +23,10 @@ SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpCreateTemplate);
 SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpDeleteConnection);
 SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpDeleteRequest);
 SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpGetStatusCode);
+SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpsDisableOption);
+SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpsDisableOptionPrivate);
+SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpsEnableOption);
+SHADNET_HOOK_DECLARE(Libraries::Network::Http, sceHttpsEnableOptionPrivate);
 
 static void RegisterHttpHooks() {
     SHADNET_HOOK(Libraries::Network::Http, sceHttpCreateConnection);
@@ -33,6 +39,10 @@ static void RegisterHttpHooks() {
     SHADNET_HOOK(Libraries::Network::Http, sceHttpDeleteConnection);
     SHADNET_HOOK(Libraries::Network::Http, sceHttpDeleteRequest);
     SHADNET_HOOK(Libraries::Network::Http, sceHttpGetStatusCode);
+    SHADNET_HOOK(Libraries::Network::Http, sceHttpsDisableOption);
+    SHADNET_HOOK(Libraries::Network::Http, sceHttpsDisableOptionPrivate);
+    SHADNET_HOOK(Libraries::Network::Http, sceHttpsEnableOption);
+    SHADNET_HOOK(Libraries::Network::Http, sceHttpsEnableOptionPrivate);
 }
 
 namespace Libraries::Network::Http {
@@ -44,11 +54,16 @@ static std::map<s32, std::string> connection_servers{};
 
 s32 sceHttpCreateConnection(s32 tmpl_id, const char* server_name, const char* scheme, u16 port,
                             s32 is_enable_keepalive) {
+    std::string server_name_ = server_name;
+    std::string scheme_ = scheme;
+    u16 port_ = port;
+    bool is_secure_ = scheme_.starts_with("https");
+    ApplyHostOverride(server_name_, scheme_, port_, is_secure_);
     LOG_INFO(Lib_Http, "called, server_name={}, scheme={}, port={}, is_enable_keepalive={}",
              server_name ? server_name : "(null)", scheme ? scheme : "(null)", port,
              is_enable_keepalive);
-    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, server_name, scheme, port,
-                                        is_enable_keepalive);
+    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, server_name_.c_str(), scheme_.c_str(),
+                                        port_, is_enable_keepalive);
     if (conn_id > 0) {
         std::scoped_lock lk{urls_mutex};
         connection_servers[conn_id] = server_name;
@@ -59,8 +74,39 @@ s32 sceHttpCreateConnection(s32 tmpl_id, const char* server_name, const char* sc
 s32 sceHttpCreateConnectionWithURL(s32 tmpl_id, const char* url, bool enable_keepalive) {
     LOG_INFO(Lib_Http, "called, url={}, enable_keepalive={}", url ? url : "(null)",
              enable_keepalive);
+    if (!url) {
+        LOG_ERROR(Lib_Http, "url is null");
+        return ORBIS_HTTP_ERROR_INVALID_URL;
+    }
+
+    u64 required = 0;
+    int parse_ret = sceHttpUriParse(nullptr, url, nullptr, &required, 0);
+    if (parse_ret < 0) {
+        LOG_ERROR(Lib_Http, "URI pre-parse failed: {:#x}", parse_ret);
+        return parse_ret; // already an ORBIS_HTTP_ERROR_*
+    }
+    std::vector<char> pool(required);
+    OrbisHttpUriElement parsed{};
+    parse_ret = sceHttpUriParse(&parsed, url, pool.data(), &required, required);
+    if (parse_ret < 0) {
+        LOG_ERROR(Lib_Http, "URI parse failed: {:#x}", parse_ret);
+        return parse_ret;
+    }
+
+    std::string scheme_str = parsed.scheme ? parsed.scheme : "";
+    bool is_secure = false;
+    if (!parsed.hostname || !parsed.hostname[0]) {
+        LOG_ERROR(Lib_Http, "URL has no hostname");
+        return ORBIS_HTTP_ERROR_INVALID_URL;
+    }
+
+    scheme_str = is_secure ? "https" : "http";
+    u16 port = parsed.port;
+    std::string host_str = parsed.hostname;
+    ApplyHostOverride(scheme_str, host_str, port, is_secure);
+
     s32 conn_id =
-        SHADNET_HOOK_CONTINUE(sceHttpCreateConnectionWithURL, tmpl_id, url, enable_keepalive);
+        SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, host_str.c_str(), scheme_str.c_str(), port, enable_keepalive);
     if (conn_id > 0) {
         std::scoped_lock lk{urls_mutex};
         connection_urls[conn_id] = url;
@@ -165,6 +211,30 @@ s32 sceHttpGetStatusCode(s32 req_id, s32* status_code) {
         }
     }
     return ret;
+}
+
+int sceHttpsDisableOption(int id, u32 sslFlags) {
+    return SHADNET_HOOK_CONTINUE(sceHttpsDisableOption, id, sslFlags);
+}
+
+int sceHttpsDisableOptionPrivate(int id, u32 sslFlags) {
+    return SHADNET_HOOK_CONTINUE(sceHttpsDisableOptionPrivate, id, sslFlags);
+}
+
+int sceHttpsEnableOption(int id, u32 sslFlags) {
+    if (ShadNet::Settings::GetInstance().IsHttpsDisabled()) {
+        LOG_INFO(Lib_Http, "Disabling https");
+        return SHADNET_HOOK_CONTINUE(sceHttpsDisableOption, id, sslFlags);
+    }
+    return SHADNET_HOOK_CONTINUE(sceHttpsEnableOption, id, sslFlags);
+}
+
+int sceHttpsEnableOptionPrivate(int id, u32 sslFlags) {
+    if (ShadNet::Settings::GetInstance().IsHttpsDisabled()) {
+        LOG_INFO(Lib_Http, "Disabling https");
+        return SHADNET_HOOK_CONTINUE(sceHttpsDisableOptionPrivate, id, sslFlags);
+    }
+    return SHADNET_HOOK_CONTINUE(sceHttpsEnableOptionPrivate, id, sslFlags);
 }
 
 void RegisterHooks() {
