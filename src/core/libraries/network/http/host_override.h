@@ -225,4 +225,4 @@ bool ApplyHostOverride(std::string& scheme, std::string& host, u16& port, bool& 
     return true;
 }
 
-} // namespace Libraries::Http
+} // namespace Libraries::Network::Http

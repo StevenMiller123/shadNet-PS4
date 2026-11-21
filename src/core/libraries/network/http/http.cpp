@@ -62,8 +62,8 @@ s32 sceHttpCreateConnection(s32 tmpl_id, const char* server_name, const char* sc
     LOG_INFO(Lib_Http, "called, server_name={}, scheme={}, port={}, is_enable_keepalive={}",
              server_name ? server_name : "(null)", scheme ? scheme : "(null)", port,
              is_enable_keepalive);
-    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, server_name_.c_str(), scheme_.c_str(),
-                                        port_, is_enable_keepalive);
+    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, server_name_.c_str(),
+                                        scheme_.c_str(), port_, is_enable_keepalive);
     if (conn_id > 0) {
         std::scoped_lock lk{urls_mutex};
         connection_servers[conn_id] = server_name;
@@ -105,8 +105,8 @@ s32 sceHttpCreateConnectionWithURL(s32 tmpl_id, const char* url, bool enable_kee
     std::string host_str = parsed.hostname;
     ApplyHostOverride(scheme_str, host_str, port, is_secure);
 
-    s32 conn_id =
-        SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, host_str.c_str(), scheme_str.c_str(), port, enable_keepalive);
+    s32 conn_id = SHADNET_HOOK_CONTINUE(sceHttpCreateConnection, tmpl_id, host_str.c_str(),
+                                        scheme_str.c_str(), port, enable_keepalive);
     if (conn_id > 0) {
         std::scoped_lock lk{urls_mutex};
         connection_urls[conn_id] = url;
