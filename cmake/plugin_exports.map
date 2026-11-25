@@ -1,0 +1,10 @@
+{
+  global:
+    plugin_load;
+    plugin_unload;
+    g_pluginName;
+    g_pluginDesc;
+    g_pluginAuth;
+    g_pluginVersion;
+  local: *;
+};

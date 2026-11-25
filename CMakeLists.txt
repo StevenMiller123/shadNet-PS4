@@ -584,7 +584,8 @@ endif()
 add_custom_command(
     OUTPUT "${TARGET_PRX}"
     COMMAND "${PLUGIN_LD}"
-            -m elf_x86_64 -pie
+            -m elf_x86_64 -shared -Bsymbolic-non-weak
+            "--version-script=${CMAKE_CURRENT_SOURCE_DIR}/cmake/plugin_exports.map"
             --script "${OO_PS4_TOOLCHAIN}/link.x"
             -e _init --eh-frame-hdr
             "-L${OO_PS4_TOOLCHAIN}/lib"
