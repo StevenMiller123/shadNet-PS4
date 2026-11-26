@@ -44,11 +44,11 @@ void SettingsPage::Run(s32 user_id) {
 
     while (true) {
         Choice choice = m_dialog.Show(FormatSummary(), ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS,
-                                      "Account settings", "Server settings");
+                                      "Server settings", "Account settings");
         if (choice == Choice::Button1) {
-            EditFields(user_fields);
-        } else if (choice == Choice::Button2) {
             EditFields(server_fields);
+        } else if (choice == Choice::Button2) {
+            EditFields(user_fields);
         } else {
             break;
         }
