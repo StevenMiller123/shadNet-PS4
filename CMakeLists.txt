@@ -270,6 +270,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/invitation_dialog/invitation_dialog.cpp
                  src/core/libraries/kernel/kernel_socket.cpp
                  src/core/libraries/kernel/kernel.cpp
+                 src/core/libraries/msg_dialog/msg_dialog.cpp
                  src/core/libraries/network/http/http.cpp
                  src/core/libraries/network/http2/http2.cpp
                  src/core/libraries/network/net/net.cpp

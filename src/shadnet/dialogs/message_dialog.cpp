@@ -10,6 +10,7 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/libraries/common_dialog/common_dialog_error.h"
+#include "core/libraries/msg_dialog/msg_dialog.h"
 #include "shadnet/dialogs/message_dialog.h"
 
 namespace ShadNet {
@@ -20,11 +21,13 @@ static constexpr s32 PAD_DATA_INDEX_COUNT = 4;
 bool MessageDialog::Begin(s32 user_id) {
     m_user_id = user_id;
     m_aborted = false;
+    Libraries::MsgDialog::SetPluginThread(true);
 
     s32 result = sceCommonDialogInitialize();
     if (result < 0 && result != ORBIS_COMMON_DIALOG_ERROR_ALREADY_SYSTEM_INITIALIZED) {
         LOG_ERROR(shadNet, "sceCommonDialogInitialize failed with error {:#x}",
                   static_cast<u32>(result));
+        Libraries::MsgDialog::SetPluginThread(false);
         return false;
     }
 
@@ -34,6 +37,7 @@ bool MessageDialog::Begin(s32 user_id) {
     } else if (result < 0) {
         LOG_ERROR(shadNet, "sceMsgDialogInitialize failed with error {:#x}",
                   static_cast<u32>(result));
+        Libraries::MsgDialog::SetPluginThread(false);
         return false;
     } else {
         m_owns_msg_dialog = true;
@@ -46,6 +50,7 @@ void MessageDialog::End() {
         sceMsgDialogTerminate();
         m_owns_msg_dialog = false;
     }
+    Libraries::MsgDialog::SetPluginThread(false);
 }
 
 MessageDialog::Choice MessageDialog::Show(const std::string& msg, s32 button_type,
@@ -87,7 +92,15 @@ MessageDialog::Choice MessageDialog::Show(const std::string& msg, s32 button_typ
 
     u32 active_buttons = 0;
     bool closed = false;
-    while (sceMsgDialogUpdateStatus() != ORBIS_COMMON_DIALOG_STATUS_FINISHED) {
+    while (true) {
+        const OrbisCommonDialogStatus status = sceMsgDialogUpdateStatus();
+        if (status == ORBIS_COMMON_DIALOG_STATUS_FINISHED) {
+            break;
+        } else if (status == ORBIS_COMMON_DIALOG_STATUS_NONE) {
+            LOG_WARNING(shadNet, "dialog was terminated by the game");
+            m_owns_msg_dialog = false;
+            return Choice::Failed;
+        }
         for (s32 i = 0; i < PAD_DATA_INDEX_COUNT; i++) {
             OrbisPadData data{};
             scePadGetDataInternal(i, &data);

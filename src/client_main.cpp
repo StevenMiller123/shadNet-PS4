@@ -21,6 +21,7 @@
 #include "core/libraries/game_custom_data_dialog/game_custom_data_dialog.h"
 #include "core/libraries/invitation_dialog/invitation_dialog.h"
 #include "core/libraries/kernel/kernel.h"
+#include "core/libraries/msg_dialog/msg_dialog.h"
 #include "core/libraries/network/http/http.h"
 #include "core/libraries/network/http2/http2.h"
 #include "core/libraries/network/net/net.h"
@@ -120,6 +121,7 @@ extern "C" s32 client_start() {
     Libraries::Kernel::RegisterHooks();
     Libraries::UserService::RegisterHooks();
     Libraries::AppContent::RegisterHooks();
+    Libraries::MsgDialog::RegisterHooks();
     Libraries::Network::Net::RegisterHooks();
     Libraries::Network::NetCtl::RegisterHooks();
     Libraries::Network::Http::RegisterHooks();
