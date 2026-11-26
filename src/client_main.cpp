@@ -33,6 +33,7 @@
 #include "core/libraries/np/np_profile_dialog/np_profile_dialog.h"
 #include "core/libraries/np/np_score/np_score.h"
 #include "core/libraries/np/np_signaling/np_signaling.h"
+#include "core/libraries/np/np_sns/facebook_dialog/np_sns_facebook_dialog.h"
 #include "core/libraries/np/np_trophy/np_trophy.h"
 #include "core/libraries/np/np_tus/np_tus.h"
 #include "core/libraries/np/np_utility/np_utility.h"
@@ -112,6 +113,7 @@ extern "C" s32 client_start() {
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_EA_ACCESS);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_PARTNER_SUBSCRIPTION);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_TROPHY);
+    sceSysmoduleLoadModule(ORBIS_SYSMODULE_NP_SNS_FACEBOOK);
     sceSysmoduleLoadModule(ORBIS_SYSMODULE_SIGNIN_DIALOG);
 
     // Init system and network library hooks
@@ -240,6 +242,7 @@ extern "C" s32 client_start() {
     Libraries::Np::NpPartner::RegisterHooks();
     Libraries::Np::NpTrophy::RegisterHooks();
     Libraries::Np::NpProfileDialog::RegisterHooks();
+    Libraries::Np::NpSns::FacebookDialog::RegisterHooks();
     Libraries::GameCustomDataDialog::RegisterHooks();
     Libraries::InvitationDialog::RegisterHooks();
     Libraries::SigninDialog::RegisterHooks();

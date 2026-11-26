@@ -233,6 +233,7 @@ set(PLUGIN_LIBS
     -lSceNpPartnerSubscription
     -lSceNpScore
     -lSceNpSignaling
+    -lSceNpSnsFacebookDialog
     -lSceNpTrophy
     -lSceNpTus
     -lSceNpUbisoftPlus
@@ -302,6 +303,7 @@ set(CORE_SOURCES src/core/file_format/npbind.cpp
                  src/core/libraries/np/np_signaling/np_signaling_state.cpp
                  src/core/libraries/np/np_signaling/np_signaling_transport.cpp
                  src/core/libraries/np/np_signaling/np_signaling.cpp
+                 src/core/libraries/np/np_sns/facebook_dialog/np_sns_facebook_dialog.cpp
                  src/core/libraries/np/np_trophy/np_trophy.cpp
                  src/core/libraries/np/np_tus/np_tus.cpp
                  src/core/libraries/np/np_utility/np_utility_lookup.cpp

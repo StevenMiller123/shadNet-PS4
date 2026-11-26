@@ -58,6 +58,6 @@ struct HookContinueWrapperImpl<func> {
 };
 
 #define SHADNET_HOOK_CONTINUE(func, ...)                                                           \
-    HookContinueWrapperImpl<func>::wrap(&Detour_##func, __VA_ARGS__)
+    HookContinueWrapperImpl<func>::wrap(&Detour_##func __VA_OPT__(, ) __VA_ARGS__)
 
 #endif
