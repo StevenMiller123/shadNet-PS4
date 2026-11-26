@@ -37,6 +37,9 @@ void SettingsPage::Run(s32 user_id) {
         {"P2P port", FieldType::Port, &m_server.shadnet_p2p_port},
         {"UPnP", FieldType::Bool, &m_server.shadnet_enable_upnp},
         {"Disable HTTPS", FieldType::Bool, &m_server.disable_https},
+        {"TTY logging", FieldType::Bool, &m_server.tty_logging,
+         "Log stdout and stderr writes through the plugin.\n"
+         "Only enable this for debugging. Causes random hangs on PS4."},
     };
 
     while (true) {
@@ -95,7 +98,8 @@ std::string SettingsPage::FormatValue(const Field& field, bool use_default) {
 std::string SettingsPage::FormatSummary() {
     return fmt::format("shadNet Settings\n\n"
                        "shadNet: {}\nNPID: {}\nPassword: {}\nAppear offline: {}\n\n"
-                       "Server: {}\nWebApi server: {}\nP2P port: {}\nUPnP: {}\nDisable HTTPS: {}",
+                       "Server: {}\nWebApi server: {}\nP2P port: {}\nUPnP: {}\nDisable HTTPS: {}\n"
+                       "TTY logging: {}",
                        m_user.shadnet_enabled.get() ? "Enabled" : "Disabled",
                        m_user.shadnet_npid.get().empty() ? "Not set" : m_user.shadnet_npid.get(),
                        m_user.shadnet_password.get().empty() ? "Not set" : "********",
@@ -103,15 +107,19 @@ std::string SettingsPage::FormatSummary() {
                        m_server.shadnet_server.get(), m_server.shadnet_webapi_server.get(),
                        m_server.shadnet_p2p_port.get(),
                        m_server.shadnet_enable_upnp.get() ? "Enabled" : "Disabled",
-                       m_server.disable_https.get() ? "Enabled" : "Disabled");
+                       m_server.disable_https.get() ? "Enabled" : "Disabled",
+                       m_server.tty_logging.get() ? "Enabled" : "Disabled");
 }
 
 void SettingsPage::EditFields(std::vector<Field> fields) {
     u64 index = 0;
     while (true) {
         Field& field = fields[index];
-        std::string msg = fmt::format("{}: {}\n\n({}/{})\nPress L1 or R1 to navigate", field.name,
-                                      FormatValue(field), index + 1, fields.size());
+        std::string msg = fmt::format("{}: {}\n\n", field.name, FormatValue(field));
+        if (field.description != nullptr) {
+            msg += fmt::format("{}\n\n", field.description);
+        }
+        msg += fmt::format("({}/{})\nPress L1 or R1 to navigate", index + 1, fields.size());
         Choice choice = m_dialog.Show(msg, ORBIS_MSG_DIALOG_BUTTON_TYPE_2BUTTONS, "Change", "Reset",
                                       Button::L1 | Button::R1);
         if (choice == Choice::Button1) {

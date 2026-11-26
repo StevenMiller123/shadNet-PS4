@@ -34,6 +34,7 @@ private:
         const char* name;
         FieldType type;
         std::variant<Setting<bool>*, Setting<std::string>*, Setting<s32>*> value;
+        const char* description = nullptr;
     };
 
     std::optional<std::string> ShowKeyboard(const char* title, const std::string& value,
