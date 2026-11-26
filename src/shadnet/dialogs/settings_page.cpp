@@ -39,7 +39,7 @@ void SettingsPage::Run(s32 user_id) {
         {"Disable HTTPS", FieldType::Bool, &m_server.disable_https},
         {"TTY logging", FieldType::Bool, &m_server.tty_logging,
          "Log stdout and stderr writes through the plugin.\n"
-         "Only enable this for debugging. Causes random hangs on PS4."},
+         "Causes random hangs when running through GoldHEN."},
     };
 
     while (true) {
